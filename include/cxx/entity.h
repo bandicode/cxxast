@@ -5,34 +5,29 @@
 #ifndef CXXAST_ENTITY_H
 #define CXXAST_ENTITY_H
 
-#include "cxx/sourcelocation.h"
-
-#include <memory>
+#include "cxx/node.h"
 
 namespace cxx
 {
 
 class Documentation;
 
-class CXXAST_API Entity
+class CXXAST_API Entity : public Node
 {
 private:
   std::string m_name;
   std::weak_ptr<Entity> m_parent;
-  SourceLocation m_location;
   std::shared_ptr<Documentation> m_documentation;
 
 public:
   explicit Entity(std::string name, std::shared_ptr<Entity> parent = nullptr);
-  virtual ~Entity();
 
-  virtual const std::string& type() const = 0;
+  std::shared_ptr<Entity> shared_from_this();
+
+  bool isEntity() const override;
 
   const std::string& name() const;
   std::shared_ptr<Entity> parent() const;
-
-  const SourceLocation& location() const;
-  SourceLocation& location();
 
   const std::shared_ptr<Documentation>& documentation() const;
   void setDocumentation(std::shared_ptr<Documentation> doc);
@@ -58,16 +53,6 @@ inline const std::string& Entity::name() const
 inline std::shared_ptr<Entity> Entity::parent() const
 {
   return m_parent.lock();
-}
-
-inline const SourceLocation& Entity::location() const
-{
-  return m_location;
-}
-
-inline SourceLocation& Entity::location()
-{
-  return m_location;
 }
 
 inline const std::shared_ptr<Documentation>& Entity::documentation() const

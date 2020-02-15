@@ -14,6 +14,10 @@
 namespace cxx
 {
 
+class Class;
+class Enum;
+class Function;
+
 class CXXAST_API Namespace : public Entity
 {
 public:
@@ -26,6 +30,11 @@ public:
 
   std::vector<std::shared_ptr<Entity>>& entities();
   const std::vector<std::shared_ptr<Entity>>& entities() const;
+
+  std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
+  std::shared_ptr<Class> createClass(std::string name);
+  std::shared_ptr<Enum> createEnum(std::string name);
+  std::shared_ptr<Function> createFunction(std::string name);
 
 private:
   std::vector<std::shared_ptr<Entity>> m_entities;

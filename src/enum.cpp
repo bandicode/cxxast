@@ -2,19 +2,16 @@
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-#include "cxx/entity.h"
+#include "cxx/enum.h"
 
 namespace cxx
 {
 
-std::shared_ptr<Entity> Entity::shared_from_this()
-{
-  return std::static_pointer_cast<Entity>(Node::shared_from_this());
-}
+const std::string Enum::TypeId = "enum";
 
-bool Entity::isEntity() const
+const std::string& Enum::type() const
 {
-  return true;
+  return TypeId;
 }
 
 } // namespace cxx
