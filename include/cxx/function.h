@@ -7,13 +7,30 @@
 
 #include "cxx/entity.h"
 
+#include "cxx/type.h"
+#include "cxx/template.h"
+
 #include <vector>
 
 namespace cxx
 {
 
-class FunctionBody;
-class Type;
+class CXXAST_API FunctionSpecifier
+{
+public:
+
+  enum Value
+  {
+    None = 0,
+    Inline = 1,
+    Static = 2,
+    Constexpr = 4,
+    Virtual = 8,
+    Override = 16,
+    Final = 32,
+    Const = 64,
+  };
+};
 
 class CXXAST_API Function : public Entity
 {
@@ -27,18 +44,38 @@ public:
 
   struct Parameter
   {
-    std::shared_ptr<Type> type;
+    Type type;
     std::string name;
+    std::string default_value;
   };
 
-  const std::shared_ptr<Type>& returnType() const;
+  Type& returnType();
+  const Type& returnType() const;
+
+  std::vector<Parameter>& parameters();
   const std::vector<Parameter>& parameters() const;
-  const std::shared_ptr<FunctionBody>& body() const;
+
+  std::vector<TemplateParameter>& templateParameters();
+  const std::vector<TemplateParameter>& templateParameters() const;
+
+  bool isTemplate() const;
+
+  bool isInline() const;
+  bool isStatic() const;
+  bool isConstexpr() const;
+  bool isVirtual() const;
+  bool isOverride() const;
+  bool isFinal() const;
+  bool isConst() const;
+
+  int& specifiers();
+  int specifiers() const;
 
 private:
-  std::shared_ptr<Type> m_rtype;
+  Type m_rtype;
   std::vector<Parameter> m_params;
-  std::shared_ptr<FunctionBody> m_body;
+  std::vector<TemplateParameter> m_tparams;
+  int m_flags = FunctionSpecifier::None;
 };
 
 } // namespace cxx
@@ -52,9 +89,19 @@ inline Function::Function(std::string name, std::shared_ptr<Entity> parent)
 
 }
 
-inline const std::shared_ptr<Type>& Function::returnType() const
+inline Type& Function::returnType()
 {
   return m_rtype;
+}
+
+inline const Type& Function::returnType() const
+{
+  return m_rtype;
+}
+
+inline std::vector<Function::Parameter>& Function::parameters()
+{
+  return m_params;
 }
 
 inline const std::vector<Function::Parameter>& Function::parameters() const
@@ -62,9 +109,64 @@ inline const std::vector<Function::Parameter>& Function::parameters() const
   return m_params;
 }
 
-inline const std::shared_ptr<FunctionBody>& Function::body() const
+inline std::vector<TemplateParameter>& Function::templateParameters()
 {
-  return m_body;
+  return m_tparams;
+}
+
+inline const std::vector<TemplateParameter>& Function::templateParameters() const
+{
+  return m_tparams;
+}
+
+inline bool Function::isTemplate() const
+{
+  return !m_tparams.empty();
+}
+
+inline bool Function::isInline() const
+{
+  return m_flags & FunctionSpecifier::Inline;
+}
+
+inline bool Function::isStatic() const
+{
+  return m_flags & FunctionSpecifier::Static;
+}
+
+inline bool Function::isConstexpr() const
+{
+  return m_flags & FunctionSpecifier::Constexpr;
+}
+
+inline bool Function::isVirtual() const
+{
+  return m_flags & FunctionSpecifier::Virtual;
+}
+
+inline bool Function::isOverride() const
+{
+  return m_flags & FunctionSpecifier::Override;
+}
+
+inline bool Function::isFinal() const
+{
+  return m_flags & FunctionSpecifier::Final;
+}
+
+inline bool Function::isConst() const
+{
+  return m_flags & FunctionSpecifier::Const;
+}
+
+inline int& Function::specifiers()
+{
+  return m_flags;
+}
+
+inline int Function::specifiers() const
+{
+  return m_flags;
 }
 
 } // namespace cxx
