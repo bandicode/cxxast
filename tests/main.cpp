@@ -8,10 +8,12 @@
 #include "cxx/parsers/libclang-parser.h"
 #include "cxx/parsers/parser.h"
 
+#include "cxx/class.h"
+
 #include <iostream>
 #include <fstream>
 
-#define ASSERT(cond) do { if(!(cond)) return 1; } while(false)
+#define ASSERT(cond) do { if(!(cond)) { std::cout << "FAIL! " << #cond << __FILE__ << __LINE__ << std::endl;  return 1; } } while(false)
 
 int test_parser()
 {
@@ -24,10 +26,10 @@ int test_parser()
   cxx::parsers::Parser parser;
   std::shared_ptr<cxx::TranslationUnit> tu;
 
-  //tu = parser.parse("test.cpp");
+  tu = parser.parse("test.cpp");
 
-  //ASSERT(tu->nodes().size() == 1);
-  //ASSERT(tu->nodes().front()->is<cxx::Function>());
+  ASSERT(tu->nodes().size() == 1);
+  ASSERT(tu->nodes().front()->is<cxx::Function>());
 
   {
     std::ofstream file{ "toast.cpp" };
@@ -40,10 +42,10 @@ int test_parser()
     file << "int Foo::bar() const { return -1 ; }" << std::endl;
   }
 
-  //tu = parser.parse("toast.cpp");
+  tu = parser.parse("toast.cpp");
 
-  //ASSERT(tu->nodes().size() == 1);
-  //ASSERT(tu->nodes().front()->is<cxx::Function>());
+  ASSERT(tu->nodes().size() == 1);
+  ASSERT(tu->nodes().front()->is<cxx::Class>());
 
   {
     std::ofstream file{ "toast.cpp" };
@@ -63,6 +65,15 @@ int test_parser()
 
 int test_restricted_parser()
 {
+  cxx::Type t = cxx::parsers::RestrictedParser::parseType("const int*");
+  ASSERT(t.isPointer());
+  ASSERT(t.pointee().cvQualification() == cxx::CVQualifier::Const);
+
+  t = cxx::parsers::RestrictedParser::parseType("void(int,char)");
+  ASSERT(t.isFunction());
+  ASSERT(t.resultType() == cxx::Type::Void);
+  ASSERT(t.parameters().size() == 2);
+
   auto func = cxx::parsers::RestrictedParser::parseFunctionSignature("int foo(int n, int = 0);");
   ASSERT(func->returnType().toString() == "int");
   ASSERT(func->name() == "foo");
@@ -86,7 +97,7 @@ int main(int argc, char *argv[])
   try
   {
     cxx::parsers::LibClangParser clang_parser;
-    std::cout << clang_parser.printableVersion() << std::endl;
+    std::cout << "libclang parser available, version = " << clang_parser.printableVersion() << std::endl;
 
     ret += test_parser();
   }

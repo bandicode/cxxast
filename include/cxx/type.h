@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <memory>
+#include <vector>
 
 namespace cxx
 {
@@ -35,14 +36,11 @@ enum class Reference
   RValue,
 };
 
-namespace type_system
-{
-
-class CXXAST_API Type : public std::enable_shared_from_this<Type>
+class CXXAST_API IType : public std::enable_shared_from_this<IType>
 {
 public:
-  Type() = default;
-  virtual ~Type();
+  IType() = default;
+  virtual ~IType();
 
   virtual bool isSimple() const;
   virtual bool isAuto() const;
@@ -54,105 +52,21 @@ public:
   virtual bool isReference() const;
   virtual bool isLValueReference() const;
   virtual bool isRValueReference() const;
+  virtual bool isFunctionType() const;
 
   virtual const std::string& name() const;
 
-  virtual std::shared_ptr<const Type> withoutPointer() const;
-  virtual std::shared_ptr<const Type> withoutReference() const;
-  virtual std::shared_ptr<const Type> withoutCV() const;
+  virtual std::shared_ptr<const IType> withoutPointer() const;
+  virtual std::shared_ptr<const IType> withoutReference() const;
+  virtual std::shared_ptr<const IType> withoutCV() const;
 
   virtual std::string toString() const = 0;
 };
 
-class CXXAST_API SimpleType : public Type
-{
-private:
-  std::string m_name;
-
-public:
-  explicit SimpleType(std::string name);
-
-  bool isSimple() const override;
-  const std::string& name() const override;
-  std::string toString() const override;
-};
-
-class CXXAST_API AutoType : public Type
-{
-public:
-  AutoType();
-
-  bool isAuto() const override;
-  std::string toString() const override;
-};
-
-class CXXAST_API DecltypeAuto : public Type
-{
-public:
-  DecltypeAuto();
-
-  bool isDecltypeAuto() const override;
-  std::string toString() const override;
-};
-
-class CXXAST_API CVQualifiedType : public Type
-{
-private:
-  std::shared_ptr<const Type> m_type;
-  CVQualifier m_qualifier;
-
-public:
-  CVQualifiedType(CVQualifier qual, std::shared_ptr<const Type> type);
-
-  CVQualifier cvqualifier() const { return m_qualifier; }
-
-  bool isConst() const override;
-  bool isVolatile() const override;
-  bool isCVQualified() const override;
-
-  std::shared_ptr<const Type> withoutCV() const override;
-  std::string toString() const override;
-};
-
-class CXXAST_API ReferenceType : public Type
-{
-private:
-  std::shared_ptr<const Type> m_type;
-  Reference m_reference;
-
-public:
-  ReferenceType(Reference ref, std::shared_ptr<const Type> type);
-
-  Reference reference() const { return m_reference; }
-
-  bool isReference() const override;
-  bool isLValueReference() const override;
-  bool isRValueReference() const override;
-
-  std::shared_ptr<const Type> withoutReference() const override;
-  std::string toString() const override;
-};
-
-class CXXAST_API PointerType : public Type
-{
-private:
-  std::shared_ptr<const Type> m_type;
-
-public:
-  explicit PointerType(std::shared_ptr<const Type> type);
-
-  bool isPointer() const override;
-
-  std::shared_ptr<const Type> withoutPointer() const override;
-  std::string toString() const override;
-};
-
-} // namespace type_system
-
 class CXXAST_API Type
 {
 private:
-  std::shared_ptr<const type_system::Type> d;
+  std::shared_ptr<const IType> d;
 
 public:
   Type();
@@ -160,7 +74,7 @@ public:
   Type(Type&&) = default;
   ~Type();
 
-  explicit Type(std::shared_ptr<const type_system::Type> t);
+  explicit Type(std::shared_ptr<const IType> t);
   explicit Type(std::string name, CVQualifier cvqual = CVQualifier::None, Reference ref = Reference::None);
 
   static const Type Int;
@@ -172,18 +86,25 @@ public:
   bool isDecltypeAuto() const;
   bool isReference() const;
   bool isPointer() const;
+  bool isFunction() const;
   bool isCVQualified() const;
 
   Reference reference() const;
   CVQualifier cvQualification() const;
 
+  Type pointee() const;
+
   static Type cvQualified(const Type& t, CVQualifier cvqual);
   static Type reference(const Type& t, Reference ref = Reference::LValue);
   static Type pointer(const Type& t);
+  static Type function(const Type& rt, std::vector<Type> params);
+
+  Type resultType() const;
+  const std::vector<Type>& parameters() const;
 
   std::string toString() const;
 
-  std::shared_ptr<const type_system::Type> impl() const;
+  std::shared_ptr<const IType> impl() const;
 
   Type& operator=(const Type&) = default;
   Type& operator=(Type&&) = default;
@@ -197,7 +118,7 @@ inline bool operator!=(const Type& lhs, const Type& rhs) { return !(lhs == rhs);
 namespace cxx
 {
 
-inline Type::Type(std::shared_ptr<const type_system::Type> t)
+inline Type::Type(std::shared_ptr<const IType> t)
   : d(t)
 {
   assert(d != nullptr);

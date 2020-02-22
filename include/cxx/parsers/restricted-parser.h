@@ -37,6 +37,7 @@ class CXXAST_API RestrictedParser
 {
 public:
 
+  static cxx::Type parseType(const std::string& str);
   static std::shared_ptr<Function> parseFunctionSignature(const std::string& str);
 
 protected:
@@ -44,6 +45,8 @@ protected:
   ~RestrictedParser() = default;
 
   Type parseType();
+  Type tryReadFunctionSignature(const Type& result_type);
+
   Name parseName();
 
   std::shared_ptr<Function> parseFunctionSignature();

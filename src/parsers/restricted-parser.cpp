@@ -292,6 +292,12 @@ RestrictedParser::RestrictedParser(const std::string *src)
   m_view = std::make_pair(0, m_buffer.size());
 }
 
+cxx::Type RestrictedParser::parseType(const std::string& str)
+{
+  RestrictedParser p{ &str };
+  return p.parseType();
+}
+
 std::shared_ptr<Function> RestrictedParser::parseFunctionSignature(const std::string& str)
 {
   RestrictedParser p{ &str };
@@ -348,22 +354,68 @@ Type RestrictedParser::parseType()
   if (atEnd())
     return Type(type_name.toString(), cv_qual, ref);
 
-  //if (unsafe_peek() == TokenType::LeftPar && mReadFunctionSignature) 
-  //{
-  //  auto save_point = pos();
+  if (unsafe_peek() == TokenType::LeftPar) 
+  {
+    auto save_point = pos();
 
-  //  try
-  //  {
-  //    auto fsig = tryReadFunctionSignature(ret);
-  //    return fsig;
-  //  }
-  //  catch (const SyntaxError&)
-  //  {
-  //    seek(save_point);
-  //  }
-  //}
+    try
+    {
+      auto fsig = tryReadFunctionSignature(Type(type_name.toString(), cv_qual, ref));
+      return fsig;
+    }
+    catch (const std::runtime_error&)
+    {
+      seek(save_point);
+    }
+  }
+  else if (peek() == TokenType::Star)
+  {
+    unsafe_read();
+
+    Type t = Type(type_name.toString(), cv_qual, ref);
+    t = Type::pointer(t);
+
+    while (!atEnd() && (peek() == TokenType::Const || unsafe_peek() == TokenType::Star))
+    {
+      Token tok = read();
+
+      if (tok == TokenType::Const)
+        t = Type::cvQualified(t, CVQualifier::Const);
+      else
+        t = Type::pointer(t);
+    }
+
+    return t;
+  }
 
   return Type(type_name.toString(), cv_qual, ref);
+}
+
+Type RestrictedParser::tryReadFunctionSignature(const Type& result_type)
+{
+  std::vector<Type> params;
+
+  const Token leftPar = unsafe_read();
+  
+  {
+    ParserParenView paren_view{ m_buffer, m_view, m_index };
+
+    while (!atEnd())
+    {
+      {
+        ListView param_view{ m_buffer, m_view, m_index };
+        Type t = parseType();
+        params.push_back(t);
+      }
+
+      if (!atEnd())
+        read(TokenType::Comma);
+    }
+  }
+
+  read(TokenType::RightPar);
+
+  return Type::function(result_type, std::move(params));
 }
 
 Name RestrictedParser::parseName()

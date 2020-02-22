@@ -4,6 +4,8 @@
 
 #include "cxx/parsers/parser.h"
 
+#include "cxx/parsers/restricted-parser.h"
+
 #include "cxx/name_p.h"
 
 #include "cxx/class.h"
@@ -11,6 +13,7 @@
 #include "cxx/function.h"
 #include "cxx/namespace.h"
 
+#include <iostream>
 #include <map>
 
 namespace cxx
@@ -118,6 +121,17 @@ std::shared_ptr<File> Parser::getFile(const std::string& path)
   m_files.push_back(file);
 
   return file;
+}
+
+CXChildVisitResult Parser::print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
+{
+  return static_cast<Parser*>(client_data)->printVisit(cursor, parent);
+}
+
+CXChildVisitResult Parser::printVisit(CXCursor cursor, CXCursor parent)
+{
+  std::cout << toStdString(clang_getCursorKindSpelling(cursor.kind)) << ": "<< getCursorSpelling(cursor) << std::endl;
+  return CXChildVisit_Recurse;
 }
 
 CXChildVisitResult Parser::visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
@@ -392,6 +406,12 @@ CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor pare
   return CXChildVisit_Continue;
 }
 
+static void remove_prefix(std::string& str, const std::string& prefix)
+{
+  if (str.find(prefix) == 0)
+    str.erase(0, prefix.size());
+}
+
 cxx::Type Parser::parseType(CXType t)
 {
   bool is_const = clang_isConstQualifiedType(t);
@@ -415,7 +435,18 @@ cxx::Type Parser::parseType(CXType t)
   }
   else
   {
-    return Type{ toStdString(clang_getTypeSpelling(t)), cv_qual };
+    if (t.kind == CXTypeKind::CXType_Elaborated)
+    {
+      std::string spelling = getTypeSpelling(t);
+      return RestrictedParser::parseType(spelling);
+    }
+    else
+    {
+      std::string spelling = getTypeSpelling(t);
+      remove_prefix(spelling, "const ");
+
+      return Type{ std::move(spelling), cv_qual };
+    }
   }
 }
 

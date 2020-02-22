@@ -63,6 +63,10 @@ protected:
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, Function::Parameter& param);
 
+  // visitors used for discovery purpose
+  static CXChildVisitResult print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data);
+  CXChildVisitResult printVisit(CXCursor cursor, CXCursor parent);
+
   cxx::Type parseType(CXType t);
 
   cxx::SourceLocation getCursorLocation(CXCursor cursor);
