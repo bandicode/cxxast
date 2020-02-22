@@ -11,7 +11,7 @@
 namespace cxx
 {
 
-namespace parser
+namespace parsers
 {
 
 class ParserViewRAII
@@ -779,7 +779,7 @@ Function::Parameter RestrictedParser::parseFunctionParameter()
   return result;
 }
 
-} // namespace parser
+} // namespace parsers
 
 } // namespace cxx
 

@@ -12,7 +12,7 @@
 namespace cxx
 {
 
-namespace parser
+namespace parsers
 {
 
 Lexer::Lexer(const std::string* src)
@@ -834,6 +834,6 @@ Token Lexer::readMultiLineComment(size_t start)
   return create(start, TokenType::MultiLineComment);
 }
 
-} // namespace parser
+} // namespace parsers
 
 } // namespace cxx

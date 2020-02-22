@@ -12,7 +12,7 @@
 namespace cxx
 {
 
-namespace parser
+namespace parsers
 {
 
 class StringView
@@ -292,7 +292,7 @@ inline Token::Token()
 
 }
 
-} // namespace parser
+} // namespace parsers
 
 } // namespace cxx
 

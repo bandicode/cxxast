@@ -10,7 +10,7 @@
 namespace cxx
 {
 
-namespace parser
+namespace parsers
 {
 
 class CXXAST_API Lexer
@@ -102,7 +102,7 @@ private:
   size_t m_pos = 0;
 };
 
-} // parser
+} // namespace parsers
 
 } // namespace cxx
 

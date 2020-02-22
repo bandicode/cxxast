@@ -18,7 +18,7 @@
 namespace cxx
 {
 
-namespace parser
+namespace parsers
 {
 
 class CXXAST_API RestrictedParserError : public std::runtime_error
@@ -84,7 +84,7 @@ private:
   size_t m_index = 0;
 };
 
-} // namespace parser
+} // namespace parsers
 
 } // namespace cxx
 
