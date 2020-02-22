@@ -375,13 +375,20 @@ std::string LibClangParser::toStdString(CXString str)
   return result;
 }
 
-std::string LibClangParser::getCursorFile(CXCursor cursor)
+CXFile LibClangParser::getCursorFile(CXCursor cursor)
 {
   CXSourceLocation location = clang_getCursorLocation(cursor);
 
   CXFile file;
   unsigned int line, col, offset;
   clang_getSpellingLocation(location, &file, &line, &col, &offset);
+
+  return file;
+}
+
+std::string LibClangParser::getCursorFilePath(CXCursor cursor)
+{
+  CXFile file = getCursorFile(cursor);
 
   std::string result = toStdString(clang_getFileName(file));
 
@@ -397,6 +404,16 @@ std::string LibClangParser::getCursorFile(CXCursor cursor)
 std::string LibClangParser::getCursorSpelling(CXCursor cursor)
 {
   return toStdString(clang_getCursorSpelling(cursor));
+}
+
+std::string LibClangParser::getTypeSpelling(CXType type)
+{
+  return toStdString(clang_getTypeSpelling(type));
+}
+
+std::string LibClangParser::getTokenSpelling(CXTranslationUnit tu, CXToken tok)
+{
+  return toStdString(clang_getTokenSpelling(tu, tok));
 }
 
 bool LibClangParser::isForwardDeclaration(CXCursor cursor)

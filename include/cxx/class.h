@@ -30,10 +30,14 @@ public:
   static const std::string TypeId;
   const std::string& type() const override;
 
+  bool& isStruct();
+  bool isStruct() const;
+
   std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& members();
   const std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& members() const;
 
 private:
+  bool m_is_struct = false;
   std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>> m_members;
 };
 
@@ -46,6 +50,16 @@ inline Class::Class(std::string name, std::shared_ptr<Entity> parent)
   : Entity{std::move(name), std::move(parent)}
 {
 
+}
+
+inline bool& Class::isStruct()
+{
+  return m_is_struct;
+}
+
+inline bool Class::isStruct() const
+{
+  return m_is_struct;
 }
 
 inline std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& Class::members()

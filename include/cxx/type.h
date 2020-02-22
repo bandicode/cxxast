@@ -21,6 +21,13 @@ enum class CVQualifier
   ConstVolatile = Const | Volatile,
 };
 
+inline CVQualifier make_cv_qual(bool is_const, bool is_volatile)
+{
+  return (is_const && is_volatile) ? CVQualifier::ConstVolatile
+    : (is_const ? CVQualifier::Const : 
+        (is_volatile ? CVQualifier::Volatile : CVQualifier::None));
+}
+
 enum class Reference
 {
   None,
@@ -157,6 +164,7 @@ public:
   explicit Type(std::string name, CVQualifier cvqual = CVQualifier::None, Reference ref = Reference::None);
 
   static const Type Int;
+  static const Type Void;
   static const Type Auto;
   static const Type DecltypeAuto;
 
@@ -168,6 +176,10 @@ public:
 
   Reference reference() const;
   CVQualifier cvQualification() const;
+
+  static Type cvQualified(const Type& t, CVQualifier cvqual);
+  static Type reference(const Type& t, Reference ref = Reference::LValue);
+  static Type pointer(const Type& t);
 
   std::string toString() const;
 

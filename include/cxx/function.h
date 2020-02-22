@@ -32,6 +32,19 @@ public:
   };
 };
 
+class CXXAST_API FunctionKind
+{
+public:
+  enum Value
+  {
+    None = 0,
+    Constructor = 1,
+    Destructor = 2,
+    OperatorOverload,
+    ConversionFunction,
+  };
+};
+
 class CXXAST_API Function : public Entity
 {
 public:
@@ -71,11 +84,18 @@ public:
   int& specifiers();
   int specifiers() const;
 
+  bool isConstructor() const;
+  bool isDestructor() const;
+
+  int& kind();
+  int kind() const;
+
 private:
   Type m_rtype;
   std::vector<Parameter> m_params;
   std::vector<TemplateParameter> m_tparams;
   int m_flags = FunctionSpecifier::None;
+  int m_kind = FunctionKind::None;
 };
 
 } // namespace cxx
@@ -167,6 +187,26 @@ inline int& Function::specifiers()
 inline int Function::specifiers() const
 {
   return m_flags;
+}
+
+inline bool Function::isConstructor() const
+{
+  return kind() == FunctionKind::Constructor;
+}
+
+inline bool Function::isDestructor() const
+{
+  return kind() == FunctionKind::Destructor;
+}
+
+inline int& Function::kind()
+{
+  return m_kind;
+}
+
+inline int Function::kind() const
+{
+  return m_kind;
 }
 
 } // namespace cxx

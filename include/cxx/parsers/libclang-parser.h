@@ -346,10 +346,13 @@ protected:
   /* libclang helpers */
   
   std::string toStdString(CXString str);
-  std::string getCursorFile(CXCursor cursor);
+  CXFile getCursorFile(CXCursor cursor);
+  std::string getCursorFilePath(CXCursor cursor);
   std::string getCursorSpelling(CXCursor cursor);
+  std::string getTypeSpelling(CXType type);
+  std::string getTokenSpelling(CXTranslationUnit tu, CXToken tok);
   bool isForwardDeclaration(CXCursor cursor);
-  
+
 public:
   LibClangParser();
   ~LibClangParser();

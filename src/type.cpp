@@ -10,6 +10,7 @@ namespace cxx
 {
 
 const Type Type::Int = Type{ std::make_shared<type_system::SimpleType>("int") };
+const Type Type::Void = Type{ std::make_shared<type_system::SimpleType>("void") };
 const Type Type::Auto = Type{ std::make_shared<type_system::AutoType>() };
 const Type Type::DecltypeAuto = Type{ std::make_shared<type_system::DecltypeAuto>() };
 
@@ -298,6 +299,27 @@ Reference Type::reference() const
 CVQualifier Type::cvQualification() const
 {
   return isCVQualified() ? std::static_pointer_cast<const type_system::CVQualifiedType>(d)->cvqualifier() : CVQualifier::None;
+}
+
+Type Type::cvQualified(const Type& t, CVQualifier cvqual)
+{
+  if (cvqual == CVQualifier::None)
+    return t;
+
+  return Type{ std::make_shared<const type_system::CVQualifiedType>(cvqual, t.impl()) };
+}
+
+Type Type::reference(const Type& t, Reference ref)
+{
+  if (ref == Reference::None)
+    return t;
+
+  return Type{ std::make_shared<const type_system::ReferenceType>(ref, t.impl()) };
+}
+
+Type Type::pointer(const Type& t)
+{
+  return Type{ std::make_shared<const type_system::PointerType>(t.impl()) };
 }
 
 std::string Type::toString() const
