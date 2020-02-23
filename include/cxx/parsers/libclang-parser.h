@@ -9,9 +9,12 @@
 
 #include "cxx/entity.h"
 
-#include "dynlib/dynlib.h"
-
 #include <stdexcept>
+
+namespace dynlib
+{
+class Library;  
+} // namespace dynlib
 
 namespace cxx
 {
@@ -29,15 +32,6 @@ class CXXAST_API LibClangParser
 {
 private:
   std::unique_ptr<dynlib::Library> libclang;
-
-  template<typename T>
-  void resolve(const char* name, T& callback)
-  {
-    callback = (T) libclang->resolve(name);
-
-    if (!callback)
-      throw LibClangParserError{ ("could not resolve libclang function : " + std::string(name)).c_str() };
-  }
 
   std::string m_printable_version;
   CXVersion m_version;
