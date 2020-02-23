@@ -4,6 +4,8 @@
 
 #include "cxx/program.h"
 
+#include "cxx/class.h"
+#include "cxx/name.h"
 #include "cxx/namespace.h"
 #include "cxx/type.h"
 
@@ -20,55 +22,52 @@ Program::~Program()
 
 }
 
-std::shared_ptr<Type> Program::getType(const std::string& name, Context context)
+static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::shared_ptr<Entity>& context)
 {
-  if (context.scope == nullptr)
-    context.scope = m_global_namespace;
-
-  ContextualName name_context{ name, context };
-
-  auto it = m_types.find(name_context);
-
-  if (it != m_types.end())
-  {
-    return it->second;
-  }
-
-  std::shared_ptr<Type>& result = m_types[name_context];
-  result = std::make_shared<Type>(name);
-  return result;
-}
-
-std::shared_ptr<Type> Program::getType(const std::string& name, Context context) const
-{
-  if (context.scope == nullptr)
-    context.scope = m_global_namespace;
-
-  ContextualName name_context{ name, context };
-
-  auto it = m_types.find(name_context);
-
-  if (it != m_types.end())
-  {
-    return it->second;
-  }
-  else
-  {
+  if (!context)
     return nullptr;
+
+  if (context->is<Namespace>())
+  {
+    const Namespace& ns = static_cast<const Namespace&>(*context);
+
+    for (const auto& e : ns.entities())
+    {
+      if (e->name() == name)
+        return e;
+    }
+
+    return resolve_impl(name, context->parent());
   }
+  else if (context->is<Class>())
+  {
+    const Class& cla = static_cast<const Class&>(*context);
+
+    for (const auto& mem : cla.members())
+    {
+      if (mem.first->name() == name)
+        return mem.first;
+    }
+
+    return resolve_impl(name, context->parent());
+  }
+
+  return nullptr;
 }
 
-std::vector<std::shared_ptr<Type>> Program::unresolvedTypes() const
+std::shared_ptr<Entity> Program::resolve(const Name& n)
 {
-  std::vector<std::shared_ptr<Type>> result;
+  return resolve(n, globalNamespace());
+}
 
-  for (const auto& elem : m_types)
-  {
-    if (elem.second == nullptr)
-      result.push_back(elem.second);
-  }
+std::shared_ptr<Entity> Program::resolve(const Name& n, const std::shared_ptr<Entity>& context)
+{
+  if (!context)
+    return nullptr;
 
-  return result;
+  std::string name = n.toString();
+
+  return resolve_impl(name, context);
 }
 
 } // namespace cxx

@@ -18,6 +18,7 @@ namespace cxx
 
 class Entity;
 class File;
+class Name;
 class Namespace;
 class Type;
 
@@ -30,28 +31,13 @@ public:
   const std::vector<std::shared_ptr<File>>& files() const;
 
   const std::shared_ptr<Namespace>& globalNamespace() const;
-  
-  struct Context
-  {
-    std::shared_ptr<Entity> scope = nullptr;
 
-    bool operator<(const Context& other) const
-    {
-      return scope < other.scope;
-    }
-  };
-
-  typedef std::pair<std::string, Context> ContextualName;
-
-  std::shared_ptr<Type> getType(const std::string& name, Context context);
-  std::shared_ptr<Type> getType(const std::string& name, Context context) const;
-
-  std::vector<std::shared_ptr<Type>> unresolvedTypes() const;
+  std::shared_ptr<Entity> resolve(const Name& n);
+  std::shared_ptr<Entity> resolve(const Name& n, const std::shared_ptr<Entity>& context);
 
 private:
   std::vector<std::shared_ptr<File>> m_files;
   std::shared_ptr<Namespace> m_global_namespace;
-  std::map<ContextualName, std::shared_ptr<Type>> m_types;
 };
 
 } // namespace cxx
