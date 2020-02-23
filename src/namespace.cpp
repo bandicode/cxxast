@@ -5,6 +5,8 @@
 #include "cxx/enum.h"
 #include "cxx/function.h"
 
+#include <algorithm>
+
 namespace cxx
 {
 

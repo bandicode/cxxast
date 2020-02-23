@@ -5,6 +5,8 @@
 #ifndef CXXAST_PARSERS_LIBCLANG_CINDEX_H
 #define CXXAST_PARSERS_LIBCLANG_CINDEX_H
 
+#include <cstddef>
+
 /****************************************************************
 For now this is limited to clang 7.0.0
 ****************************************************************/

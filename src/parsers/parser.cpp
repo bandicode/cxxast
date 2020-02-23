@@ -13,6 +13,7 @@
 #include "cxx/function.h"
 #include "cxx/namespace.h"
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 
