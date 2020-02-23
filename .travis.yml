@@ -1,0 +1,47 @@
+
+language: cpp
+
+before_install:
+  - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
+  - sudo apt-get update -qq
+
+before_script:
+  - mkdir build
+  - cd build
+
+matrix:
+  include:
+  - os: linux
+    dist: xenial
+    env:
+      - COMPILER="Clang 7.0"
+    compiler: clang
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-xenial-7
+        packages:
+          - libc++-7-dev
+          - libc++abi-7-dev
+    script:
+      - cmake ..
+      - make
+      - ./TEST_cxxast
+  - os: linux
+    env:
+      - COMPILER="GCC 8"
+      - CC=gcc-8
+      - CXX=g++-8
+    compiler: gcc-8
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-8
+          - g++-8
+    script:
+      - cmake ..
+      - make
+      - ./TEST_cxxast
