@@ -29,9 +29,18 @@ public:
 
   virtual const std::string& type() const = 0;
 
+  template<typename T>
+  bool is() const;
+
   const SourceLocation& location() const;
   SourceLocation& location();
 };
+
+template<typename T>
+bool test_documentation_type(const Documentation& doc)
+{
+  return T::TypeId == doc.type();
+}
 
 class CXXAST_API MultilineComment : public Documentation
 {
@@ -52,6 +61,12 @@ public:
 
 namespace cxx
 {
+
+template<typename T>
+inline bool Documentation::is() const
+{
+  return test_documentation_type<T>(*this);
+}
 
 inline Documentation::Documentation(const SourceLocation& loc)
   : m_location(loc)
