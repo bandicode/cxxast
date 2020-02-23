@@ -27,7 +27,9 @@ public:
   bool isEntity() const override;
 
   const std::string& name() const;
+
   std::shared_ptr<Entity> parent() const;
+  void setParent(std::shared_ptr<Entity> e);
 
   const std::shared_ptr<Documentation>& documentation() const;
   void setDocumentation(std::shared_ptr<Documentation> doc);
@@ -53,6 +55,11 @@ inline const std::string& Entity::name() const
 inline std::shared_ptr<Entity> Entity::parent() const
 {
   return m_parent.lock();
+}
+
+inline void Entity::setParent(std::shared_ptr<Entity> e)
+{
+  m_parent = e;
 }
 
 inline const std::shared_ptr<Documentation>& Entity::documentation() const
