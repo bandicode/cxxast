@@ -21,7 +21,6 @@ target_compile_definitions(dynlib PUBLIC -DDYNLIB_STATIC_LINKING)
 
 if(NOT WIN32)
   set_property(TARGET dynlib PROPERTY POSITION_INDEPENDENT_CODE ON)
-  target_link_libraries(dynlib ${CMAKE_DL_LIBS})
 endif()
 
 foreach(_source IN ITEMS ${DYNLIB_HDR_FILES} ${DYNLIB_SRC_FILES})
