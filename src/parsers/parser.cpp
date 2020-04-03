@@ -314,7 +314,7 @@ CXChildVisitResult Parser::visitEnum(CXCursor cursor, CXCursor parent, std::shar
   if (kind == CXCursor_EnumConstantDecl)
   {
     std::string n = getCursorSpelling(cursor);
-    en->values().push_back(Enum::Value{std::move(n)});
+    en->values().push_back(std::make_shared<EnumValue>(std::move(n), en));
   }
 
   return CXChildVisit_Continue;
@@ -366,17 +366,18 @@ std::shared_ptr<cxx::Function> Parser::parseFunction(CXCursor cursor)
 
 void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
 {
-  cxx::Function::Parameter param;
-  param.type = parseType(clang_getCursorType(cursor));
-  param.name = getCursorSpelling(cursor);
+  Type t = parseType(clang_getCursorType(cursor));
+  std::string name = getCursorSpelling(cursor);
+
+  auto param = std::make_shared<cxx::FunctionParameter>(t, std::move(name), std::static_pointer_cast<cxx::Function>(func.shared_from_this()));
 
   // Parse default-argument
   {
-    auto data = std::make_pair(this, &param);
+    auto data = std::make_pair(this, param.get());
     clang_visitChildren(cursor, &Parser::param_decl_visitor, &data);
   }
 
-  func.parameters().push_back(std::move(param));
+  func.parameters().push_back(param);
 }
 
 CXChildVisitResult Parser::param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data)
@@ -402,7 +403,7 @@ CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor pare
     clang_disposeTokens(m_tu, tokens, nTokens);
   }
 
-  param.default_value += spelling;
+  param.defaultValue() += spelling;
 
   return CXChildVisit_Continue;
 }

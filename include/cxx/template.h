@@ -6,6 +6,7 @@
 #define CXXAST_TEMPLATE_H
 
 #include "cxx/type.h"
+#include "cxx/entity.h"
 
 #include <tuple>
 #include <vector>
@@ -28,12 +29,11 @@ struct TemplateTypeParameter
   typedef Type default_value_t;
 };
 
-class CXXAST_API TemplateParameter
+class CXXAST_API TemplateParameter : public Entity
 {
 private:
   bool m_is_type_parameter;
   std::tuple<TemplateNonTypeParameter, TemplateTypeParameter> m_data;
-  std::string m_name;
 
 public:
   TemplateParameter();
@@ -43,6 +43,9 @@ public:
 
   explicit TemplateParameter(std::string name, Type default_value = {});
   TemplateParameter(const Type& type, std::string name, std::string default_value = {});
+
+  static const std::string TypeId;
+  const std::string& type() const override;
 
   bool isTypeParameter() const;
   bool isNonTypeParameter() const;

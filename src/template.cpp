@@ -7,22 +7,30 @@
 namespace cxx
 {
 
+const std::string TemplateParameter::TypeId = "template-parameter";
+
+const std::string& TemplateParameter::type() const
+{
+  return TypeId;
+}
+
 TemplateParameter::TemplateParameter()
-  : m_is_type_parameter(true)
+  : Entity(""),
+    m_is_type_parameter(true)
 {
   std::get<TemplateNonTypeParameter>(m_data).type = Type::Auto;
 }
 
 TemplateParameter::TemplateParameter(std::string name, Type default_value)
-  : m_is_type_parameter(false),
-  m_name(std::move(name))
+  : Entity(std::move(name)), 
+    m_is_type_parameter(false)
 {
   std::get<TemplateTypeParameter>(m_data).default_value = default_value;
 }
 
 TemplateParameter::TemplateParameter(const Type& type, std::string name, std::string default_value)
-  : m_is_type_parameter(false),
-  m_name(std::move(name))
+  : Entity(std::move(name)), 
+    m_is_type_parameter(false)
 {
   std::get<TemplateNonTypeParameter>(m_data).type = type;
   std::get<TemplateNonTypeParameter>(m_data).default_value = default_value;

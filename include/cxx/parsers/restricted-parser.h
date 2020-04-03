@@ -75,10 +75,10 @@ protected:
 
 protected:
   TemplateArgument parseDelimitedTemplateArgument();
-  TemplateParameter parseDelimitedTemplateParameter();
+  std::shared_ptr<TemplateParameter> parseDelimitedTemplateParameter();
 
 protected:
-  Function::Parameter parseFunctionParameter();
+  std::shared_ptr<Function::Parameter> parseFunctionParameter();
 
 private:
   Lexer m_lexer;

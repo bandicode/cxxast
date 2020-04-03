@@ -45,6 +45,30 @@ public:
   };
 };
 
+class Function;
+
+class CXXAST_API FunctionParameter : public Entity
+{
+public:
+  FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent = nullptr);
+  FunctionParameter(Type type, std::string name, std::string default_falue, std::shared_ptr<Function> parent = nullptr);
+
+  static const std::string TypeId;
+  const std::string& type() const override;
+
+  std::shared_ptr<Function> parent() const;
+
+  Type& parameterType();
+  const Type& parameterType() const;
+
+  std::string& defaultValue();
+  const std::string& defaultValue() const;
+
+private:
+  Type m_type;
+  std::string m_default_value;
+};
+
 class CXXAST_API Function : public Entity
 {
 public:
@@ -55,21 +79,16 @@ public:
   static const std::string TypeId;
   const std::string& type() const override;
 
-  struct Parameter
-  {
-    Type type;
-    std::string name;
-    std::string default_value;
-  };
+  typedef FunctionParameter Parameter;
 
   Type& returnType();
   const Type& returnType() const;
 
-  std::vector<Parameter>& parameters();
-  const std::vector<Parameter>& parameters() const;
+  std::vector<std::shared_ptr<Parameter>>& parameters();
+  const std::vector<std::shared_ptr<Parameter>>& parameters() const;
 
-  std::vector<TemplateParameter>& templateParameters();
-  const std::vector<TemplateParameter>& templateParameters() const;
+  std::vector<std::shared_ptr<TemplateParameter>>& templateParameters();
+  const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
 
   bool isTemplate() const;
 
@@ -92,8 +111,8 @@ public:
 
 private:
   Type m_rtype;
-  std::vector<Parameter> m_params;
-  std::vector<TemplateParameter> m_tparams;
+  std::vector<std::shared_ptr<Parameter>> m_params;
+  std::vector<std::shared_ptr<TemplateParameter>> m_tparams;
   int m_flags = FunctionSpecifier::None;
   int m_kind = FunctionKind::None;
 };
@@ -119,22 +138,22 @@ inline const Type& Function::returnType() const
   return m_rtype;
 }
 
-inline std::vector<Function::Parameter>& Function::parameters()
+inline std::vector<std::shared_ptr<FunctionParameter>>& Function::parameters()
 {
   return m_params;
 }
 
-inline const std::vector<Function::Parameter>& Function::parameters() const
+inline const std::vector<std::shared_ptr<FunctionParameter>>& Function::parameters() const
 {
   return m_params;
 }
 
-inline std::vector<TemplateParameter>& Function::templateParameters()
+inline std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParameters()
 {
   return m_tparams;
 }
 
-inline const std::vector<TemplateParameter>& Function::templateParameters() const
+inline const std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParameters() const
 {
   return m_tparams;
 }

@@ -12,6 +12,27 @@
 namespace cxx
 {
 
+class Enum;
+
+class CXXAST_API EnumValue : public Entity
+{
+public:
+  explicit EnumValue(std::string name, std::shared_ptr<Enum> parent = nullptr);
+  EnumValue(std::string name, std::string value, std::shared_ptr<Enum> parent = nullptr);
+
+  static const std::string TypeId;
+  const std::string& type() const override;
+
+  std::shared_ptr<Enum> parent() const;
+
+  std::string& value();
+  const std::string& value() const;
+
+private:
+  std::string m_value;
+};
+
+
 class CXXAST_API Enum : public Entity
 {
 public:
@@ -22,16 +43,11 @@ public:
   static const std::string TypeId;
   const std::string& type() const override;
 
-  struct Value
-  {
-    std::string name;
-  };
-
-  std::vector<Value>& values();
-  const std::vector<Value>& values() const;
+  std::vector<std::shared_ptr<EnumValue>>& values();
+  const std::vector<std::shared_ptr<EnumValue>>& values() const;
 
 private:
-  std::vector<Value> m_values;
+  std::vector<std::shared_ptr<EnumValue>> m_values;
 };
 
 } // namespace cxx
@@ -45,12 +61,12 @@ inline Enum::Enum(std::string name, std::shared_ptr<Entity> parent)
 
 }
 
-inline std::vector<Enum::Value>& Enum::values()
+inline std::vector<std::shared_ptr<EnumValue>>& Enum::values()
 {
   return m_values;
 }
 
-inline const std::vector<Enum::Value>& Enum::values() const
+inline const std::vector<std::shared_ptr<EnumValue>>& Enum::values() const
 {
   return m_values;
 }

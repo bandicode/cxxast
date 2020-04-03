@@ -623,6 +623,7 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
         ListView param_view{ m_buffer, m_view,  m_index };
 
         ret->parameters().push_back(parseFunctionParameter());
+        ret->parameters().back()->setParent(ret);
       }
 
       if (!atEnd())
@@ -753,7 +754,7 @@ TemplateArgument RestrictedParser::parseDelimitedTemplateArgument()
   }
 }
 
-TemplateParameter RestrictedParser::parseDelimitedTemplateParameter()
+std::shared_ptr<TemplateParameter> RestrictedParser::parseDelimitedTemplateParameter()
 {
   Token tok = peek();
 
@@ -762,12 +763,12 @@ TemplateParameter RestrictedParser::parseDelimitedTemplateParameter()
     unsafe_read();
 
     if (atEnd())
-      return TemplateParameter{ "" };
+      return std::make_shared<TemplateParameter>("");
 
     std::string name = peek().isIdentifier() ? read().to_string() : "";
 
     if (atEnd())
-      return TemplateParameter{ std::move(name) };
+      return std::make_shared<TemplateParameter>(std::move(name));
 
     if (peek() != TokenType::Eq)
       throw std::runtime_error{ "expected '='" };
@@ -777,19 +778,19 @@ TemplateParameter RestrictedParser::parseDelimitedTemplateParameter()
     if(!atEnd())
       throw std::runtime_error{ "expected end of input" };
 
-    return TemplateParameter{ std::move(name), default_value };
+    return std::make_shared<TemplateParameter>(std::move(name), default_value);
   }
   else
   {
     Type type = parseType();
 
     if (atEnd())
-      return TemplateParameter{ type, "" };
+      return std::make_shared<TemplateParameter>(type, "");
 
     std::string name = peek().isIdentifier() ? read().to_string() : "";
 
     if (atEnd())
-      return TemplateParameter{ type, std::move(name) };
+      return std::make_shared<TemplateParameter>(type, std::move(name));
 
     if (peek() != TokenType::Eq)
       throw std::runtime_error{ "expected '='" };
@@ -805,30 +806,31 @@ TemplateParameter RestrictedParser::parseDelimitedTemplateParameter()
 
     default_val.pop_back();
 
-    return TemplateParameter{ type, std::move(name), std::move(default_val) };
+    return std::make_shared<TemplateParameter>(type, std::move(name), std::move(default_val));
   }
 }
 
-Function::Parameter RestrictedParser::parseFunctionParameter()
+std::shared_ptr<Function::Parameter> RestrictedParser::parseFunctionParameter()
 {
-  Function::Parameter result;
-  result.type = parseType();
+  const Type param_type = parseType();
 
   if (atEnd())
-    return result;
+    return std::make_shared<Function::Parameter>(param_type, "");
+
+  std::string name;
 
   if (peek().isIdentifier())
-    result.name = read().to_string();
+    name = read().to_string();
 
   if (atEnd())
-    return result;
+    return std::make_shared<Function::Parameter>(param_type, std::move(name));
 
   read(TokenType::Eq);
 
-  result.default_value = stringtoend();
+  std::string default_value = stringtoend();
   seekEnd();
 
-  return result;
+  return std::make_shared<Function::Parameter>(param_type, std::move(name), std::move(default_value));
 }
 
 } // namespace parsers
