@@ -53,8 +53,8 @@ public:
   FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent = nullptr);
   FunctionParameter(Type type, std::string name, std::string default_falue, std::shared_ptr<Function> parent = nullptr);
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::FunctionParameter;
+  NodeKind node_kind() const override;
 
   std::shared_ptr<Function> parent() const;
 
@@ -76,8 +76,8 @@ public:
 
   explicit Function(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::Function;
+  NodeKind node_kind() const override;
 
   typedef FunctionParameter Parameter;
 

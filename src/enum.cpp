@@ -7,12 +7,9 @@
 namespace cxx
 {
 
-const std::string Enum::TypeId = "enum";
-const std::string EnumValue::TypeId = "enum-value";
-
-const std::string& Enum::type() const
+NodeKind Enum::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 EnumValue::EnumValue(std::string name, std::shared_ptr<Enum> parent)
@@ -28,9 +25,9 @@ EnumValue::EnumValue(std::string name, std::string value, std::shared_ptr<Enum> 
 
 }
 
-const std::string& EnumValue::type() const
+NodeKind EnumValue::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 std::shared_ptr<Enum> EnumValue::parent() const

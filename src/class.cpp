@@ -7,11 +7,9 @@
 namespace cxx
 {
 
-const std::string Class::TypeId = "class";
-
-const std::string& Class::type() const
+NodeKind Class::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 } // namespace cxx

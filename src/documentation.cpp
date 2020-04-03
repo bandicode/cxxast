@@ -12,11 +12,19 @@ Documentation::~Documentation()
 
 }
 
-const std::string MultilineComment::TypeId = "multiline-comment";
-
-const std::string& MultilineComment::type() const
+NodeKind Documentation::node_kind() const
 {
-  return TypeId;
+  return NodeKind::Documentation;
+}
+
+bool Documentation::isDocumentation() const
+{
+  return true;
+}
+
+NodeKind MultilineComment::node_kind() const
+{
+  return ClassNodeKind;
 }
 
 } // namespace cxx

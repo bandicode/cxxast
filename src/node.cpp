@@ -17,4 +17,9 @@ bool Node::isEntity() const
   return false;
 }
 
-} // name
+bool Node::isDocumentation() const
+{
+  return false;
+}
+
+} // namespace cxx

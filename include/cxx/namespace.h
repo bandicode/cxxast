@@ -23,8 +23,8 @@ class CXXAST_API Namespace : public Entity
 public:
   ~Namespace() = default;
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::Namespace;
+  NodeKind node_kind() const override;
 
   explicit Namespace(std::string name, std::shared_ptr<Entity> parent = nullptr);
 

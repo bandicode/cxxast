@@ -27,8 +27,8 @@ public:
 
   explicit Class(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::Class;
+  NodeKind node_kind() const override;
 
   bool& isStruct();
   bool isStruct() const;

@@ -7,11 +7,9 @@
 namespace cxx
 {
 
-const std::string TemplateParameter::TypeId = "template-parameter";
-
-const std::string& TemplateParameter::type() const
+NodeKind TemplateParameter::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 TemplateParameter::TemplateParameter()

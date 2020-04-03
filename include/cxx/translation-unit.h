@@ -18,8 +18,8 @@ public:
   TranslationUnit(std::shared_ptr<File> file);
   ~TranslationUnit();
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::TranslationUnit;
+  NodeKind node_kind() const override;
 
   const std::shared_ptr<File>& file() const;
 

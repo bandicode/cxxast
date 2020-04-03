@@ -20,8 +20,8 @@ public:
   explicit EnumValue(std::string name, std::shared_ptr<Enum> parent = nullptr);
   EnumValue(std::string name, std::string value, std::shared_ptr<Enum> parent = nullptr);
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::EnumValue;
+  NodeKind node_kind() const override;
 
   std::shared_ptr<Enum> parent() const;
 
@@ -40,8 +40,8 @@ public:
 
   explicit Enum(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::Enum;
+  NodeKind node_kind() const override;
 
   std::vector<std::shared_ptr<EnumValue>>& values();
   const std::vector<std::shared_ptr<EnumValue>>& values() const;

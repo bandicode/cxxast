@@ -7,12 +7,9 @@
 namespace cxx
 {
 
-const std::string Function::TypeId = "function";
-const std::string FunctionParameter::TypeId = "function-parameter";
-
-const std::string& Function::type() const
+NodeKind Function::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 FunctionParameter::FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent)
@@ -30,10 +27,9 @@ FunctionParameter::FunctionParameter(Type type, std::string name, std::string de
 
 }
 
-
-const std::string& FunctionParameter::type() const
+NodeKind FunctionParameter::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 std::shared_ptr<Function> FunctionParameter::parent() const

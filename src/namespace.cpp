@@ -10,11 +10,9 @@
 namespace cxx
 {
 
-const std::string Namespace::TypeId = "namespace";
-
-const std::string& Namespace::type() const
+NodeKind Namespace::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 std::shared_ptr<Namespace> Namespace::getOrCreateNamespace(const std::string& name)

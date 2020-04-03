@@ -20,11 +20,9 @@ TranslationUnit::~TranslationUnit()
 
 }
 
-const std::string TranslationUnit::TypeId = "translation-unit";
-
-const std::string& TranslationUnit::type() const
+NodeKind TranslationUnit::node_kind() const
 {
-  return TypeId;
+  return ClassNodeKind;
 }
 
 } // namespace cxx

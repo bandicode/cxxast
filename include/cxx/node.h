@@ -13,7 +13,19 @@
 namespace cxx
 {
 
-class Documentation;
+enum class NodeKind
+{
+  Class,
+  Enum,
+  EnumValue,
+  Function,
+  FunctionParameter,
+  Namespace,
+  TemplateParameter,
+  TranslationUnit,
+  MultilineComment,
+  Documentation,
+};
 
 class CXXAST_API Node : public std::enable_shared_from_this<Node>
 {
@@ -24,9 +36,11 @@ public:
   Node() = default;
   virtual ~Node();
 
-  virtual const std::string& type() const = 0;
+  virtual NodeKind node_kind() const = 0;
+  NodeKind kind() const { return node_kind(); }
 
   virtual bool isEntity() const;
+  virtual bool isDocumentation() const;
 
   template<typename T>
   bool is() const;
@@ -37,9 +51,9 @@ public:
 
 
 template<typename T>
-bool test_node_type(const Node& n)
+bool test_node_kind(const Node& n)
 {
-  return T::TypeId == n.type();
+  return T::ClassNodeKind == n.kind();
 }
 
 } // namespace cxx
@@ -50,7 +64,7 @@ namespace cxx
 template<typename T>
 inline bool Node::is() const
 {
-  return test_node_type<T>(*this);
+  return test_node_kind<T>(*this);
 }
 
 inline const SourceLocation& Node::location() const

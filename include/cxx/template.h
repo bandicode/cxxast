@@ -44,8 +44,8 @@ public:
   explicit TemplateParameter(std::string name, Type default_value = {});
   TemplateParameter(const Type& type, std::string name, std::string default_value = {});
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::TemplateParameter;
+  NodeKind node_kind() const override;
 
   bool isTypeParameter() const;
   bool isNonTypeParameter() const;

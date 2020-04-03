@@ -5,9 +5,7 @@
 #ifndef CXXAST_DOCUMENTATION_H
 #define CXXAST_DOCUMENTATION_H
 
-#include "cxx/cxxast-defs.h"
-
-#include "cxx/sourcelocation.h"
+#include "cxx/node.h"
 
 #include <memory>
 #include <utility>
@@ -16,31 +14,17 @@
 namespace cxx
 {
 
-class CXXAST_API Documentation
+class CXXAST_API Documentation : public Node
 {
-private:
-  SourceLocation m_location;
-
 public:
   Documentation() = default;
   virtual ~Documentation();
 
   explicit Documentation(const SourceLocation& loc);
 
-  virtual const std::string& type() const = 0;
-
-  template<typename T>
-  bool is() const;
-
-  const SourceLocation& location() const;
-  SourceLocation& location();
+  NodeKind node_kind() const override;
+  bool isDocumentation() const override;
 };
-
-template<typename T>
-bool test_documentation_type(const Documentation& doc)
-{
-  return T::TypeId == doc.type();
-}
 
 class CXXAST_API MultilineComment : public Documentation
 {
@@ -50,8 +34,8 @@ private:
 public:
   explicit MultilineComment(std::string text, const SourceLocation& loc = {});
 
-  static const std::string TypeId;
-  const std::string& type() const override;
+  static constexpr NodeKind ClassNodeKind = NodeKind::MultilineComment;
+  NodeKind node_kind() const override;
 
   const std::string& text() const;
   std::string& text();
@@ -62,26 +46,9 @@ public:
 namespace cxx
 {
 
-template<typename T>
-inline bool Documentation::is() const
-{
-  return test_documentation_type<T>(*this);
-}
-
 inline Documentation::Documentation(const SourceLocation& loc)
-  : m_location(loc)
 {
-
-}
-
-inline const SourceLocation& Documentation::location() const
-{
-  return m_location;
-}
-
-inline SourceLocation& Documentation::location()
-{
-  return m_location;
+  location() = loc;
 }
 
 inline MultilineComment::MultilineComment(std::string text, const SourceLocation& loc)
