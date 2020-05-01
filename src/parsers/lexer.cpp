@@ -543,6 +543,7 @@ const Keyword l6k[] = {
   { "export", TokenType::Export },
   { "friend", TokenType::Friend },
   { "import", TokenType::Import },
+  { "inline", TokenType::Inline },
   { "public", TokenType::Public },
   { "return", TokenType::Return },
   { "static", TokenType::Static },
@@ -567,6 +568,7 @@ const Keyword l8k[] = {
 };
 
 const Keyword l9k[] = {
+  { "constexpr", TokenType::Constexpr },
   { "namespace", TokenType::Namespace },
   { "protected", TokenType::Protected },
 };
