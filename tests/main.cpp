@@ -74,6 +74,17 @@ int test_restricted_parser()
   ASSERT(t.resultType() == cxx::Type::Void);
   ASSERT(t.parameters().size() == 2);
 
+  auto variable = cxx::parsers::RestrictedParser::parseVariable("int a = 5;");
+  ASSERT(variable->type().toString() == "int");
+  ASSERT(variable->name() == "a");
+  ASSERT(variable->defaultValue() == "5");
+
+  variable = cxx::parsers::RestrictedParser::parseVariable("inline constexpr std::string text = \"Hello World!\";");
+  ASSERT(variable->type().toString() == "std::string");
+  ASSERT(variable->name() == "text");
+  ASSERT(variable->defaultValue() == "\"Hello World!\"");
+  ASSERT(variable->specifiers() == cxx::VariableSpecifier::Constexpr | cxx::VariableSpecifier::Inline);
+
   auto func = cxx::parsers::RestrictedParser::parseFunctionSignature("int foo(int n, int = 0);");
   ASSERT(func->returnType().toString() == "int");
   ASSERT(func->name() == "foo");

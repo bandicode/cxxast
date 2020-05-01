@@ -23,6 +23,7 @@ enum class NodeKind
   Namespace,
   TemplateParameter,
   TranslationUnit,
+  Variable,
   MultilineComment,
   Documentation,
 };

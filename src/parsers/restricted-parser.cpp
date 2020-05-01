@@ -304,6 +304,12 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature(const std::st
   return p.parseFunctionSignature();
 }
 
+std::shared_ptr<Variable> RestrictedParser::parseVariable(const std::string& str)
+{
+  RestrictedParser p{ &str };
+  return p.parseVariable();
+}
+
 bool RestrictedParser::atEnd() const
 {
   return m_index == m_view.second;
@@ -649,6 +655,48 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
     return ret;
 
   read(TokenType::Semicolon);
+
+  return ret;
+}
+
+std::shared_ptr<Variable> RestrictedParser::parseVariable()
+{
+  int specifiers = VariableSpecifier::None;
+
+  while (peek() == TokenType::Inline || peek() == TokenType::Static || peek() == TokenType::Constexpr)
+  {
+    if (unsafe_peek() == TokenType::Inline)
+    {
+      unsafe_read();
+      specifiers |= VariableSpecifier::Inline;
+    }
+    else if (unsafe_peek() == TokenType::Static)
+    {
+      unsafe_read();
+      specifiers |= VariableSpecifier::Static;
+    }
+    else
+    {
+      unsafe_read();
+      specifiers |= VariableSpecifier::Constexpr;
+    }
+  }
+
+  Type type = parseType();
+  Name name = parseName();
+
+  auto ret = std::make_shared<Variable>(type, name.toString());
+  ret->specifiers() = specifiers;
+
+  if (atEnd() || peek() == TokenType::Semicolon)
+    return ret;
+
+  read(TokenType::Eq);
+
+  ret->defaultValue() = stringtoend();
+
+  if (ret->defaultValue().back() == ';')
+    ret->defaultValue().pop_back();
 
   return ret;
 }

@@ -11,6 +11,7 @@
 #include "cxx/name.h"
 #include "cxx/template.h"
 #include "cxx/type.h"
+#include "cxx/variable.h"
 
 #include <stdexcept>
 #include <vector>
@@ -39,6 +40,7 @@ public:
 
   static cxx::Type parseType(const std::string& str);
   static std::shared_ptr<Function> parseFunctionSignature(const std::string& str);
+  static std::shared_ptr<Variable> parseVariable(const std::string& str);
 
 protected:
   RestrictedParser(const std::string* src);
@@ -50,6 +52,8 @@ protected:
   Name parseName();
 
   std::shared_ptr<Function> parseFunctionSignature();
+
+  std::shared_ptr<Variable> parseVariable();
 
 protected:
   bool atEnd() const;
