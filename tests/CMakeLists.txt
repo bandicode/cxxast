@@ -7,7 +7,16 @@ endif()
 
 if(BUILD_CXXAST_TESTS)
 
-  add_executable(TEST_cxxast "main.cpp")
+  if(NOT DEFINED CATCH2_SINGLE_HEADER_FILE OR NOT CATCH2_SINGLE_HEADER_FILE)
+
+    message("Downloading Catch2")
+    file(DOWNLOAD https://github.com/catchorg/Catch2/releases/download/v2.11.3/catch.hpp "${CMAKE_CURRENT_LIST_DIR}/catch.hpp" SHOW_PROGRESS)
+  
+    set(CATCH2_SINGLE_HEADER_FILE "${CMAKE_CURRENT_LIST_DIR}/catch.hpp" CACHE STRING "Path of catch.hpp")
+
+  endif()
+
+  add_executable(TEST_cxxast "main.cpp" "tests-cxx-restricted-parser.cpp" "tests-cxx-libclang-parser.cpp" ${CATCH2_SINGLE_HEADER_FILE})
   add_dependencies(TEST_cxxast cxxast)
   target_include_directories(TEST_cxxast PUBLIC "../include")
   target_link_libraries(TEST_cxxast cxxast)
