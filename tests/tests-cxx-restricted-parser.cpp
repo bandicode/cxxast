@@ -50,4 +50,23 @@ TEST_CASE("The parser is able to parse simple function declarations", "[restrict
   REQUIRE(func->name() == "max");
   REQUIRE(func->parameters().size() == 2);
   REQUIRE(func->isInline());
+
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("virtual void draw() = 0;");
+  REQUIRE(func->returnType().toString() == "void");
+  REQUIRE(func->name() == "draw");
+  REQUIRE(func->parameters().empty());
+  REQUIRE(func->isVirtual());
+  REQUIRE(func->isVirtualPure());
+
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("void draw() override;");
+  REQUIRE(func->returnType().toString() == "void");
+  REQUIRE(func->name() == "draw");
+  REQUIRE(func->parameters().empty());
+  REQUIRE(func->isOverride());
+
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("void draw() final;");
+  REQUIRE(func->returnType().toString() == "void");
+  REQUIRE(func->name() == "draw");
+  REQUIRE(func->parameters().empty());
+  REQUIRE(func->isFinal());
 }

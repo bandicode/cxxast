@@ -147,6 +147,7 @@ public:
     Explicit,
     Export,
     False,
+    Final,
     Float,
     For,
     Friend,
@@ -157,6 +158,7 @@ public:
     Mutable,
     Namespace,
     Operator,
+    Override,
     Private,
     Protected,
     Public,
@@ -174,7 +176,7 @@ public:
     Void,
     While,
     //Operators
-    ScopeResolution = TokenCategory::OperatorToken | 62,
+    ScopeResolution = TokenCategory::OperatorToken | 64,
     PlusPlus,
     MinusMinus,
     Plus,
@@ -210,9 +212,9 @@ public:
     BitXorEq,
     Comma,
     // Misc
-    UserDefinedName = TokenCategory::Identifier | 97,
-    UserDefinedLiteral = TokenCategory::Literal | 98,
-    SingleLineComment = 99,
+    UserDefinedName = TokenCategory::Identifier | 99,
+    UserDefinedLiteral = TokenCategory::Literal | 100,
+    SingleLineComment = 101,
     LeftRightPar,
     LeftRightBracket,
     //perhaps it would be better to have two tokens for

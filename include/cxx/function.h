@@ -29,6 +29,7 @@ public:
     Override = 16,
     Final = 32,
     Const = 64,
+    Pure = 128,
   };
 };
 
@@ -96,6 +97,7 @@ public:
   bool isStatic() const;
   bool isConstexpr() const;
   bool isVirtual() const;
+  bool isVirtualPure() const;
   bool isOverride() const;
   bool isFinal() const;
   bool isConst() const;
@@ -181,6 +183,11 @@ inline bool Function::isConstexpr() const
 inline bool Function::isVirtual() const
 {
   return m_flags & FunctionSpecifier::Virtual;
+}
+
+inline bool Function::isVirtualPure() const
+{
+  return m_flags & FunctionSpecifier::Pure;
 }
 
 inline bool Function::isOverride() const

@@ -532,6 +532,7 @@ const Keyword l5k[] = {
   { "class", TokenType::Class },
   { "const", TokenType::Const },
   { "false", TokenType::False },
+  { "final", TokenType::Final },
   { "float", TokenType::Float },
   { "using", TokenType::Using },
   { "while", TokenType::While },
@@ -563,6 +564,7 @@ const Keyword l8k[] = {
   { "continue", TokenType::Continue },
   { "explicit", TokenType::Explicit },
   { "operator", TokenType::Operator },
+  { "override", TokenType::Override },
   { "template", TokenType::Template },
   { "typename", TokenType::Typename },
 };

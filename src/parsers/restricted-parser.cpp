@@ -660,7 +660,39 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
     return ret;
 
   if (tok == TokenType::Const)
+  {
     ret->specifiers() |= FunctionSpecifier::Const;
+
+    if (atEnd())
+      return ret;
+
+    tok = read();
+  }
+
+  if (tok == TokenType::Semicolon)
+    return ret;
+
+  if (tok == TokenType::Override)
+  {
+    ret->specifiers() |= FunctionSpecifier::Override;
+  }
+  else if (tok == TokenType::Final)
+  {
+    ret->specifiers() |= FunctionSpecifier::Final;
+  }
+  else if (tok == TokenType::Eq)
+  {
+    tok = read();
+
+    if (tok == TokenType::Zero)
+    {
+      ret->specifiers() |= FunctionSpecifier::Pure;
+    }
+    else
+    {
+      throw std::runtime_error{ "expected = 0" };
+    }
+  }
 
   if (atEnd())
     return ret;
