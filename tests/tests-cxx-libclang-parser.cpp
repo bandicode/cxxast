@@ -40,7 +40,7 @@ static bool findLibclangParser()
 static bool skipTest()
 {
   static bool value = findLibclangParser();
-  return value;
+  return !value;
 }
 
 TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
