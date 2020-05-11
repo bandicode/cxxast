@@ -22,7 +22,7 @@ namespace cxx
 namespace parsers
 {
 
-class CXXAST_API RestrictedParserError : public std::runtime_error
+class RestrictedParserError : public std::runtime_error
 {
 public:
   using std::runtime_error::runtime_error;
