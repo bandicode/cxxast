@@ -7,6 +7,7 @@
 
 #include "cxx/entity.h"
 
+#include "cxx/expression.h"
 #include "cxx/type.h"
 #include "cxx/template.h"
 
@@ -52,7 +53,7 @@ class CXXAST_API FunctionParameter : public Entity
 {
 public:
   FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent = nullptr);
-  FunctionParameter(Type type, std::string name, std::string default_falue, std::shared_ptr<Function> parent = nullptr);
+  FunctionParameter(Type type, std::string name, Expression default_value, std::shared_ptr<Function> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::FunctionParameter;
   NodeKind node_kind() const override;
@@ -62,12 +63,12 @@ public:
   Type& parameterType();
   const Type& parameterType() const;
 
-  std::string& defaultValue();
-  const std::string& defaultValue() const;
+  Expression& defaultValue();
+  const Expression& defaultValue() const;
 
 private:
   Type m_type;
-  std::string m_default_value;
+  Expression m_default_value;
 };
 
 class CXXAST_API Function : public Entity

@@ -369,11 +369,15 @@ void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
   std::string name = getCursorSpelling(cursor);
 
   auto param = std::make_shared<cxx::FunctionParameter>(t, std::move(name), std::static_pointer_cast<cxx::Function>(func.shared_from_this()));
+  std::string default_value_expr;
 
   // Parse default-argument
   {
-    auto data = std::make_pair(this, param.get());
+    auto data = std::make_pair(this, &default_value_expr);
     clang_visitChildren(cursor, &Parser::param_decl_visitor, &data);
+
+    if (!default_value_expr.empty())
+      param->defaultValue() = Expression{ std::move(default_value_expr) };
   }
 
   func.parameters().push_back(param);
@@ -381,11 +385,11 @@ void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
 
 CXChildVisitResult Parser::param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data)
 {
-  std::pair<Parser*, Function::Parameter*>* p = (std::pair<Parser*, Function::Parameter*>*) data;
+  std::pair<Parser*, std::string*>* p = (std::pair<Parser*, std::string*>*) data;
   return p->first->visitFunctionParamDecl(cursor, parent, *(p->second));
 }
 
-CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor parent, Function::Parameter& param)
+CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param)
 {
   std::string spelling = getCursorSpelling(cursor);
 
@@ -402,7 +406,7 @@ CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor pare
     clang_disposeTokens(m_tu, tokens, nTokens);
   }
 
-  param.defaultValue() += spelling;
+  param += spelling;
 
   return CXChildVisit_Continue;
 }

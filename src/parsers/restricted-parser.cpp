@@ -736,10 +736,12 @@ std::shared_ptr<Variable> RestrictedParser::parseVariable()
 
   read(TokenType::Eq);
 
-  ret->defaultValue() = stringtoend();
+  std::string default_val = stringtoend();
 
-  if (ret->defaultValue().back() == ';')
-    ret->defaultValue().pop_back();
+  if (default_val.back() == ';')
+    default_val.pop_back();
+
+  ret->defaultValue() = Expression{ std::move(default_val) };
 
   return ret;
 }
@@ -921,7 +923,7 @@ std::shared_ptr<Function::Parameter> RestrictedParser::parseFunctionParameter()
   std::string default_value = stringtoend();
   seekEnd();
 
-  return std::make_shared<Function::Parameter>(param_type, std::move(name), std::move(default_value));
+  return std::make_shared<Function::Parameter>(param_type, std::move(name), Expression{ std::move(default_value) });
 }
 
 } // namespace parsers

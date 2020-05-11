@@ -65,7 +65,7 @@ protected:
   std::shared_ptr<cxx::Function> parseFunction(CXCursor cursor);
   void parseFunctionArgument(cxx::Function& func, CXCursor cursor);
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
-  CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, Function::Parameter& param);
+  CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
 
   // visitors used for discovery purpose
   static CXChildVisitResult print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data);

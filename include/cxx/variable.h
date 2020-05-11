@@ -7,6 +7,7 @@
 
 #include "cxx/entity.h"
 
+#include "cxx/expression.h"
 #include "cxx/type.h"
 #include "cxx/template.h"
 
@@ -32,7 +33,7 @@ class CXXAST_API Variable : public Entity
 {
 public:
   Variable(Type type, std::string name, std::shared_ptr<Entity> parent = nullptr);
-  Variable(Type type, std::string name, std::string default_falue, std::shared_ptr<Entity> parent = nullptr);
+  Variable(Type type, std::string name, Expression default_value, std::shared_ptr<Entity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Variable;
   NodeKind node_kind() const override;
@@ -40,8 +41,8 @@ public:
   Type& type();
   const Type& type() const;
 
-  std::string& defaultValue();
-  const std::string& defaultValue() const;
+  Expression& defaultValue();
+  const Expression& defaultValue() const;
 
   int& specifiers();
   int specifiers() const;
@@ -49,7 +50,7 @@ public:
 private:
   Type m_type;
   int m_flags = VariableSpecifier::None;
-  std::string m_default_value;
+  Expression m_default_value;
 };
 
 } // namespace cxx
@@ -64,7 +65,7 @@ inline Variable::Variable(Type type, std::string name, std::shared_ptr<Entity> p
 
 }
 
-inline Variable::Variable(Type type, std::string name, std::string default_value, std::shared_ptr<Entity> parent)
+inline Variable::Variable(Type type, std::string name, Expression default_value, std::shared_ptr<Entity> parent)
   : Entity{ std::move(name), std::move(parent) },
     m_type{ type },
     m_default_value{ std::move(default_value) }

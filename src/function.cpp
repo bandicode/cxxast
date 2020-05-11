@@ -19,10 +19,10 @@ FunctionParameter::FunctionParameter(Type type, std::string name, std::shared_pt
 
 }
 
-FunctionParameter::FunctionParameter(Type type, std::string name, std::string default_falue, std::shared_ptr<Function> parent)
+FunctionParameter::FunctionParameter(Type type, std::string name, Expression default_value, std::shared_ptr<Function> parent)
   : Entity(std::move(name), parent),
   m_type(std::move(type)),
-  m_default_value(std::move(default_falue))
+  m_default_value(std::move(default_value))
 {
 
 }
@@ -47,12 +47,12 @@ const Type& FunctionParameter::parameterType() const
   return m_type;
 }
 
-std::string& FunctionParameter::defaultValue()
+Expression& FunctionParameter::defaultValue()
 {
   return m_default_value;
 }
 
-const std::string& FunctionParameter::defaultValue() const
+const Expression& FunctionParameter::defaultValue() const
 {
   return m_default_value;
 }

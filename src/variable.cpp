@@ -12,12 +12,12 @@ NodeKind Variable::node_kind() const
   return ClassNodeKind;
 }
 
-std::string& Variable::defaultValue()
+Expression& Variable::defaultValue()
 {
   return m_default_value;
 }
 
-const std::string& Variable::defaultValue() const
+const Expression& Variable::defaultValue() const
 {
   return m_default_value;
 }

@@ -23,12 +23,12 @@ TEST_CASE("The parser is able to parse simple variable declarations", "[restrict
   auto variable = cxx::parsers::RestrictedParser::parseVariable("int a = 5;");
   REQUIRE(variable->type().toString() == "int");
   REQUIRE(variable->name() == "a");
-  REQUIRE(variable->defaultValue() == "5");
+  REQUIRE(variable->defaultValue() == cxx::Expression("5"));
 
   variable = cxx::parsers::RestrictedParser::parseVariable("inline constexpr std::string text = \"Hello World!\";");
   REQUIRE(variable->type().toString() == "std::string");
   REQUIRE(variable->name() == "text");
-  REQUIRE(variable->defaultValue() == "\"Hello World!\"");
+  REQUIRE(variable->defaultValue() == cxx::Expression("\"Hello World!\""));
   REQUIRE(variable->specifiers() == (cxx::VariableSpecifier::Constexpr | cxx::VariableSpecifier::Inline));
 }
 
