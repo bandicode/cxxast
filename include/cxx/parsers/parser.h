@@ -23,6 +23,8 @@ class Enum;
 class Namespace;
 class Type;
 
+class FileSystem;
+
 namespace parsers
 {
 
@@ -31,6 +33,8 @@ class CXXAST_API Parser : public LibClangParser
 public:
   Parser();
   ~Parser();
+
+  explicit Parser(cxx::FileSystem& fs);
 
   std::set<std::string>& includedirs();
   const std::set<std::string>& includedirs() const;
@@ -72,6 +76,8 @@ protected:
   cxx::SourceLocation getCursorLocation(CXCursor cursor);
 
 private:
+  cxx::FileSystem& m_filesystem;
+  
   CXIndex m_index = nullptr;
 
   bool m_ignore_outside_decls = false;

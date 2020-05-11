@@ -13,6 +13,8 @@
 #include "cxx/function.h"
 #include "cxx/namespace.h"
 
+#include "cxx/filesystem.h"
+
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -54,6 +56,7 @@ struct StateGuard
 };
 
 Parser::Parser()
+  : m_filesystem(FileSystem::GlobalInstance())
 {
   m_index = clang_createIndex(0, 0);
 }
@@ -61,6 +64,12 @@ Parser::Parser()
 Parser::~Parser()
 {
   clang_disposeIndex(m_index);
+}
+
+Parser::Parser(FileSystem& fs)
+  : m_filesystem(fs)
+{
+
 }
 
 std::shared_ptr<TranslationUnit> Parser::parse(const std::string& file)
@@ -111,17 +120,7 @@ cxx::AccessSpecifier Parser::getAccessSpecifier(CX_CXXAccessSpecifier as)
 
 std::shared_ptr<File> Parser::getFile(const std::string& path)
 {
-  auto it = std::find_if(files().begin(), files().end(), [&path](const std::shared_ptr<File>& file) {
-    return file->path() == path;
-    });
-
-  if (it != files().end())
-    return *it;
-
-  auto file = std::make_shared<File>(path);
-  m_files.push_back(file);
-
-  return file;
+  return m_filesystem.get(path);
 }
 
 CXChildVisitResult Parser::print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
