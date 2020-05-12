@@ -55,24 +55,24 @@ struct StateGuard
   }
 };
 
-Parser::Parser()
+LibClangParser::LibClangParser()
   : m_filesystem(FileSystem::GlobalInstance())
 {
   m_index = clang_createIndex(0, 0);
 }
 
-Parser::~Parser()
+LibClangParser::~LibClangParser()
 {
   clang_disposeIndex(m_index);
 }
 
-Parser::Parser(FileSystem& fs)
+LibClangParser::LibClangParser(FileSystem& fs)
   : m_filesystem(fs)
 {
 
 }
 
-std::shared_ptr<TranslationUnit> Parser::parse(const std::string& file)
+std::shared_ptr<TranslationUnit> LibClangParser::parse(const std::string& file)
 {
   auto result = std::make_shared<TranslationUnit>(getFile(file));
 
@@ -98,12 +98,12 @@ std::shared_ptr<TranslationUnit> Parser::parse(const std::string& file)
 
   m_tu_file = clang_getFile(m_tu, file.data());
   CXCursor cursor = clang_getTranslationUnitCursor(m_tu);
-  clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+  clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
 
   return result;
 }
 
-cxx::AccessSpecifier Parser::getAccessSpecifier(CX_CXXAccessSpecifier as)
+cxx::AccessSpecifier LibClangParser::getAccessSpecifier(CX_CXXAccessSpecifier as)
 {
   switch (as)
   {
@@ -118,28 +118,28 @@ cxx::AccessSpecifier Parser::getAccessSpecifier(CX_CXXAccessSpecifier as)
   return cxx::AccessSpecifier::PRIVATE;
 }
 
-std::shared_ptr<File> Parser::getFile(const std::string& path)
+std::shared_ptr<File> LibClangParser::getFile(const std::string& path)
 {
   return m_filesystem.get(path);
 }
 
-CXChildVisitResult Parser::print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
+CXChildVisitResult LibClangParser::print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
 {
-  return static_cast<Parser*>(client_data)->printVisit(cursor, parent);
+  return static_cast<LibClangParser*>(client_data)->printVisit(cursor, parent);
 }
 
-CXChildVisitResult Parser::printVisit(CXCursor cursor, CXCursor parent)
+CXChildVisitResult LibClangParser::printVisit(CXCursor cursor, CXCursor parent)
 {
   std::cout << toStdString(clang_getCursorKindSpelling(cursor.kind)) << ": "<< getCursorSpelling(cursor) << std::endl;
   return CXChildVisit_Recurse;
 }
 
-CXChildVisitResult Parser::visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
+CXChildVisitResult LibClangParser::visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
 {
-  return static_cast<Parser*>(client_data)->visit(cursor, parent);
+  return static_cast<LibClangParser*>(client_data)->visit(cursor, parent);
 }
 
-CXChildVisitResult Parser::visit(CXCursor cursor, CXCursor parent)
+CXChildVisitResult LibClangParser::visit(CXCursor cursor, CXCursor parent)
 {
   if (m_stack.back()->is<cxx::Namespace>())
     return visitNamespace(cursor, parent, std::static_pointer_cast<cxx::Namespace>(m_stack.back()));
@@ -153,7 +153,7 @@ CXChildVisitResult Parser::visit(CXCursor cursor, CXCursor parent)
   return CXChildVisitResult::CXChildVisit_Break;
 }
 
-CXChildVisitResult Parser::visitTU(CXCursor cursor, CXCursor parent, std::shared_ptr<TranslationUnit> tu)
+CXChildVisitResult LibClangParser::visitTU(CXCursor cursor, CXCursor parent, std::shared_ptr<TranslationUnit> tu)
 {
   if (ignoreOutsideDeclarations() && !clang_File_isEqual(getCursorFile(cursor), m_tu_file))
     return CXChildVisit_Continue;
@@ -167,7 +167,7 @@ CXChildVisitResult Parser::visitTU(CXCursor cursor, CXCursor parent, std::shared
     inner->location() = getCursorLocation(cursor);
 
     StateGuard guard{ m_stack, inner };
-    clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
 
     tu->nodes().push_back(inner);
   }
@@ -182,7 +182,7 @@ CXChildVisitResult Parser::visitTU(CXCursor cursor, CXCursor parent, std::shared
 
     {
       StateGuard guard{ m_stack, c };
-      clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
     }
 
     if (!c->members().empty())
@@ -205,7 +205,7 @@ CXChildVisitResult Parser::visitTU(CXCursor cursor, CXCursor parent, std::shared
     e->location() = getCursorLocation(cursor);
 
     StateGuard guard{ m_stack, e };
-    clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
 
     tu->nodes().push_back(e);
   }
@@ -213,7 +213,7 @@ CXChildVisitResult Parser::visitTU(CXCursor cursor, CXCursor parent, std::shared
   return CXChildVisit_Continue;
 }
 
-CXChildVisitResult Parser::visitNamespace(CXCursor cursor, CXCursor parent, std::shared_ptr<Namespace> ns)
+CXChildVisitResult LibClangParser::visitNamespace(CXCursor cursor, CXCursor parent, std::shared_ptr<Namespace> ns)
 {
   if (clang_getCursorKind(cursor) == CXCursor_Namespace)
   {
@@ -221,7 +221,7 @@ CXChildVisitResult Parser::visitNamespace(CXCursor cursor, CXCursor parent, std:
     inner->location() = getCursorLocation(cursor);
 
     StateGuard guard{ m_stack, inner };
-    clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
   }
   else if (clang_getCursorKind(cursor) == CXCursor_ClassDecl)
   {
@@ -233,7 +233,7 @@ CXChildVisitResult Parser::visitNamespace(CXCursor cursor, CXCursor parent, std:
 
     {
       StateGuard guard{ m_stack, c };
-      clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
     }
 
     if (c->members().empty())
@@ -254,13 +254,13 @@ CXChildVisitResult Parser::visitNamespace(CXCursor cursor, CXCursor parent, std:
     e->location() = getCursorLocation(cursor);
 
     StateGuard guard{ m_stack, e };
-    clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
   }
 
   return CXChildVisit_Continue;
 }
 
-CXChildVisitResult Parser::visitClass(CXCursor cursor, CXCursor parent, std::shared_ptr<Class> cla)
+CXChildVisitResult LibClangParser::visitClass(CXCursor cursor, CXCursor parent, std::shared_ptr<Class> cla)
 {
   cxx::AccessSpecifier access_specifier = getAccessSpecifier(clang_getCXXAccessSpecifier(cursor));
 
@@ -282,7 +282,7 @@ CXChildVisitResult Parser::visitClass(CXCursor cursor, CXCursor parent, std::sha
 
     {
       StateGuard nested_class_guard{ m_stack, nested_class };
-      clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
     }
 
     if (!nested_class->members().empty())
@@ -297,7 +297,7 @@ CXChildVisitResult Parser::visitClass(CXCursor cursor, CXCursor parent, std::sha
 
     {
       StateGuard nested_class_guard{ m_stack, en };
-      clang_visitChildren(cursor, &Parser::visitor_callback, (void*)this);
+      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
     }
 
     cla->members().push_back(std::make_pair(en, access_specifier));
@@ -306,7 +306,7 @@ CXChildVisitResult Parser::visitClass(CXCursor cursor, CXCursor parent, std::sha
   return CXChildVisit_Continue;
 }
 
-CXChildVisitResult Parser::visitEnum(CXCursor cursor, CXCursor parent, std::shared_ptr<Enum> en)
+CXChildVisitResult LibClangParser::visitEnum(CXCursor cursor, CXCursor parent, std::shared_ptr<Enum> en)
 {
   CXCursorKind kind = clang_getCursorKind(cursor);
 
@@ -319,7 +319,7 @@ CXChildVisitResult Parser::visitEnum(CXCursor cursor, CXCursor parent, std::shar
   return CXChildVisit_Continue;
 }
 
-std::shared_ptr<cxx::Function> Parser::parseFunction(CXCursor cursor)
+std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
 {
   auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_stack.back()));
 
@@ -363,7 +363,7 @@ std::shared_ptr<cxx::Function> Parser::parseFunction(CXCursor cursor)
   return func;
 }
 
-void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
+void LibClangParser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
 {
   Type t = parseType(clang_getCursorType(cursor));
   std::string name = getCursorSpelling(cursor);
@@ -374,7 +374,7 @@ void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
   // Parse default-argument
   {
     auto data = std::make_pair(this, &default_value_expr);
-    clang_visitChildren(cursor, &Parser::param_decl_visitor, &data);
+    clang_visitChildren(cursor, &LibClangParser::param_decl_visitor, &data);
 
     if (!default_value_expr.empty())
       param->defaultValue() = Expression{ std::move(default_value_expr) };
@@ -383,13 +383,13 @@ void Parser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
   func.parameters().push_back(param);
 }
 
-CXChildVisitResult Parser::param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data)
+CXChildVisitResult LibClangParser::param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data)
 {
-  std::pair<Parser*, std::string*>* p = (std::pair<Parser*, std::string*>*) data;
+  std::pair<LibClangParser*, std::string*>* p = (std::pair<LibClangParser*, std::string*>*) data;
   return p->first->visitFunctionParamDecl(cursor, parent, *(p->second));
 }
 
-CXChildVisitResult Parser::visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param)
+CXChildVisitResult LibClangParser::visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param)
 {
   std::string spelling = getCursorSpelling(cursor);
 
@@ -417,7 +417,7 @@ static void remove_prefix(std::string& str, const std::string& prefix)
     str.erase(0, prefix.size());
 }
 
-cxx::Type Parser::parseType(CXType t)
+cxx::Type LibClangParser::parseType(CXType t)
 {
   bool is_const = clang_isConstQualifiedType(t);
   bool is_volatile = clang_isVolatileQualifiedType(t);
@@ -455,7 +455,7 @@ cxx::Type Parser::parseType(CXType t)
   }
 }
 
-cxx::SourceLocation Parser::getCursorLocation(CXCursor cursor)
+cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
 {
   CXSourceLocation location = clang_getCursorLocation(cursor);
 

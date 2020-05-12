@@ -5,7 +5,7 @@
 #ifndef CXXAST_PARSERS_PARSER_H
 #define CXXAST_PARSERS_PARSER_H
 
-#include "cxx/parsers/libclang-parser.h"
+#include "cxx/libclang.h"
 
 #include "cxx/function.h"
 #include "cxx/translation-unit.h"
@@ -28,13 +28,13 @@ class FileSystem;
 namespace parsers
 {
 
-class CXXAST_API Parser : public LibClangParser
+class CXXAST_API LibClangParser : protected LibClang
 {
 public:
-  Parser();
-  ~Parser();
+  LibClangParser();
+  ~LibClangParser();
 
-  explicit Parser(cxx::FileSystem& fs);
+  explicit LibClangParser(cxx::FileSystem& fs);
 
   std::set<std::string>& includedirs();
   const std::set<std::string>& includedirs() const;
@@ -103,37 +103,37 @@ namespace cxx
 namespace parsers
 {
 
-inline std::set<std::string>& Parser::includedirs()
+inline std::set<std::string>& LibClangParser::includedirs()
 {
   return m_include_dirs;
 }
 
-inline const std::set<std::string>& Parser::includedirs() const
+inline const std::set<std::string>& LibClangParser::includedirs() const
 {
   return m_include_dirs;
 }
 
-inline std::map<std::string, std::string>& Parser::defines()
+inline std::map<std::string, std::string>& LibClangParser::defines()
 {
   return m_defines;
 }
 
-inline const std::map<std::string, std::string>& Parser::defines() const
+inline const std::map<std::string, std::string>& LibClangParser::defines() const
 {
   return m_defines;
 }
 
-inline const std::vector<std::shared_ptr<File>>& Parser::files() const
+inline const std::vector<std::shared_ptr<File>>& LibClangParser::files() const
 {
   return m_files;
 }
 
-inline bool Parser::ignoreOutsideDeclarations() const
+inline bool LibClangParser::ignoreOutsideDeclarations() const
 {
   return m_ignore_outside_decls;
 }
 
-inline void Parser::ignoreOutsideDeclarations(bool on)
+inline void LibClangParser::ignoreOutsideDeclarations(bool on)
 {
   m_ignore_outside_decls = on;
 }

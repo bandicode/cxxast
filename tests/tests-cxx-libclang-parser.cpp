@@ -6,7 +6,6 @@
 
 #include "cxx/translation-unit.h"
 
-#include "cxx/parsers/libclang-parser.h"
 #include "cxx/parsers/parser.h"
 
 #include "cxx/class.h"
@@ -24,11 +23,11 @@ static bool findLibclangParser()
 {
   try
   {
-    cxx::parsers::LibClangParser clang_parser;
+    cxx::parsers::LibClang clang_parser;
     std::cout << "libclang parser available, version = " << clang_parser.printableVersion() << std::endl;
     return true;
   }
-  catch (const cxx::parsers::LibClangParserError & err)
+  catch (const cxx::parsers::LibClangError & err)
   {
     std::cout << "libclang error: " << err.what() << std::endl;
     std::cout << "libclang parser tests will be skipped..." << std::endl;
@@ -51,7 +50,7 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
   write_file("test.cpp",
     "const int foo(int& i, int j = 0) { return i+j; }");
 
-  cxx::parsers::Parser parser;
+  cxx::parsers::LibClangParser parser;
   std::shared_ptr<cxx::TranslationUnit> tu;
 
   tu = parser.parse("test.cpp");
@@ -73,7 +72,7 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     "\n"
     "int Foo::bar() const { return -1 ; }\n");
 
-  cxx::parsers::Parser parser;
+  cxx::parsers::LibClangParser parser;
   std::shared_ptr<cxx::TranslationUnit> tu;
 
   tu = parser.parse("toast.cpp");
@@ -91,7 +90,7 @@ TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
     "#include <vector>\n"
     "std::vector<int> foo() { return {}; }\n");
 
-  cxx::parsers::Parser parser;
+  cxx::parsers::LibClangParser parser;
   std::shared_ptr<cxx::TranslationUnit> tu;
 
   parser.ignoreOutsideDeclarations(true);

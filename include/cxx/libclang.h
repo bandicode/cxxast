@@ -2,10 +2,10 @@
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef CXXAST_PARSERS_LIBCLANG_PARSER_H
-#define CXXAST_PARSERS_LIBCLANG_PARSER_H
+#ifndef CXXAST_LIBCLANG_H
+#define CXXAST_LIBCLANG_H
 
-#include "cxx/parsers/libclang-cindex.h"
+#include "cxx/clang/cindex.h"
 
 #include "cxx/entity.h"
 
@@ -22,21 +22,22 @@ namespace cxx
 namespace parsers
 {
 
-class LibClangParserError : public std::runtime_error
+class LibClangError : public std::runtime_error
 {
 public:
   using std::runtime_error::runtime_error;
 };
 
-class CXXAST_API LibClangParser
+class CXXAST_API LibClang
 {
-private:
+public:
   std::unique_ptr<dynlib::Library> libclang;
 
+private:
   std::string m_printable_version;
   CXVersion m_version;
 
-protected:
+public:
 
   /* libclang functions */
 
@@ -335,7 +336,7 @@ protected:
   ClangIndexLocGetCXSourceLocation clang_indexLoc_getCXSourceLocation = nullptr;
   ClangTypeVisitFields clang_Type_visitFields = nullptr;
 
-protected:
+public:
 
   /* libclang helpers */
   
@@ -348,12 +349,11 @@ protected:
   bool isForwardDeclaration(CXCursor cursor);
 
 public:
-  LibClangParser();
-  ~LibClangParser();
+  LibClang();
+  ~LibClang();
 
   CXVersion version() const;
   const std::string& printableVersion() const;
-
 };
 
 } // namespace parsers

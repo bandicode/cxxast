@@ -2,7 +2,7 @@
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-#include "cxx/parsers/libclang-parser.h"
+#include "cxx/libclang.h"
 
 #include "dynlib/dynlib.h"
 
@@ -18,7 +18,7 @@ void resolve(dynlib::Library& libclang, const char* name, T& callback)
   callback = (T) libclang.resolve(name);
 
   if (!callback)
-    throw LibClangParserError{ ("could not resolve libclang function : " + std::string(name)).c_str() };
+    throw LibClangError{ ("could not resolve libclang function : " + std::string(name)).c_str() };
 }
 
 static CXVersion parse_clang_version(std::string str)
@@ -57,12 +57,12 @@ static CXVersion parse_clang_version(std::string str)
   return result;
 }
 
-LibClangParser::LibClangParser()
+LibClang::LibClang()
 {
   libclang.reset(new dynlib::Library("libclang"));
 
   if (!libclang->load())
-    throw LibClangParserError{ "could not load libclang" };
+    throw LibClangError{ "could not load libclang" };
 
   resolve(*libclang, "clang_getClangVersion", clang_getClangVersion);
   resolve(*libclang, "clang_getCString", clang_getCString);
@@ -364,29 +364,29 @@ LibClangParser::LibClangParser()
   resolve(*libclang, "clang_Type_visitFields", clang_Type_visitFields);
 }
 
-LibClangParser::~LibClangParser()
+LibClang::~LibClang()
 {
 
 }
 
-CXVersion LibClangParser::version() const
+CXVersion LibClang::version() const
 {
   return m_version;
 }
 
-const std::string& LibClangParser::printableVersion() const
+const std::string& LibClang::printableVersion() const
 {
   return m_printable_version;
 }
 
-std::string LibClangParser::toStdString(CXString str)
+std::string LibClang::toStdString(CXString str)
 {
   std::string result = clang_getCString(str);
   clang_disposeString(str);
   return result;
 }
 
-CXFile LibClangParser::getCursorFile(CXCursor cursor)
+CXFile LibClang::getCursorFile(CXCursor cursor)
 {
   CXSourceLocation location = clang_getCursorLocation(cursor);
 
@@ -397,7 +397,7 @@ CXFile LibClangParser::getCursorFile(CXCursor cursor)
   return file;
 }
 
-std::string LibClangParser::getCursorFilePath(CXCursor cursor)
+std::string LibClang::getCursorFilePath(CXCursor cursor)
 {
   CXFile file = getCursorFile(cursor);
 
@@ -412,22 +412,22 @@ std::string LibClangParser::getCursorFilePath(CXCursor cursor)
   return result;
 }
 
-std::string LibClangParser::getCursorSpelling(CXCursor cursor)
+std::string LibClang::getCursorSpelling(CXCursor cursor)
 {
   return toStdString(clang_getCursorSpelling(cursor));
 }
 
-std::string LibClangParser::getTypeSpelling(CXType type)
+std::string LibClang::getTypeSpelling(CXType type)
 {
   return toStdString(clang_getTypeSpelling(type));
 }
 
-std::string LibClangParser::getTokenSpelling(CXTranslationUnit tu, CXToken tok)
+std::string LibClang::getTokenSpelling(CXTranslationUnit tu, CXToken tok)
 {
   return toStdString(clang_getTokenSpelling(tu, tok));
 }
 
-bool LibClangParser::isForwardDeclaration(CXCursor cursor)
+bool LibClang::isForwardDeclaration(CXCursor cursor)
 {
   return clang_equalCursors(clang_getCursorDefinition(cursor), clang_getNullCursor());
 }

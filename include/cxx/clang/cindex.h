@@ -2,8 +2,8 @@
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef CXXAST_PARSERS_LIBCLANG_CINDEX_H
-#define CXXAST_PARSERS_LIBCLANG_CINDEX_H
+#ifndef CXXAST_CLANG_CINDEX_H
+#define CXXAST_CLANG_CINDEX_H
 
 #include <cstddef>
 
@@ -1372,4 +1372,4 @@ typedef enum CXVisitorResult(*CXFieldVisitor)(CXCursor, CXClientData);
 
 using ClangTypeVisitFields = unsigned(*)(CXType, CXFieldVisitor, CXClientData);
 
-#endif // CXXAST_PARSERS_LIBCLANG_CINDEX_H
+#endif // CXXAST_CLANG_CINDEX_H
