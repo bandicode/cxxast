@@ -310,6 +310,18 @@ std::shared_ptr<Variable> RestrictedParser::parseVariable(const std::string& str
   return p.parseVariable();
 }
 
+std::shared_ptr<Typedef> RestrictedParser::parseTypedef(const std::string& str)
+{
+  RestrictedParser p{ &str };
+  return p.parseTypedef();
+}
+
+std::shared_ptr<Macro> RestrictedParser::parseMacro(const std::string& str)
+{
+  RestrictedParser p{ &str };
+  return p.parseMacro();
+}
+
 bool RestrictedParser::atEnd() const
 {
   return m_index == m_view.second;
@@ -744,6 +756,71 @@ std::shared_ptr<Variable> RestrictedParser::parseVariable()
   ret->defaultValue() = Expression{ std::move(default_val) };
 
   return ret;
+}
+
+std::shared_ptr<Typedef> RestrictedParser::parseTypedef()
+{
+  read(TokenType::Typedef);
+
+  Type t = parseType();
+
+  Token name = read();
+
+  if (!name.isIdentifier())
+    throw std::runtime_error{ "Unexpected identifier while parsing typedef" };
+
+  auto result = std::make_shared<Typedef>(t, name.to_string());
+
+  if (atEnd())
+    return result;
+
+  read(TokenType::Semicolon);
+
+  return result;
+}
+
+std::shared_ptr<Macro> RestrictedParser::parseMacro()
+{
+  std::string name = read(TokenType::UserDefinedName).to_string();
+  std::vector<std::string> params;
+
+  if (atEnd())
+    return std::make_shared<Macro>(name, std::move(params));
+
+  read(TokenType::LeftPar);
+
+  Token tok = read();
+
+  for (;;)
+  {
+    if (tok.isIdentifier())
+    {
+      params.push_back(tok.to_string());
+
+      tok = read();
+
+      if (tok.type() == TokenType::Comma)
+        tok = read();
+      else if (tok.type() == TokenType::RightPar)
+        break;
+    }
+    else if (tok.type() == TokenType::Dot)
+    {
+      read(TokenType::Dot);
+      read(TokenType::Dot);
+
+      params.push_back("...");
+
+      read(TokenType::RightPar);
+      break;
+    }
+    else
+    {
+      throw std::runtime_error{ "bad input to parseMacro" };
+    }
+  }
+
+  return std::make_shared<Macro>(name, std::move(params));
 }
 
 Token RestrictedParser::read()

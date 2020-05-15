@@ -18,12 +18,16 @@ namespace cxx
 
 class Entity;
 class File;
+class Macro;
 class Name;
 class Namespace;
 class Type;
 
 class CXXAST_API Program
 {
+public:
+  std::vector<std::shared_ptr<Macro>> macros;
+
 public:
   Program();
   ~Program();

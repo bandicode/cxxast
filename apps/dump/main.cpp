@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   {
     work(argc, argv);
   }
-  catch (cxx::LibClangError & err)
+  catch (cxx::LibClangError & )
   {
     std::cerr << "could not find libclang" << std::endl;
     return 1;

@@ -21,8 +21,10 @@ enum class NodeKind
   EnumValue,
   Function,
   FunctionParameter,
+  Macro,
   Namespace,
   TemplateParameter,
+  Typedef,
   Variable,
   /* Statements */
   CompoundStatement,

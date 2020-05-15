@@ -70,3 +70,37 @@ TEST_CASE("The parser is able to parse simple function declarations", "[restrict
   REQUIRE(func->parameters.empty());
   REQUIRE(func->isFinal());
 }
+
+TEST_CASE("The parser is able to parse simple typedef declarations", "[restricted-parser]")
+{
+  auto def = cxx::parsers::RestrictedParser::parseTypedef("typedef const int ConstInt;");
+  REQUIRE(def->name == "ConstInt");
+  REQUIRE(def->type.toString() == "const int");
+
+  def = cxx::parsers::RestrictedParser::parseTypedef("typedef std::vector<bool> vec_of_bool;");
+  REQUIRE(def->name == "vec_of_bool");
+  REQUIRE(def->type.toString() == "std::vector<bool>");
+
+  // The following is not a valid typedef, but that will do for now...
+  def = cxx::parsers::RestrictedParser::parseTypedef("typedef int(void) func_int;");
+  REQUIRE(def->name == "func_int");
+  REQUIRE(def->type.toString() == "int(void)");
+}
+
+TEST_CASE("The parser is able to parse simple macro declarations", "[restricted-parser]")
+{
+  auto def = cxx::parsers::RestrictedParser::parseMacro("__cpp__");
+  REQUIRE(def->name == "__cpp__");
+  REQUIRE(def->parameters.empty());
+
+  def = cxx::parsers::RestrictedParser::parseMacro("EXPAND(X)");
+  REQUIRE(def->name == "EXPAND");
+  REQUIRE(def->parameters.size() == 1);
+  REQUIRE(def->parameters.front() == "X");
+
+  def = cxx::parsers::RestrictedParser::parseMacro("EXPAND(X, ...)");
+  REQUIRE(def->name == "EXPAND");
+  REQUIRE(def->parameters.size() == 2);
+  REQUIRE(def->parameters.front() == "X");
+  REQUIRE(def->parameters.back() == "...");
+}

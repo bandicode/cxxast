@@ -8,9 +8,10 @@
 #include "cxx/parsers/lexer.h"
 
 #include "cxx/function.h"
+#include "cxx/macro.h"
 #include "cxx/name.h"
 #include "cxx/template.h"
-#include "cxx/type.h"
+#include "cxx/typedef.h"
 #include "cxx/variable.h"
 
 #include <stdexcept>
@@ -41,6 +42,8 @@ public:
   static cxx::Type parseType(const std::string& str);
   static std::shared_ptr<Function> parseFunctionSignature(const std::string& str);
   static std::shared_ptr<Variable> parseVariable(const std::string& str);
+  static std::shared_ptr<Typedef> parseTypedef(const std::string& str);
+  static std::shared_ptr<Macro> parseMacro(const std::string& str);
 
 protected:
   RestrictedParser(const std::string* src);
@@ -54,6 +57,10 @@ protected:
   std::shared_ptr<Function> parseFunctionSignature();
 
   std::shared_ptr<Variable> parseVariable();
+
+  std::shared_ptr<Typedef> parseTypedef();
+
+  std::shared_ptr<Macro> parseMacro();
 
 protected:
   bool atEnd() const;

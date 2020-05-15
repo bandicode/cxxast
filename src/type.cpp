@@ -264,7 +264,7 @@ std::string FunctionType::toString() const
 {
   std::string ret = m_result_type->toString();
 
-  ret += ")";
+  ret += "(";
 
   for (const auto& pt : m_parameter_types)
   {
