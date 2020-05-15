@@ -4,6 +4,8 @@
 
 #include "cxx/filesystem.h"
 
+#include <algorithm>
+
 namespace cxx
 {
 
