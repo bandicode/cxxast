@@ -4,8 +4,6 @@
 
 #include "catch.hpp"
 
-#include "cxx/translation-unit.h"
-
 #include "cxx/parsers/parser.h"
 
 #include "cxx/program.h"

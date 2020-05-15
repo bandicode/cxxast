@@ -32,7 +32,6 @@ enum class NodeKind
   NamespaceDeclaration,
   VariableDeclaration,
   /* Misc */
-  TranslationUnit,
   MultilineComment,
   Documentation,
 };

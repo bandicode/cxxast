@@ -11,7 +11,6 @@
 
 #include <cxx/class.h>
 #include "cxx/function.h"
-#include "cxx/translation-unit.h"
 
 #include <map>
 #include <set>
