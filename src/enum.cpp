@@ -7,11 +7,6 @@
 namespace cxx
 {
 
-NodeKind Enum::node_kind() const
-{
-  return ClassNodeKind;
-}
-
 EnumValue::EnumValue(std::string name, std::shared_ptr<Enum> parent)
   : Entity(std::move(name), parent)
 {
@@ -43,6 +38,22 @@ std::string& EnumValue::value()
 const std::string& EnumValue::value() const
 {
   return m_value;
+}
+
+
+NodeKind Enum::node_kind() const
+{
+  return ClassNodeKind;
+}
+
+AccessSpecifier Enum::getAccessSpecifier() const
+{
+  return access_specifier;
+}
+
+void Enum::setAccessSpecifier(AccessSpecifier aspec)
+{
+  access_specifier = aspec;
 }
 
 } // namespace cxx

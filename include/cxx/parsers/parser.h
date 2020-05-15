@@ -9,7 +9,7 @@
 #include "cxx/clang/clang-index.h"
 #include "cxx/clang/clang-translation-unit.h"
 
-#include <cxx/class.h>
+#include <cxx/access-specifier.h>
 #include "cxx/function.h"
 
 #include <map>
@@ -20,8 +20,6 @@
 namespace cxx
 {
 
-enum class AccessSpecifier;
-class Class;
 class Enum;
 class Namespace;
 class Type;

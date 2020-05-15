@@ -7,6 +7,8 @@
 
 #include "cxx/node.h"
 
+#include "cxx/access-specifier.h"
+
 namespace cxx
 {
 
@@ -33,6 +35,9 @@ public:
 
   const std::shared_ptr<Documentation>& documentation() const;
   void setDocumentation(std::shared_ptr<Documentation> doc);
+
+  virtual AccessSpecifier getAccessSpecifier() const;
+  virtual void setAccessSpecifier(AccessSpecifier aspec);
 };
 
 } // namespace cxx

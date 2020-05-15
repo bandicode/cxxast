@@ -7,11 +7,6 @@
 namespace cxx
 {
 
-NodeKind Function::node_kind() const
-{
-  return ClassNodeKind;
-}
-
 FunctionParameter::FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent)
   : Entity(std::move(name), parent),
   m_type(std::move(type))
@@ -55,6 +50,21 @@ Expression& FunctionParameter::defaultValue()
 const Expression& FunctionParameter::defaultValue() const
 {
   return m_default_value;
+}
+
+NodeKind Function::node_kind() const
+{
+  return ClassNodeKind;
+}
+
+AccessSpecifier Function::getAccessSpecifier() const
+{
+  return access_specifier;
+}
+
+void Function::setAccessSpecifier(AccessSpecifier aspec)
+{
+  access_specifier = aspec;
 }
 
 } // namespace cxx

@@ -13,15 +13,11 @@
 namespace cxx
 {
 
-enum class AccessSpecifier
-{
-  PUBLIC,
-  PROTECTED,
-  PRIVATE,
-};
-
 class CXXAST_API Class : public Entity
 {
+public:
+  AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+
 public:
   ~Class() = default;
 
@@ -33,12 +29,15 @@ public:
   bool& isStruct();
   bool isStruct() const;
 
-  std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& members();
-  const std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& members() const;
+  std::vector<std::shared_ptr<Entity>>& members();
+  const std::vector<std::shared_ptr<Entity>>& members() const;
+
+  AccessSpecifier getAccessSpecifier() const override;
+  void setAccessSpecifier(AccessSpecifier aspec) override;
 
 private:
   bool m_is_struct = false;
-  std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>> m_members;
+  std::vector<std::shared_ptr<Entity>> m_members;
 };
 
 } // namespace cxx
@@ -62,12 +61,12 @@ inline bool Class::isStruct() const
   return m_is_struct;
 }
 
-inline std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& Class::members()
+inline std::vector<std::shared_ptr<Entity>>& Class::members()
 {
   return m_members;
 }
 
-inline const std::vector<std::pair<std::shared_ptr<Entity>, AccessSpecifier>>& Class::members() const
+inline const std::vector<std::shared_ptr<Entity>>& Class::members() const
 {
   return m_members;
 }

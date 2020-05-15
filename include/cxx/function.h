@@ -74,12 +74,18 @@ private:
 class CXXAST_API Function : public Entity
 {
 public:
+  AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+
+public:
   ~Function() = default;
 
   explicit Function(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Function;
   NodeKind node_kind() const override;
+
+  AccessSpecifier getAccessSpecifier() const override;
+  void setAccessSpecifier(AccessSpecifier aspec) override;
 
   typedef FunctionParameter Parameter;
 

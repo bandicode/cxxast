@@ -12,4 +12,14 @@ NodeKind Class::node_kind() const
   return ClassNodeKind;
 }
 
+AccessSpecifier Class::getAccessSpecifier() const
+{
+  return access_specifier;
+}
+
+void Class::setAccessSpecifier(AccessSpecifier aspec)
+{
+  access_specifier = aspec;
+}
+
 } // namespace cxx

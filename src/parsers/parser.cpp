@@ -270,7 +270,8 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
     
     Class& cla = static_cast<Class&>(curNode());
     auto result = std::make_shared<Class>(std::move(name), cla.shared_from_this());
-    cla.members().push_back(std::make_pair(result, m_access_specifier));
+    result->setAccessSpecifier(m_access_specifier);
+    cla.members().push_back(result);
     return result;
   }();
 
@@ -317,7 +318,8 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
 
     Class& cla = static_cast<Class&>(curNode());
     auto result = std::make_shared<Enum>(std::move(name), cla.shared_from_this());
-    cla.members().push_back(std::make_pair(result, m_access_specifier));
+    result->setAccessSpecifier(m_access_specifier);
+    cla.members().push_back(result);
     return result;
   }();
 
@@ -381,10 +383,10 @@ static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, c
   {
     for (const auto& m : static_cast<cxx::Class&>(current_node).members())
     {
-      if (m.first->is<cxx::Function>())
+      if (m->is<cxx::Function>())
       {
-        if (are_equiv_func(static_cast<cxx::Function&>(*m.first), func))
-          return std::static_pointer_cast<cxx::Function>(m.first);
+        if (are_equiv_func(static_cast<cxx::Function&>(*m), func))
+          return std::static_pointer_cast<cxx::Function>(m);
       }
     }
   }
@@ -470,7 +472,8 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     else
     {
       Class& cla = static_cast<Class&>(curNode());
-      cla.members().push_back(std::make_pair(entity, m_access_specifier));
+      entity->setAccessSpecifier(m_access_specifier);
+      cla.members().push_back(entity);
     }
 
     func = entity;

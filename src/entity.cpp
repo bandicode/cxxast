@@ -4,6 +4,8 @@
 
 #include "cxx/entity.h"
 
+#include <stdexcept>
+
 namespace cxx
 {
 
@@ -15,6 +17,17 @@ std::shared_ptr<Entity> Entity::shared_from_this()
 bool Entity::isEntity() const
 {
   return true;
+}
+
+AccessSpecifier Entity::getAccessSpecifier() const
+{
+  return AccessSpecifier::PUBLIC;
+}
+
+void Entity::setAccessSpecifier(AccessSpecifier aspec)
+{
+  if (aspec != AccessSpecifier::PUBLIC)
+    throw std::runtime_error{ "bad call to Entity::setAccessSpecifier()" };
 }
 
 } // namespace cxx

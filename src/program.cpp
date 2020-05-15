@@ -45,8 +45,8 @@ static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::
 
     for (const auto& mem : cla.members())
     {
-      if (mem.first->name() == name)
-        return mem.first;
+      if (mem->name() == name)
+        return mem;
     }
 
     return resolve_impl(name, context->parent());
