@@ -249,7 +249,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
   else
-    m_ast_stack.back()->children.push_back(decl);
+    m_ast_stack.back()->appendChild(decl);
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
@@ -281,7 +281,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
   else
-    m_ast_stack.back()->children.push_back(decl);
+    m_ast_stack.back()->appendChild(decl);
 
   if (isForwardDeclaration(cursor))
     return;
@@ -329,7 +329,7 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
   else
-    m_ast_stack.back()->children.push_back(decl);
+    m_ast_stack.back()->appendChild(decl);
 
   entity->location = getCursorLocation(cursor);
 
@@ -437,7 +437,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
   else
-    m_ast_stack.back()->children.push_back(decl);
+    m_ast_stack.back()->appendChild(decl);
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };

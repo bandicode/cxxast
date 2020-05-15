@@ -4,6 +4,8 @@
 
 #include "cxx/enum.h"
 
+#include <stdexcept>
+
 namespace cxx
 {
 
@@ -44,6 +46,24 @@ const std::string& EnumValue::value() const
 NodeKind Enum::node_kind() const
 {
   return ClassNodeKind;
+}
+
+size_t Enum::childCount() const
+{
+  return this->values.size();
+}
+
+std::shared_ptr<Node> Enum::childAt(size_t index) const
+{
+  return this->values.at(index);
+}
+
+void Enum::appendChild(std::shared_ptr<Node> n)
+{
+  if (!n->is<EnumValue>())
+    throw std::runtime_error{ "bad call Namespace::appendChild()" };
+
+  this->values.push_back(std::static_pointer_cast<EnumValue>(n));
 }
 
 AccessSpecifier Enum::getAccessSpecifier() const

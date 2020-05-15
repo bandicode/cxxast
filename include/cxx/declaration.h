@@ -13,6 +13,9 @@ namespace cxx
 class CXXAST_API Declaration : public Statement
 {
 public:
+  std::vector<std::shared_ptr<Declaration>> declarations;
+
+public:
   Declaration() = default;
 
   explicit Declaration(SourceLocation loc);
@@ -20,6 +23,10 @@ public:
   std::shared_ptr<Declaration> shared_from_this();
 
   bool isDeclaration() const override;
+
+  size_t childCount() const override;
+  std::shared_ptr<Node> childAt(size_t index) const override;
+  void appendChild(std::shared_ptr<Node> n) override;
 };
 
 } // namespace cxx
