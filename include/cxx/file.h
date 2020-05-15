@@ -9,14 +9,20 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace cxx
 {
+
+class Node;
 
 class File
 {
 private:
   std::string m_path;
+
+public:
+  std::vector<std::shared_ptr<Node>> nodes;
 
 public:
   explicit File(std::string path);

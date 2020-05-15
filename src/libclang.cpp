@@ -6,10 +6,9 @@
 
 #include "dynlib/dynlib.h"
 
-namespace cxx
-{
+#include "cxx/clang/clang-index.h"
 
-namespace parsers
+namespace cxx
 {
 
 template<typename T>
@@ -379,6 +378,11 @@ const std::string& LibClang::printableVersion() const
   return m_printable_version;
 }
 
+ClangIndex LibClang::createIndex()
+{
+  return ClangIndex{ *this };
+}
+
 std::string LibClang::toStdString(CXString str)
 {
   std::string result = clang_getCString(str);
@@ -431,7 +435,5 @@ bool LibClang::isForwardDeclaration(CXCursor cursor)
 {
   return clang_equalCursors(clang_getCursorDefinition(cursor), clang_getNullCursor());
 }
-
-} // namespace parsers
 
 } // namespace cxx

@@ -22,4 +22,14 @@ bool Node::isDocumentation() const
   return false;
 }
 
+bool Node::isStatement() const
+{
+  return false;
+}
+
+bool Node::isDeclaration() const
+{
+  return false;
+}
+
 } // namespace cxx

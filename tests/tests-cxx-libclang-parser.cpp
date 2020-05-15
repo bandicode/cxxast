@@ -8,7 +8,10 @@
 
 #include "cxx/parsers/parser.h"
 
+#include "cxx/program.h"
+
 #include "cxx/class.h"
+#include "cxx/namespace.h"
 
 #include <iostream>
 #include <fstream>
@@ -23,11 +26,11 @@ static bool findLibclangParser()
 {
   try
   {
-    cxx::parsers::LibClang clang_parser;
+    cxx::LibClang clang_parser;
     std::cout << "libclang parser available, version = " << clang_parser.printableVersion() << std::endl;
     return true;
   }
-  catch (const cxx::parsers::LibClangError & err)
+  catch (const cxx::LibClangError & err)
   {
     std::cout << "libclang error: " << err.what() << std::endl;
     std::cout << "libclang parser tests will be skipped..." << std::endl;
@@ -51,12 +54,15 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
     "const int foo(int& i, int j = 0) { return i+j; }");
 
   cxx::parsers::LibClangParser parser;
-  std::shared_ptr<cxx::TranslationUnit> tu;
 
-  tu = parser.parse("test.cpp");
+  bool result = parser.parse("test.cpp");
 
-  REQUIRE(tu->nodes().size() == 1);
-  REQUIRE(tu->nodes().front()->is<cxx::Function>());
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities().size() == 1);
+  REQUIRE(prog->globalNamespace()->entities().front()->is<cxx::Function>());
 }
 
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
@@ -73,12 +79,15 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     "int Foo::bar() const { return -1 ; }\n");
 
   cxx::parsers::LibClangParser parser;
-  std::shared_ptr<cxx::TranslationUnit> tu;
 
-  tu = parser.parse("toast.cpp");
+  bool result = parser.parse("toast.cpp");
 
-  REQUIRE(tu->nodes().size() == 1);
-  REQUIRE(tu->nodes().front()->is<cxx::Class>());
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities().size() == 1);
+  REQUIRE(prog->globalNamespace()->entities().front()->is<cxx::Class>());
 }
 
 TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
@@ -91,11 +100,15 @@ TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
     "std::vector<int> foo() { return {}; }\n");
 
   cxx::parsers::LibClangParser parser;
-  std::shared_ptr<cxx::TranslationUnit> tu;
 
-  parser.ignoreOutsideDeclarations(true);
-  tu = parser.parse("toast.cpp");
+  bool result = parser.parse("toast.cpp");
 
-  REQUIRE(tu->nodes().size() == 1);
-  REQUIRE(tu->nodes().front()->is<cxx::Function>());
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities().back()->is<cxx::Function>());
+
+  auto foo = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities().back());
+  REQUIRE(foo->name() == "foo");
 }

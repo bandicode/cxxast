@@ -36,6 +36,20 @@ std::shared_ptr<Class> Namespace::createClass(std::string name)
   return result;
 }
 
+std::shared_ptr<Class> Namespace::getOrCreateClass(const std::string& name)
+{
+  auto it = std::find_if(entities().begin(), entities().end(), [&name](const std::shared_ptr<Entity>& e) {
+    return e->is<Class>() && e->name() == name;
+    });
+
+  if (it != entities().end())
+    return std::static_pointer_cast<Class>(*it);
+
+  auto result = std::make_shared<Class>(name, shared_from_this());
+  entities().push_back(result);
+  return result;
+}
+
 std::shared_ptr<Enum> Namespace::createEnum(std::string name)
 {
   auto result = std::make_shared<Enum>(std::move(name), shared_from_this());

@@ -43,7 +43,8 @@ set_target_properties(cxxast PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY
 set_target_properties(cxxast PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 ##################################################################
-###### tests
+###### apps & tests
 ##################################################################
 
+add_subdirectory(apps)
 add_subdirectory(tests)

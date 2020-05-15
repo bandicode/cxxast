@@ -15,6 +15,7 @@ namespace cxx
 
 enum class NodeKind
 {
+  /* Entities */
   Class,
   Enum,
   EnumValue,
@@ -22,8 +23,16 @@ enum class NodeKind
   FunctionParameter,
   Namespace,
   TemplateParameter,
-  TranslationUnit,
   Variable,
+  /* Statements */
+  CompoundStatement,
+  ClassDeclaration,
+  EnumDeclaration,
+  FunctionDeclaration,
+  NamespaceDeclaration,
+  VariableDeclaration,
+  /* Misc */
+  TranslationUnit,
   MultilineComment,
   Documentation,
 };
@@ -42,6 +51,8 @@ public:
 
   virtual bool isEntity() const;
   virtual bool isDocumentation() const;
+  virtual bool isStatement() const;
+  virtual bool isDeclaration() const;
 
   template<typename T>
   bool is() const;
@@ -56,6 +67,12 @@ bool test_node_kind(const Node& n)
 {
   return T::ClassNodeKind == n.kind();
 }
+
+class CXXAST_API AstNode : public Node
+{
+public:
+  std::vector<std::shared_ptr<AstNode>> children;
+};
 
 } // namespace cxx
 

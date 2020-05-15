@@ -19,8 +19,7 @@ class Library;
 namespace cxx
 {
 
-namespace parsers
-{
+class ClangIndex;
 
 class LibClangError : public std::runtime_error
 {
@@ -338,6 +337,8 @@ public:
 
 public:
 
+  ClangIndex createIndex();
+
   /* libclang helpers */
   
   std::string toStdString(CXString str);
@@ -355,8 +356,6 @@ public:
   CXVersion version() const;
   const std::string& printableVersion() const;
 };
-
-} // namespace parsers
 
 } // namespace cxx
 

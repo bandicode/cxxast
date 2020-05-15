@@ -6,6 +6,8 @@
 
 #include "cxx/parsers/restricted-parser.h"
 
+#include "cxx/clang/clang-translation-unit.h"
+
 #include "cxx/name_p.h"
 
 #include "cxx/class.h"
@@ -13,7 +15,13 @@
 #include "cxx/function.h"
 #include "cxx/namespace.h"
 
+#include "cxx/class-declaration.h"
+#include "cxx/enum-declaration.h"
+#include "cxx/function-declaration.h"
+#include "cxx/namespace-declaration.h"
+
 #include "cxx/filesystem.h"
+#include "cxx/program.h"
 
 #include <algorithm>
 #include <iostream>
@@ -24,20 +32,6 @@ namespace cxx
 
 namespace parsers
 {
-
-struct TranslationUnitGuard
-{
-  CXTranslationUnit& translation_unit;
-  ClangDisposeTranslationUnit clang_disposeTranslationUnit = nullptr;
-
-  TranslationUnitGuard(CXTranslationUnit& tu, ClangDisposeTranslationUnit callback)
-    : translation_unit(tu), clang_disposeTranslationUnit(callback) { }
-
-  ~TranslationUnitGuard()
-  {
-    clang_disposeTranslationUnit(translation_unit);
-  }
-};
 
 struct StateGuard
 {
@@ -55,52 +49,114 @@ struct StateGuard
   }
 };
 
-LibClangParser::LibClangParser()
-  : m_filesystem(FileSystem::GlobalInstance())
+template<typename T>
+struct RAIIVectorSharedGuard
 {
-  m_index = clang_createIndex(0, 0);
+  std::vector<std::shared_ptr<T>>& target_;
+
+  RAIIVectorSharedGuard(std::vector<std::shared_ptr<T>>& target, std::shared_ptr<T> elem)
+    : target_(target)
+  {
+    target_.push_back(elem);
+  }
+
+  ~RAIIVectorSharedGuard()
+  {
+    target_.pop_back();
+  }
+};
+
+template<typename T>
+struct RAIIGuard
+{
+  T& target_;
+  T value_;
+
+  RAIIGuard(T& target)
+    : target_(target), value_(target)
+  {
+
+  }
+
+  ~RAIIGuard()
+  {
+    target_ = value_;
+  }
+};
+
+struct StacksGuard
+{
+  RAIIVectorSharedGuard<cxx::Node> prog_;
+  RAIIVectorSharedGuard<cxx::AstNode> ast_;
+
+  StacksGuard(std::vector<std::shared_ptr<cxx::Node>>& p, std::vector<std::shared_ptr<cxx::AstNode>>& a, 
+    std::shared_ptr<cxx::Node> p_elem, std::shared_ptr<cxx::AstNode> a_elem)
+    : prog_(p, p_elem),
+      ast_(a, a_elem)
+  {
+
+  }
+};
+
+LibClangParser::LibClangParser()
+  : m_filesystem(FileSystem::GlobalInstance()),
+    m_index{*this}
+{
+  m_program = std::make_shared<Program>();
 }
 
 LibClangParser::~LibClangParser()
 {
-  clang_disposeIndex(m_index);
 }
 
 LibClangParser::LibClangParser(FileSystem& fs)
-  : m_filesystem(fs)
+  : m_filesystem(fs),
+    m_index{ *this }
 {
-
+  m_program = std::make_shared<Program>();
 }
 
-std::shared_ptr<TranslationUnit> LibClangParser::parse(const std::string& file)
+LibClangParser::LibClangParser(std::shared_ptr<Program> prog)
+  : m_filesystem(FileSystem::GlobalInstance()),
+    m_index{ *this }
 {
-  auto result = std::make_shared<TranslationUnit>(getFile(file));
+  m_program = prog;
+}
 
-  const int options = CXTranslationUnit_SkipFunctionBodies;
+LibClangParser::LibClangParser(std::shared_ptr<Program> prog, cxx::FileSystem& fs)
+  : m_filesystem(fs),
+    m_index{ *this }
+{
+  m_program = prog;
+}
 
-  const char* command_line_args[128] = { nullptr };
-  std::vector<std::string> argv{ "-x", "c++", "-Xclang", "-ast-dump", "-fsyntax-only" };
-  for (const std::string& f : includedirs())
+std::shared_ptr<Program> LibClangParser::program() const
+{
+  return m_program;
+}
+
+bool LibClangParser::parse(const std::string& file)
+{
+  try
   {
-    argv.push_back("--include-directory");
-    argv.push_back(f);
+    m_tu = m_index.parseTranslationUnit(file, includedirs(), CXTranslationUnit_SkipFunctionBodies);
   }
-  for (int i(0); i < argv.size(); ++i)
-    command_line_args[i] = argv.at(i).data();
+  catch (...)
+  {
+    return false;
+  }
 
-  CXErrorCode error = clang_parseTranslationUnit2(m_index, file.data(), command_line_args, static_cast<int>(argv.size()), nullptr, 0, options, &m_tu);
-
-  TranslationUnitGuard tu_guard{ m_tu, clang_disposeTranslationUnit };
-  StateGuard stack_guard{ m_stack, result };
-
-  if (error)
-    return nullptr;
+  StateGuard stack_guard{ m_program_stack, m_program->globalNamespace() };
 
   m_tu_file = clang_getFile(m_tu, file.data());
-  CXCursor cursor = clang_getTranslationUnitCursor(m_tu);
-  clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
 
-  return result;
+  ClangCursor c = m_tu.getCursor();
+
+  c.visitChildren([this](ClangCursor c) {
+    visit_tu(c);
+    });
+
+  return true;
 }
 
 cxx::AccessSpecifier LibClangParser::getAccessSpecifier(CX_CXXAccessSpecifier as)
@@ -123,205 +179,315 @@ std::shared_ptr<File> LibClangParser::getFile(const std::string& path)
   return m_filesystem.get(path);
 }
 
-CXChildVisitResult LibClangParser::print_visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
+cxx::Node& LibClangParser::curNode()
 {
-  return static_cast<LibClangParser*>(client_data)->printVisit(cursor, parent);
+  return *m_program_stack.back();
 }
 
-CXChildVisitResult LibClangParser::printVisit(CXCursor cursor, CXCursor parent)
+void LibClangParser::visit(const ClangCursor& cursor)
 {
-  std::cout << toStdString(clang_getCursorKindSpelling(cursor.kind)) << ": "<< getCursorSpelling(cursor) << std::endl;
-  return CXChildVisit_Recurse;
-}
+  CXCursorKind kind = cursor.kind();
 
-CXChildVisitResult LibClangParser::visitor_callback(CXCursor cursor, CXCursor parent, CXClientData client_data)
-{
-  return static_cast<LibClangParser*>(client_data)->visit(cursor, parent);
-}
-
-CXChildVisitResult LibClangParser::visit(CXCursor cursor, CXCursor parent)
-{
-  if (m_stack.back()->is<cxx::Namespace>())
-    return visitNamespace(cursor, parent, std::static_pointer_cast<cxx::Namespace>(m_stack.back()));
-  else if (m_stack.back()->is<cxx::Class>())
-    return visitClass(cursor, parent, std::static_pointer_cast<cxx::Class>(m_stack.back()));
-  else if (m_stack.back()->is<cxx::Enum>())
-    return visitEnum(cursor, parent, std::static_pointer_cast<cxx::Enum>(m_stack.back()));
-  else if (m_stack.back()->is<cxx::TranslationUnit>())
-    return visitTU(cursor, parent, std::static_pointer_cast<cxx::TranslationUnit>(m_stack.back()));
-
-  return CXChildVisitResult::CXChildVisit_Break;
-}
-
-CXChildVisitResult LibClangParser::visitTU(CXCursor cursor, CXCursor parent, std::shared_ptr<TranslationUnit> tu)
-{
-  if (ignoreOutsideDeclarations() && !clang_File_isEqual(getCursorFile(cursor), m_tu_file))
-    return CXChildVisit_Continue;
-
-  m_current_cxfile = getCursorFile(cursor);
-  m_current_file = getFile(getCursorFilePath(cursor));
-
-  if (clang_getCursorKind(cursor) == CXCursor_Namespace)
+  switch (kind)
   {
-    std::shared_ptr<Namespace> inner = std::make_shared<cxx::Namespace>(getCursorSpelling(cursor));
-    inner->location() = getCursorLocation(cursor);
-
-    StateGuard guard{ m_stack, inner };
-    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-
-    tu->nodes().push_back(inner);
+  case CXCursor_Namespace:
+    return visit_namespace(cursor);
+  case CXCursor_ClassDecl:
+  case CXCursor_StructDecl:
+    return visit_class(cursor);
+  case CXCursor_EnumDecl:
+    return visit_enum(cursor);
+  case CXCursor_CXXMethod:
+  case CXCursor_FunctionDecl:
+  case CXCursor_Constructor:
+  case CXCursor_Destructor:
+    return visit_function(cursor);
+  case CXCursor_EnumConstantDecl:
+    return visit_enumconstant(cursor);
+  default:
+    return;
   }
-  else if (clang_getCursorKind(cursor) == CXCursor_ClassDecl || clang_getCursorKind(cursor) == CXCursor_StructDecl)
+}
+
+void LibClangParser::visit_tu(const ClangCursor& cursor)
+{
+  assert(m_ast_stack.empty());
+
+  // We are working at translation-unit level
+
+  auto cursor_file = getCursorFile(cursor);
+
+  if (!clang_File_isEqual(m_current_cxfile, cursor_file))
   {
-    if (isForwardDeclaration(cursor))
-      return CXChildVisit_Continue;
+    // We have reached another file
 
-    auto c = std::make_shared<cxx::Class>(getCursorSpelling(cursor));
-    c->location() = getCursorLocation(cursor);
-    c->isStruct() = (clang_getCursorKind(cursor) == CXCursor_StructDecl);
+    m_parsed_files.insert(m_current_file);
 
+    auto file = getFile(getCursorFilePath(cursor));
+
+    if (m_parsed_files.find(file) != m_parsed_files.end())
     {
-      StateGuard guard{ m_stack, c };
-      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
+      // The file has already been parsed, we skip until we reach a non-parsed file
+      return;
     }
 
-    if (!c->members().empty())
-    {
-      tu->nodes().push_back(c);
-    }
-  }
-  else if (clang_getCursorKind(cursor) == CXCursor_FunctionDecl)
-  {
-    std::shared_ptr<cxx::Function> func = parseFunction(cursor);
-    func->location() = getCursorLocation(cursor);
-    tu->nodes().push_back(func);
-  }
-  else if (clang_getCursorKind(cursor) == CXCursor_EnumDecl)
-  {
-    if (isForwardDeclaration(cursor))
-      return CXChildVisit_Continue;
-
-    std::shared_ptr<Enum> e = std::make_shared<cxx::Enum>(getCursorSpelling(cursor));
-    e->location() = getCursorLocation(cursor);
-
-    StateGuard guard{ m_stack, e };
-    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-
-    tu->nodes().push_back(e);
+    m_current_cxfile = cursor_file;
+    m_current_file = file;
   }
 
-  return CXChildVisit_Continue;
+  return visit(cursor);
 }
 
-CXChildVisitResult LibClangParser::visitNamespace(CXCursor cursor, CXCursor parent, std::shared_ptr<Namespace> ns)
+void LibClangParser::visit_namespace(const ClangCursor& cursor)
 {
-  if (clang_getCursorKind(cursor) == CXCursor_Namespace)
+  std::string name = cursor.getSpelling();
+  auto entity = static_cast<Namespace*>(m_program_stack.back().get())->getOrCreateNamespace(name);
+  auto decl = std::make_shared<NamespaceDeclaration>(entity);
+
+  decl->location() = getCursorLocation(cursor);
+
+  if (m_ast_stack.empty())
+    m_current_file->nodes.push_back(decl);
+  else
+    m_ast_stack.back()->children.push_back(decl);
+
   {
-    std::shared_ptr<Namespace> inner = ns->getOrCreateNamespace(getCursorSpelling(cursor));
-    inner->location() = getCursorLocation(cursor);
+    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
 
-    StateGuard guard{ m_stack, inner };
-    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
+    cursor.visitChildren([this](ClangCursor c) {
+      this->visit(c);
+      });
   }
-  else if (clang_getCursorKind(cursor) == CXCursor_ClassDecl)
-  {
-    if (isForwardDeclaration(cursor))
-      return CXChildVisit_Continue;
-
-    std::shared_ptr<Class> c = ns->createClass(getCursorSpelling(cursor));
-    c->location() = getCursorLocation(cursor);
-
-    {
-      StateGuard guard{ m_stack, c };
-      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-    }
-
-    if (c->members().empty())
-      ns->entities().pop_back();
-  }
-  else if (clang_getCursorKind(cursor) == CXCursor_FunctionDecl)
-  {
-    std::shared_ptr<Function> func = parseFunction(cursor);
-    func->location() = getCursorLocation(cursor);
-    ns->entities().push_back(func);
-  }
-  else if (clang_getCursorKind(cursor) == CXCursor_EnumDecl)
-  {
-    if (isForwardDeclaration(cursor))
-      return CXChildVisit_Continue;
-
-    std::shared_ptr<Enum> e = ns->createEnum(getCursorSpelling(cursor));
-    e->location() = getCursorLocation(cursor);
-
-    StateGuard guard{ m_stack, e };
-    clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-  }
-
-  return CXChildVisit_Continue;
 }
 
-CXChildVisitResult LibClangParser::visitClass(CXCursor cursor, CXCursor parent, std::shared_ptr<Class> cla)
+void LibClangParser::visit_class(const ClangCursor& cursor)
 {
-  cxx::AccessSpecifier access_specifier = getAccessSpecifier(clang_getCXXAccessSpecifier(cursor));
+  std::string name = cursor.getSpelling();
 
-  CXCursorKind kind = clang_getCursorKind(cursor);
+  std::shared_ptr<Class> entity = [&]() {
+    if (curNode().is<Namespace>())
+      return static_cast<Namespace&>(curNode()).getOrCreateClass(name);
+    
+    Class& cla = static_cast<Class&>(curNode());
+    auto result = std::make_shared<Class>(std::move(name), cla.shared_from_this());
+    cla.members().push_back(std::make_pair(result, m_access_specifier));
+    return result;
+  }();
 
-  if (kind == CXCursor_CXXMethod || kind == CXCursor_FunctionDecl || kind == CXCursor_Constructor || kind == CXCursor_Destructor)
+  auto decl = std::make_shared<ClassDeclaration>(entity);
+  decl->location() = getCursorLocation(cursor);
+
+  if (m_ast_stack.empty())
+    m_current_file->nodes.push_back(decl);
+  else
+    m_ast_stack.back()->children.push_back(decl);
+
+  if (isForwardDeclaration(cursor))
+    return;
+
+  entity->location() = getCursorLocation(cursor);
+  m_cursor_entity_map[cursor] = entity;
+
+  cxx::AccessSpecifier default_access = [&]() {
+    if (clang_getCursorKind(cursor) == CXCursor_StructDecl)
+      return cxx::AccessSpecifier::PUBLIC;
+    else
+      return cxx::AccessSpecifier::PRIVATE;
+  }();
+
   {
-    std::shared_ptr<cxx::Function> func = parseFunction(cursor);
-    func->location() = getCursorLocation(cursor);
-    cla->members().push_back(std::make_pair(func, access_specifier));
+    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    RAIIGuard<cxx::AccessSpecifier> access_guard{ m_access_specifier };
+
+    m_access_specifier = default_access;
+
+    cursor.visitChildren([this](ClangCursor c) {
+      this->visit(c);
+      });
   }
-  else if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl)
-  {
-    if (isForwardDeclaration(cursor))
-      return CXChildVisit_Continue;
-
-    auto nested_class = std::make_shared<cxx::Class>(getCursorSpelling(cursor), cla);
-    nested_class->location() = getCursorLocation(cursor);
-
-    {
-      StateGuard nested_class_guard{ m_stack, nested_class };
-      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-    }
-
-    if (!nested_class->members().empty())
-    {
-      cla->members().push_back(std::make_pair(nested_class, access_specifier));
-    }
-  }
-  else if (clang_getCursorKind(cursor) == CXCursor_EnumDecl)
-  {
-    auto en = std::make_shared<cxx::Enum>(getCursorSpelling(cursor), cla);
-    en->location() = getCursorLocation(cursor);
-
-    {
-      StateGuard nested_class_guard{ m_stack, en };
-      clang_visitChildren(cursor, &LibClangParser::visitor_callback, (void*)this);
-    }
-
-    cla->members().push_back(std::make_pair(en, access_specifier));
-  }
-
-  return CXChildVisit_Continue;
 }
 
-CXChildVisitResult LibClangParser::visitEnum(CXCursor cursor, CXCursor parent, std::shared_ptr<Enum> en)
+void LibClangParser::visit_enum(const ClangCursor& cursor)
 {
-  CXCursorKind kind = clang_getCursorKind(cursor);
+  std::string name = getCursorSpelling(cursor);
 
-  if (kind == CXCursor_EnumConstantDecl)
+  std::shared_ptr<Enum> entity = [&]() {
+    if (curNode().is<Namespace>())
+      return static_cast<Namespace&>(curNode()).createEnum(name);
+
+    Class& cla = static_cast<Class&>(curNode());
+    auto result = std::make_shared<Enum>(std::move(name), cla.shared_from_this());
+    cla.members().push_back(std::make_pair(result, m_access_specifier));
+    return result;
+  }();
+
+  auto decl = std::make_shared<EnumDeclaration>(entity);
+  decl->location() = getCursorLocation(cursor);
+
+  if (m_ast_stack.empty())
+    m_current_file->nodes.push_back(decl);
+  else
+    m_ast_stack.back()->children.push_back(decl);
+
+  entity->location() = getCursorLocation(cursor);
+
   {
-    std::string n = getCursorSpelling(cursor);
-    en->values().push_back(std::make_shared<EnumValue>(std::move(n), en));
+    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+
+    cursor.visitChildren([this](ClangCursor c) {
+      this->visit(c);
+      });
+  }
+}
+
+void LibClangParser::visit_enumconstant(const ClangCursor& cursor)
+{
+  std::string n = cursor.getSpelling();
+
+  auto& en = static_cast<Enum&>(curNode());
+  auto val = std::make_shared<EnumValue>(std::move(n), std::static_pointer_cast<cxx::Enum>(en.shared_from_this()));
+  val->location() = getCursorLocation(cursor);
+  en.values().push_back(val);
+}
+
+static bool are_equiv_param(const cxx::FunctionParameter& a, const cxx::FunctionParameter& b)
+{
+  return a.parameterType() == b.parameterType();
+}
+
+static bool are_equiv_func(const cxx::Function& a, const cxx::Function& b)
+{
+  if (a.name() != b.name())
+    return false;
+
+  if (a.parameters().size() != b.parameters().size())
+    return false;
+
+  if (a.returnType() != b.returnType())
+    return false;
+
+  for (size_t i(0); i < a.parameters().size(); ++i)
+  {
+    if (!are_equiv_param(*a.parameters().at(i), *b.parameters().at(i)))
+      return false;
   }
 
-  return CXChildVisit_Continue;
+  return true;
+}
+
+static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, const cxx::Function& func)
+{
+  if (current_node.is<cxx::Class>())
+  {
+    for (const auto& m : static_cast<cxx::Class&>(current_node).members())
+    {
+      if (m.first->is<cxx::Function>())
+      {
+        if (are_equiv_func(static_cast<cxx::Function&>(*m.first), func))
+          return std::static_pointer_cast<cxx::Function>(m.first);
+      }
+    }
+  }
+  else if(current_node.is<cxx::Namespace>())
+  { 
+    for (const auto& m : static_cast<cxx::Namespace&>(current_node).entities())
+    {
+      if (m->is<cxx::Function>())
+      {
+        if (are_equiv_func(static_cast<cxx::Function&>(*m), func))
+          return std::static_pointer_cast<cxx::Function>(m);
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+static void update_func(cxx::Function& func, const cxx::Function& new_one)
+{
+  for (size_t i(0); i < func.parameters().size(); ++i)
+  {
+    if (func.parameters().at(i)->defaultValue() == cxx::Expression())
+    {
+      if (new_one.parameters().at(i)->defaultValue() != cxx::Expression())
+        func.parameters().at(i)->defaultValue() = new_one.parameters().at(i)->defaultValue();
+    }
+  }
+
+  if (func.body() == nullptr && new_one.body() != nullptr)
+  {
+    func.setBody(new_one.body());
+  }
+}
+
+void LibClangParser::visit_function(const ClangCursor& cursor)
+{
+  // Tricky:
+  // We may be dealing with a forward declaration, and the body may not be available.
+  // We must create the Function nonetheless, even without the body.
+  // Further declarations may provide the body or additional default parameters.
+
+  auto entity = parseFunction(cursor);
+
+  auto decl = std::make_shared<FunctionDeclaration>(entity);
+  decl->location() = getCursorLocation(cursor);
+
+  if (m_ast_stack.empty())
+    m_current_file->nodes.push_back(decl);
+  else
+    m_ast_stack.back()->children.push_back(decl);
+
+  {
+    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    // TODO: parse func body
+  }
+
+  bool is_member = [&]() {
+    switch (cursor.kind())
+    {
+    case CXCursor_CXXMethod:
+    case CXCursor_Constructor:
+    case CXCursor_Destructor:
+      return true;
+    default:
+      return false;
+    }
+  }();
+
+  std::shared_ptr<cxx::Node> semantic_parent = is_member ?
+    m_cursor_entity_map.at(cursor.getSemanticParent()) : curNode().shared_from_this();
+
+  auto func = find_equiv_func(*semantic_parent, *entity);
+
+  if (!func)
+  {
+    entity->setParent(std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this()));
+
+    if (curNode().is<Namespace>())
+    {
+      static_cast<Namespace&>(curNode()).entities().push_back(entity);
+    }
+    else
+    {
+      Class& cla = static_cast<Class&>(curNode());
+      cla.members().push_back(std::make_pair(entity, m_access_specifier));
+    }
+
+    func = entity;
+  }
+  else
+  {
+    decl->function = func;
+    update_func(*func, *entity);
+  }
+
+  if (!isForwardDeclaration(cursor))
+    entity->location() = decl->location();
 }
 
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
 {
-  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_stack.back()));
+  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_program_stack.back()));
 
   CXCursorKind kind = clang_getCursorKind(cursor);
 

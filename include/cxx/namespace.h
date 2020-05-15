@@ -33,6 +33,7 @@ public:
 
   std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
   std::shared_ptr<Class> createClass(std::string name);
+  std::shared_ptr<Class> getOrCreateClass(const std::string& name);
   std::shared_ptr<Enum> createEnum(std::string name);
   std::shared_ptr<Function> createFunction(std::string name);
 

@@ -92,6 +92,9 @@ public:
   std::vector<std::shared_ptr<TemplateParameter>>& templateParameters();
   const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
 
+  std::shared_ptr<Node> body() const;
+  void setBody(std::shared_ptr<Node> b);
+
   bool isTemplate() const;
 
   bool isInline() const;
@@ -118,6 +121,7 @@ private:
   std::vector<std::shared_ptr<TemplateParameter>> m_tparams;
   int m_flags = FunctionSpecifier::None;
   int m_kind = FunctionKind::None;
+  std::shared_ptr<Node> m_body;
 };
 
 } // namespace cxx
@@ -159,6 +163,16 @@ inline std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParame
 inline const std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParameters() const
 {
   return m_tparams;
+}
+
+inline std::shared_ptr<Node> Function::body() const
+{
+  return m_body;
+}
+
+inline void Function::setBody(std::shared_ptr<Node> b)
+{
+  m_body = b;
 }
 
 inline bool Function::isTemplate() const
