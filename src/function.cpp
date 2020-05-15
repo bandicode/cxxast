@@ -7,17 +7,17 @@
 namespace cxx
 {
 
-FunctionParameter::FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent)
+FunctionParameter::FunctionParameter(Type t, std::string name, std::shared_ptr<Function> parent)
   : Entity(std::move(name), parent),
-  m_type(std::move(type))
+    type(std::move(t))
 {
 
 }
 
-FunctionParameter::FunctionParameter(Type type, std::string name, Expression default_value, std::shared_ptr<Function> parent)
+FunctionParameter::FunctionParameter(Type t, std::string name, Expression default_val, std::shared_ptr<Function> parent)
   : Entity(std::move(name), parent),
-  m_type(std::move(type)),
-  m_default_value(std::move(default_value))
+    type(std::move(t)),
+    default_value(std::move(default_val))
 {
 
 }
@@ -30,26 +30,6 @@ NodeKind FunctionParameter::node_kind() const
 std::shared_ptr<Function> FunctionParameter::parent() const
 {
   return std::static_pointer_cast<Function>(Entity::parent());
-}
-
-Type& FunctionParameter::parameterType()
-{
-  return m_type;
-}
-
-const Type& FunctionParameter::parameterType() const
-{
-  return m_type;
-}
-
-Expression& FunctionParameter::defaultValue()
-{
-  return m_default_value;
-}
-
-const Expression& FunctionParameter::defaultValue() const
-{
-  return m_default_value;
 }
 
 NodeKind Function::node_kind() const

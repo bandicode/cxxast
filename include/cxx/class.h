@@ -17,6 +17,8 @@ class CXXAST_API Class : public Entity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+  std::vector<std::shared_ptr<Entity>> members;
+  bool is_struct = false;
 
 public:
   ~Class() = default;
@@ -26,18 +28,8 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::Class;
   NodeKind node_kind() const override;
 
-  bool& isStruct();
-  bool isStruct() const;
-
-  std::vector<std::shared_ptr<Entity>>& members();
-  const std::vector<std::shared_ptr<Entity>>& members() const;
-
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
-
-private:
-  bool m_is_struct = false;
-  std::vector<std::shared_ptr<Entity>> m_members;
 };
 
 } // namespace cxx
@@ -49,26 +41,6 @@ inline Class::Class(std::string name, std::shared_ptr<Entity> parent)
   : Entity{std::move(name), std::move(parent)}
 {
 
-}
-
-inline bool& Class::isStruct()
-{
-  return m_is_struct;
-}
-
-inline bool Class::isStruct() const
-{
-  return m_is_struct;
-}
-
-inline std::vector<std::shared_ptr<Entity>>& Class::members()
-{
-  return m_members;
-}
-
-inline const std::vector<std::shared_ptr<Entity>>& Class::members() const
-{
-  return m_members;
 }
 
 } // namespace cxx

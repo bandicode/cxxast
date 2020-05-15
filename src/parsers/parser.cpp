@@ -139,7 +139,7 @@ bool LibClangParser::parse(const std::string& file)
 {
   try
   {
-    m_tu = m_index.parseTranslationUnit(file, includedirs(), CXTranslationUnit_SkipFunctionBodies);
+    m_tu = m_index.parseTranslationUnit(file, includedirs, CXTranslationUnit_SkipFunctionBodies);
   }
   catch (...)
   {
@@ -244,7 +244,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
   auto entity = static_cast<Namespace*>(m_program_stack.back().get())->getOrCreateNamespace(name);
   auto decl = std::make_shared<NamespaceDeclaration>(entity);
 
-  decl->location() = getCursorLocation(cursor);
+  decl->location = getCursorLocation(cursor);
 
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
@@ -271,12 +271,12 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
     Class& cla = static_cast<Class&>(curNode());
     auto result = std::make_shared<Class>(std::move(name), cla.shared_from_this());
     result->setAccessSpecifier(m_access_specifier);
-    cla.members().push_back(result);
+    cla.members.push_back(result);
     return result;
   }();
 
   auto decl = std::make_shared<ClassDeclaration>(entity);
-  decl->location() = getCursorLocation(cursor);
+  decl->location = getCursorLocation(cursor);
 
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
@@ -286,7 +286,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   if (isForwardDeclaration(cursor))
     return;
 
-  entity->location() = getCursorLocation(cursor);
+  entity->location = getCursorLocation(cursor);
   m_cursor_entity_map[cursor] = entity;
 
   cxx::AccessSpecifier default_access = [&]() {
@@ -319,19 +319,19 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
     Class& cla = static_cast<Class&>(curNode());
     auto result = std::make_shared<Enum>(std::move(name), cla.shared_from_this());
     result->setAccessSpecifier(m_access_specifier);
-    cla.members().push_back(result);
+    cla.members.push_back(result);
     return result;
   }();
 
   auto decl = std::make_shared<EnumDeclaration>(entity);
-  decl->location() = getCursorLocation(cursor);
+  decl->location = getCursorLocation(cursor);
 
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
   else
     m_ast_stack.back()->children.push_back(decl);
 
-  entity->location() = getCursorLocation(cursor);
+  entity->location = getCursorLocation(cursor);
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
@@ -348,29 +348,29 @@ void LibClangParser::visit_enumconstant(const ClangCursor& cursor)
 
   auto& en = static_cast<Enum&>(curNode());
   auto val = std::make_shared<EnumValue>(std::move(n), std::static_pointer_cast<cxx::Enum>(en.shared_from_this()));
-  val->location() = getCursorLocation(cursor);
-  en.values().push_back(val);
+  val->location = getCursorLocation(cursor);
+  en.values.push_back(val);
 }
 
 static bool are_equiv_param(const cxx::FunctionParameter& a, const cxx::FunctionParameter& b)
 {
-  return a.parameterType() == b.parameterType();
+  return a.type == b.type;
 }
 
 static bool are_equiv_func(const cxx::Function& a, const cxx::Function& b)
 {
-  if (a.name() != b.name())
+  if (a.name != b.name)
     return false;
 
-  if (a.parameters().size() != b.parameters().size())
+  if (a.parameters.size() != b.parameters.size())
     return false;
 
-  if (a.returnType() != b.returnType())
+  if (a.return_type != b.return_type)
     return false;
 
-  for (size_t i(0); i < a.parameters().size(); ++i)
+  for (size_t i(0); i < a.parameters.size(); ++i)
   {
-    if (!are_equiv_param(*a.parameters().at(i), *b.parameters().at(i)))
+    if (!are_equiv_param(*a.parameters.at(i), *b.parameters.at(i)))
       return false;
   }
 
@@ -381,7 +381,7 @@ static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, c
 {
   if (current_node.is<cxx::Class>())
   {
-    for (const auto& m : static_cast<cxx::Class&>(current_node).members())
+    for (const auto& m : static_cast<cxx::Class&>(current_node).members)
     {
       if (m->is<cxx::Function>())
       {
@@ -392,7 +392,7 @@ static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, c
   }
   else if(current_node.is<cxx::Namespace>())
   { 
-    for (const auto& m : static_cast<cxx::Namespace&>(current_node).entities())
+    for (const auto& m : static_cast<cxx::Namespace&>(current_node).entities)
     {
       if (m->is<cxx::Function>())
       {
@@ -407,18 +407,18 @@ static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, c
 
 static void update_func(cxx::Function& func, const cxx::Function& new_one)
 {
-  for (size_t i(0); i < func.parameters().size(); ++i)
+  for (size_t i(0); i < func.parameters.size(); ++i)
   {
-    if (func.parameters().at(i)->defaultValue() == cxx::Expression())
+    if (func.parameters.at(i)->default_value == cxx::Expression())
     {
-      if (new_one.parameters().at(i)->defaultValue() != cxx::Expression())
-        func.parameters().at(i)->defaultValue() = new_one.parameters().at(i)->defaultValue();
+      if (new_one.parameters.at(i)->default_value != cxx::Expression())
+        func.parameters.at(i)->default_value = new_one.parameters.at(i)->default_value;
     }
   }
 
-  if (func.body() == nullptr && new_one.body() != nullptr)
+  if (func.body == nullptr && new_one.body != nullptr)
   {
-    func.setBody(new_one.body());
+    func.body = new_one.body;
   }
 }
 
@@ -432,7 +432,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   auto entity = parseFunction(cursor);
 
   auto decl = std::make_shared<FunctionDeclaration>(entity);
-  decl->location() = getCursorLocation(cursor);
+  decl->location = getCursorLocation(cursor);
 
   if (m_ast_stack.empty())
     m_current_file->nodes.push_back(decl);
@@ -463,17 +463,17 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
 
   if (!func)
   {
-    entity->setParent(std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this()));
+    entity->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
 
     if (curNode().is<Namespace>())
     {
-      static_cast<Namespace&>(curNode()).entities().push_back(entity);
+      static_cast<Namespace&>(curNode()).entities.push_back(entity);
     }
     else
     {
       Class& cla = static_cast<Class&>(curNode());
       entity->setAccessSpecifier(m_access_specifier);
-      cla.members().push_back(entity);
+      cla.members.push_back(entity);
     }
 
     func = entity;
@@ -485,7 +485,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   }
 
   if (!isForwardDeclaration(cursor))
-    entity->location() = decl->location();
+    entity->location = decl->location;
 }
 
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
@@ -496,29 +496,29 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
 
   if (kind == CXCursor_Constructor)
   {
-    func->kind() = FunctionKind::Constructor;
+    func->kind = FunctionKind::Constructor;
   }
   else if (kind == CXCursor_Destructor)
   {
-    func->kind() = FunctionKind::Destructor;
+    func->kind = FunctionKind::Destructor;
   }
   else
   {
     if (clang_CXXMethod_isConst(cursor))
-      func->specifiers() |= FunctionSpecifier::Const;
+      func->specifiers |= FunctionSpecifier::Const;
     if (clang_CXXMethod_isStatic(cursor))
-      func->specifiers() |= FunctionSpecifier::Static;
+      func->specifiers |= FunctionSpecifier::Static;
   }
 
   CXType function_type = clang_getCursorType(cursor);
 
   if (kind != CXCursor_Constructor && kind != CXCursor_Destructor)
   {
-    func->returnType() = parseType(clang_getResultType(function_type));
+    func->return_type = parseType(clang_getResultType(function_type));
   }
   else
   {
-    func->returnType() = Type::Void;
+    func->return_type = Type::Void;
   }
 
   const int num_args = clang_Cursor_getNumArguments(cursor);
@@ -546,10 +546,10 @@ void LibClangParser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
     clang_visitChildren(cursor, &LibClangParser::param_decl_visitor, &data);
 
     if (!default_value_expr.empty())
-      param->defaultValue() = Expression{ std::move(default_value_expr) };
+      param->default_value = Expression{ std::move(default_value_expr) };
   }
 
-  func.parameters().push_back(param);
+  func.parameters.push_back(param);
 }
 
 CXChildVisitResult LibClangParser::param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data)

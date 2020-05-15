@@ -59,8 +59,8 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
 
   auto prog = parser.program();
 
-  REQUIRE(prog->globalNamespace()->entities().size() == 1);
-  REQUIRE(prog->globalNamespace()->entities().front()->is<cxx::Function>());
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
 }
 
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
@@ -84,8 +84,8 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 
   auto prog = parser.program();
 
-  REQUIRE(prog->globalNamespace()->entities().size() == 1);
-  REQUIRE(prog->globalNamespace()->entities().front()->is<cxx::Class>());
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Class>());
 }
 
 TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
@@ -105,8 +105,8 @@ TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
 
   auto prog = parser.program();
 
-  REQUIRE(prog->globalNamespace()->entities().back()->is<cxx::Function>());
+  REQUIRE(prog->globalNamespace()->entities.back()->is<cxx::Function>());
 
-  auto foo = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities().back());
-  REQUIRE(foo->name() == "foo");
+  auto foo = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.back());
+  REQUIRE(foo->name == "foo");
 }

@@ -31,9 +31,9 @@ static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::
   {
     const Namespace& ns = static_cast<const Namespace&>(*context);
 
-    for (const auto& e : ns.entities())
+    for (const auto& e : ns.entities)
     {
-      if (e->name() == name)
+      if (e->name == name)
         return e;
     }
 
@@ -43,9 +43,9 @@ static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::
   {
     const Class& cla = static_cast<const Class&>(*context);
 
-    for (const auto& mem : cla.members())
+    for (const auto& mem : cla.members)
     {
-      if (mem->name() == name)
+      if (mem->name == name)
         return mem;
     }
 

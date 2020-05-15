@@ -21,6 +21,9 @@ class Function;
 class CXXAST_API Namespace : public Entity
 {
 public:
+  std::vector<std::shared_ptr<Entity>> entities;
+
+public:
   ~Namespace() = default;
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Namespace;
@@ -28,17 +31,11 @@ public:
 
   explicit Namespace(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  std::vector<std::shared_ptr<Entity>>& entities();
-  const std::vector<std::shared_ptr<Entity>>& entities() const;
-
   std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
   std::shared_ptr<Class> createClass(std::string name);
   std::shared_ptr<Class> getOrCreateClass(const std::string& name);
   std::shared_ptr<Enum> createEnum(std::string name);
   std::shared_ptr<Function> createFunction(std::string name);
-
-private:
-  std::vector<std::shared_ptr<Entity>> m_entities;
 };
 
 } // namespace cxx
@@ -50,16 +47,6 @@ inline Namespace::Namespace(std::string name, std::shared_ptr<Entity> parent)
   : Entity{ std::move(name), std::move(parent) }
 {
 
-}
-
-inline std::vector<std::shared_ptr<Entity>>& Namespace::entities()
-{
-  return m_entities;
-}
-
-inline const std::vector<std::shared_ptr<Entity>>& Namespace::entities() const
-{
-  return m_entities;
 }
 
 } // namespace cxx

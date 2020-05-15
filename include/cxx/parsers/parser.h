@@ -33,21 +33,16 @@ namespace parsers
 class CXXAST_API LibClangParser : protected LibClang
 {
 public:
+  std::set<std::string> includedirs;
+  std::map<std::string, std::string> defines;
+
+public:
   LibClangParser();
   ~LibClangParser();
 
   explicit LibClangParser(cxx::FileSystem& fs);
   explicit LibClangParser(std::shared_ptr<Program> prog);
   LibClangParser(std::shared_ptr<Program> prog, cxx::FileSystem& fs);
-
-  std::set<std::string>& includedirs();
-  const std::set<std::string>& includedirs() const;
-
-  std::map<std::string, std::string>& defines();
-  const std::map<std::string, std::string>& defines() const;
-
-  bool ignoreOutsideDeclarations() const;
-  void ignoreOutsideDeclarations(bool on);
 
   std::shared_ptr<Program> program() const;
 
@@ -85,13 +80,9 @@ private:
   ClangIndex m_index;
   ClangTranslationUnit m_tu;
 
-  bool m_ignore_outside_decls = false;
   CXFile m_tu_file = nullptr;
   CXFile m_current_cxfile = nullptr;
   std::shared_ptr<File> m_current_file = nullptr;
-
-  std::set<std::string> m_include_dirs;
-  std::map<std::string, std::string> m_defines;
 
   std::set<std::shared_ptr<File>> m_parsed_files;
 
@@ -111,36 +102,6 @@ namespace cxx
 
 namespace parsers
 {
-
-inline std::set<std::string>& LibClangParser::includedirs()
-{
-  return m_include_dirs;
-}
-
-inline const std::set<std::string>& LibClangParser::includedirs() const
-{
-  return m_include_dirs;
-}
-
-inline std::map<std::string, std::string>& LibClangParser::defines()
-{
-  return m_defines;
-}
-
-inline const std::map<std::string, std::string>& LibClangParser::defines() const
-{
-  return m_defines;
-}
-
-inline bool LibClangParser::ignoreOutsideDeclarations() const
-{
-  return m_ignore_outside_decls;
-}
-
-inline void LibClangParser::ignoreOutsideDeclarations(bool on)
-{
-  m_ignore_outside_decls = on;
-}
 
 } // namespace parsers
 

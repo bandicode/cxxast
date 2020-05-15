@@ -37,6 +37,7 @@ class CXXAST_API Enum : public Entity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+  std::vector<std::shared_ptr<EnumValue>> values;
 
 public:
   ~Enum() = default;
@@ -48,12 +49,6 @@ public:
 
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
-
-  std::vector<std::shared_ptr<EnumValue>>& values();
-  const std::vector<std::shared_ptr<EnumValue>>& values() const;
-
-private:
-  std::vector<std::shared_ptr<EnumValue>> m_values;
 };
 
 } // namespace cxx
@@ -65,16 +60,6 @@ inline Enum::Enum(std::string name, std::shared_ptr<Entity> parent)
   : Entity{std::move(name), std::move(parent)}
 {
 
-}
-
-inline std::vector<std::shared_ptr<EnumValue>>& Enum::values()
-{
-  return m_values;
-}
-
-inline const std::vector<std::shared_ptr<EnumValue>>& Enum::values() const
-{
-  return m_values;
 }
 
 } // namespace cxx

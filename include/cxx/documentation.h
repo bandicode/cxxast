@@ -28,17 +28,14 @@ public:
 
 class CXXAST_API MultilineComment : public Documentation
 {
-private:
-  std::string m_text;
+public:
+  std::string text;
 
 public:
   explicit MultilineComment(std::string text, const SourceLocation& loc = {});
 
   static constexpr NodeKind ClassNodeKind = NodeKind::MultilineComment;
   NodeKind node_kind() const override;
-
-  const std::string& text() const;
-  std::string& text();
 };
 
 } // namespace cxx
@@ -48,24 +45,14 @@ namespace cxx
 
 inline Documentation::Documentation(const SourceLocation& loc)
 {
-  location() = loc;
+  location = loc;
 }
 
-inline MultilineComment::MultilineComment(std::string text, const SourceLocation& loc)
+inline MultilineComment::MultilineComment(std::string srctext, const SourceLocation& loc)
   : Documentation(loc),
-  m_text(std::move(text))
+    text(std::move(srctext))
 {
 
-}
-
-inline const std::string& MultilineComment::text() const
-{
-  return m_text;
-}
-
-inline std::string& MultilineComment::text()
-{
-  return m_text;
 }
 
 } // namespace cxx

@@ -38,8 +38,8 @@ enum class NodeKind
 
 class CXXAST_API Node : public std::enable_shared_from_this<Node>
 {
-private:
-  SourceLocation m_location;
+public:
+  SourceLocation location;
 
 public:
   Node() = default;
@@ -55,9 +55,6 @@ public:
 
   template<typename T>
   bool is() const;
-
-  const SourceLocation& location() const;
-  SourceLocation& location();
 };
 
 
@@ -82,16 +79,6 @@ template<typename T>
 inline bool Node::is() const
 {
   return test_node_kind<T>(*this);
-}
-
-inline const SourceLocation& Node::location() const
-{
-  return m_location;
-}
-
-inline SourceLocation& Node::location()
-{
-  return m_location;
 }
 
 } // namespace cxx

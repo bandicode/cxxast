@@ -626,8 +626,8 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
   Name fun_name = parseName();
 
   auto ret = std::make_shared<Function>(fun_name.toString());
-  ret->specifiers() = specifiers;
-  ret->returnType() = return_type;
+  ret->specifiers = specifiers;
+  ret->return_type = return_type;
 
   read(TokenType::LeftPar);
 
@@ -639,8 +639,8 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
       {
         ListView param_view{ m_buffer, m_view,  m_index };
 
-        ret->parameters().push_back(parseFunctionParameter());
-        ret->parameters().back()->setParent(ret);
+        ret->parameters.push_back(parseFunctionParameter());
+        ret->parameters.back()->weak_parent = ret;
       }
 
       if (!atEnd())
@@ -661,7 +661,7 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
 
   if (tok == TokenType::Const)
   {
-    ret->specifiers() |= FunctionSpecifier::Const;
+    ret->specifiers |= FunctionSpecifier::Const;
 
     if (atEnd())
       return ret;
@@ -674,11 +674,11 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
 
   if (tok == TokenType::Override)
   {
-    ret->specifiers() |= FunctionSpecifier::Override;
+    ret->specifiers |= FunctionSpecifier::Override;
   }
   else if (tok == TokenType::Final)
   {
-    ret->specifiers() |= FunctionSpecifier::Final;
+    ret->specifiers |= FunctionSpecifier::Final;
   }
   else if (tok == TokenType::Eq)
   {
@@ -686,7 +686,7 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
 
     if (tok == TokenType::Zero)
     {
-      ret->specifiers() |= FunctionSpecifier::Pure;
+      ret->specifiers |= FunctionSpecifier::Pure;
     }
     else
     {

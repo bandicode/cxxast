@@ -16,10 +16,10 @@ class Documentation;
 
 class CXXAST_API Entity : public Node
 {
-private:
-  std::string m_name;
-  std::weak_ptr<Entity> m_parent;
-  std::shared_ptr<Documentation> m_documentation;
+public:
+  std::string name;
+  std::weak_ptr<Entity> weak_parent;
+  std::shared_ptr<Documentation> documentation;
 
 public:
   explicit Entity(std::string name, std::shared_ptr<Entity> parent = nullptr);
@@ -28,13 +28,7 @@ public:
 
   bool isEntity() const override;
 
-  const std::string& name() const;
-
   std::shared_ptr<Entity> parent() const;
-  void setParent(std::shared_ptr<Entity> e);
-
-  const std::shared_ptr<Documentation>& documentation() const;
-  void setDocumentation(std::shared_ptr<Documentation> doc);
 
   virtual AccessSpecifier getAccessSpecifier() const;
   virtual void setAccessSpecifier(AccessSpecifier aspec);
@@ -45,36 +39,16 @@ public:
 namespace cxx
 {
 
-inline Entity::Entity(std::string name, std::shared_ptr<Entity> parent)
-  : m_name(std::move(name)),
-    m_parent(parent)
+inline Entity::Entity(std::string n, std::shared_ptr<Entity> parent)
+  : name(std::move(n)),
+    weak_parent(parent)
 {
 
-}
-
-inline const std::string& Entity::name() const
-{
-  return m_name;
 }
 
 inline std::shared_ptr<Entity> Entity::parent() const
 {
-  return m_parent.lock();
-}
-
-inline void Entity::setParent(std::shared_ptr<Entity> e)
-{
-  m_parent = e;
-}
-
-inline const std::shared_ptr<Documentation>& Entity::documentation() const
-{
-  return m_documentation;
-}
-
-inline void Entity::setDocumentation(std::shared_ptr<Documentation> doc)
-{
-  m_documentation = doc;
+  return weak_parent.lock();
 }
 
 } // namespace cxx

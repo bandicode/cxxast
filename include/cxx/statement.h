@@ -33,7 +33,7 @@ namespace cxx
 
 inline Statement::Statement(SourceLocation loc)
 {
-  location() = loc;
+  location = loc;
 }
 
 } // namespace cxx

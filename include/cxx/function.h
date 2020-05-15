@@ -52,6 +52,10 @@ class Function;
 class CXXAST_API FunctionParameter : public Entity
 {
 public:
+  Type type;
+  Expression default_value;
+
+public:
   FunctionParameter(Type type, std::string name, std::shared_ptr<Function> parent = nullptr);
   FunctionParameter(Type type, std::string name, Expression default_value, std::shared_ptr<Function> parent = nullptr);
 
@@ -59,22 +63,18 @@ public:
   NodeKind node_kind() const override;
 
   std::shared_ptr<Function> parent() const;
-
-  Type& parameterType();
-  const Type& parameterType() const;
-
-  Expression& defaultValue();
-  const Expression& defaultValue() const;
-
-private:
-  Type m_type;
-  Expression m_default_value;
 };
 
 class CXXAST_API Function : public Entity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+  Type return_type;
+  std::vector<std::shared_ptr<FunctionParameter>> parameters;
+  std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
+  int specifiers = FunctionSpecifier::None;
+  FunctionKind::Value kind = FunctionKind::None;
+  std::shared_ptr<Node> body;
 
 public:
   ~Function() = default;
@@ -89,18 +89,6 @@ public:
 
   typedef FunctionParameter Parameter;
 
-  Type& returnType();
-  const Type& returnType() const;
-
-  std::vector<std::shared_ptr<Parameter>>& parameters();
-  const std::vector<std::shared_ptr<Parameter>>& parameters() const;
-
-  std::vector<std::shared_ptr<TemplateParameter>>& templateParameters();
-  const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
-
-  std::shared_ptr<Node> body() const;
-  void setBody(std::shared_ptr<Node> b);
-
   bool isTemplate() const;
 
   bool isInline() const;
@@ -112,22 +100,8 @@ public:
   bool isFinal() const;
   bool isConst() const;
 
-  int& specifiers();
-  int specifiers() const;
-
   bool isConstructor() const;
   bool isDestructor() const;
-
-  int& kind();
-  int kind() const;
-
-private:
-  Type m_rtype;
-  std::vector<std::shared_ptr<Parameter>> m_params;
-  std::vector<std::shared_ptr<TemplateParameter>> m_tparams;
-  int m_flags = FunctionSpecifier::None;
-  int m_kind = FunctionKind::None;
-  std::shared_ptr<Node> m_body;
 };
 
 } // namespace cxx
@@ -141,119 +115,59 @@ inline Function::Function(std::string name, std::shared_ptr<Entity> parent)
 
 }
 
-inline Type& Function::returnType()
-{
-  return m_rtype;
-}
-
-inline const Type& Function::returnType() const
-{
-  return m_rtype;
-}
-
-inline std::vector<std::shared_ptr<FunctionParameter>>& Function::parameters()
-{
-  return m_params;
-}
-
-inline const std::vector<std::shared_ptr<FunctionParameter>>& Function::parameters() const
-{
-  return m_params;
-}
-
-inline std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParameters()
-{
-  return m_tparams;
-}
-
-inline const std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParameters() const
-{
-  return m_tparams;
-}
-
-inline std::shared_ptr<Node> Function::body() const
-{
-  return m_body;
-}
-
-inline void Function::setBody(std::shared_ptr<Node> b)
-{
-  m_body = b;
-}
-
 inline bool Function::isTemplate() const
 {
-  return !m_tparams.empty();
+  return !template_parameters.empty();
 }
 
 inline bool Function::isInline() const
 {
-  return m_flags & FunctionSpecifier::Inline;
+  return specifiers & FunctionSpecifier::Inline;
 }
 
 inline bool Function::isStatic() const
 {
-  return m_flags & FunctionSpecifier::Static;
+  return specifiers & FunctionSpecifier::Static;
 }
 
 inline bool Function::isConstexpr() const
 {
-  return m_flags & FunctionSpecifier::Constexpr;
+  return specifiers & FunctionSpecifier::Constexpr;
 }
 
 inline bool Function::isVirtual() const
 {
-  return m_flags & FunctionSpecifier::Virtual;
+  return specifiers & FunctionSpecifier::Virtual;
 }
 
 inline bool Function::isVirtualPure() const
 {
-  return m_flags & FunctionSpecifier::Pure;
+  return specifiers & FunctionSpecifier::Pure;
 }
 
 inline bool Function::isOverride() const
 {
-  return m_flags & FunctionSpecifier::Override;
+  return specifiers & FunctionSpecifier::Override;
 }
 
 inline bool Function::isFinal() const
 {
-  return m_flags & FunctionSpecifier::Final;
+  return specifiers & FunctionSpecifier::Final;
 }
 
 inline bool Function::isConst() const
 {
-  return m_flags & FunctionSpecifier::Const;
-}
-
-inline int& Function::specifiers()
-{
-  return m_flags;
-}
-
-inline int Function::specifiers() const
-{
-  return m_flags;
+  return specifiers & FunctionSpecifier::Const;
 }
 
 inline bool Function::isConstructor() const
 {
-  return kind() == FunctionKind::Constructor;
+  return kind == FunctionKind::Constructor;
 }
 
 inline bool Function::isDestructor() const
 {
-  return kind() == FunctionKind::Destructor;
-}
-
-inline int& Function::kind()
-{
-  return m_kind;
-}
-
-inline int Function::kind() const
-{
-  return m_kind;
+  return kind == FunctionKind::Destructor;
 }
 
 } // namespace cxx
