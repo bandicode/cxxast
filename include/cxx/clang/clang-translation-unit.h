@@ -11,6 +11,7 @@ namespace cxx
 {
 
 class ClangCursor;
+class ClangTokenSet;
 
 class CXXAST_API ClangTranslationUnit
 {
@@ -47,6 +48,7 @@ public:
 
   ClangCursor getCursor() const;
 
+  ClangTokenSet tokenize(CXSourceRange range) const;
 };
 
 } // namespace cxx

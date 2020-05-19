@@ -101,6 +101,11 @@ public:
     return ClangCursor{ *libclang, c };
   }
 
+  CXSourceRange getExtent() const
+  {
+    return libclang->clang_getCursorExtent(this->cursor);
+  }
+
   template<typename T>
   struct VisitorData
   {

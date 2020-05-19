@@ -6,6 +6,7 @@
 
 #include "cxx/clang/clang-cursor.h"
 #include "cxx/clang/clang-index.h"
+#include "cxx/clang/clang-token.h"
 #include "cxx/clang/clang-translation-unit.h"
 
 #include <iostream>
@@ -13,12 +14,32 @@
 using namespace cxx;
 
 int depth = 0;
+ClangTranslationUnit* gTranslationUnit = nullptr;
 
 void visit(ClangCursor c)
 {
   std::cout << std::string(static_cast<size_t>(depth), ' ');
 
-  std::cout << c.getCursorKingSpelling() << ": " << c.getSpelling() << std::endl;
+  std::cout << c.getCursorKingSpelling() << ": ";
+
+  std::string spelling = c.getSpelling();
+
+  if (!spelling.empty())
+  {
+    std::cout << spelling;
+  }
+  else
+  {
+    CXSourceRange range = c.getExtent();
+    ClangTokenSet tokens = gTranslationUnit->tokenize(range);
+
+    for (size_t i(0); i < tokens.size(); ++i)
+    {
+      std::cout << tokens.at(i).getSpelling();
+    }
+  }
+
+  std::cout << std::endl;
 
   {
     ++depth;
@@ -44,7 +65,8 @@ void work(int argc, char* argv[])
   ClangIndex index = libclang.createIndex();
 
   std::string file{ argv[1] };
-  ClangTranslationUnit tu = index.parseTranslationUnit(file, {}, CXTranslationUnit_SkipFunctionBodies);
+  ClangTranslationUnit tu = index.parseTranslationUnit(file, {}, CXTranslationUnit_None);
+  gTranslationUnit = &tu;
 
   ClangCursor cursor = tu.getCursor();
 

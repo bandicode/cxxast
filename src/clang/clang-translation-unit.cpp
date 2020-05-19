@@ -5,6 +5,7 @@
 #include "cxx/clang/clang-translation-unit.h"
 
 #include "cxx/clang/clang-cursor.h"
+#include "cxx/clang/clang-token.h"
 
 namespace cxx
 {
@@ -32,6 +33,14 @@ ClangCursor ClangTranslationUnit::getCursor() const
 {
   CXCursor c = libclang->clang_getTranslationUnitCursor(this->translation_unit);
   return ClangCursor{ *libclang, c };
+}
+
+ClangTokenSet ClangTranslationUnit::tokenize(CXSourceRange range) const
+{
+  CXToken* tokens = nullptr;
+  unsigned int size = 0;
+  libclang->clang_tokenize(translation_unit, range, &tokens, &size);
+  return ClangTokenSet{ *libclang, translation_unit, tokens, size };
 }
 
 } // namespace cxx
