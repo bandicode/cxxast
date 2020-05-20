@@ -10,6 +10,7 @@
 
 #include "cxx/class.h"
 #include "cxx/namespace.h"
+#include "cxx/variable.h"
 
 #include <iostream>
 #include <fstream>
@@ -71,6 +72,7 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
   write_file("toast.cpp",
     "struct Foo\n"
     "{\n"
+    "  int n = 0;\n"
     "  int bar() const;\n"
     "};\n"
     "\n"
@@ -86,6 +88,22 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 
   REQUIRE(prog->globalNamespace()->entities.size() == 1);
   REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Class>());
+
+  auto& Foo = static_cast<cxx::Class&>(*(prog->globalNamespace()->entities.front()));
+
+  REQUIRE(Foo.name == "Foo");
+
+  REQUIRE(Foo.members.size() == 2);
+
+  REQUIRE(Foo.members.front()->is<cxx::Variable>());
+
+  {
+    auto& n = static_cast<cxx::Variable&>(*Foo.members.front());
+
+    REQUIRE(n.name == "n");
+    REQUIRE(n.type().toString() == "int");
+    REQUIRE(n.defaultValue().toString() == "0");
+  }
 }
 
 TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")

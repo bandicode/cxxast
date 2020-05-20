@@ -18,5 +18,18 @@ size_t ClangCursor::childCount() const
   return counter;
 }
 
+ClangCursor ClangCursor::childAt(size_t index) const
+{
+  ClangCursor result{ *libclang, this->cursor };
+
+  visitChildren([&result, &index](const ClangCursor& c) {
+    if (index == 0)
+      result = c;
+    --index;
+    });
+
+  return result;
+}
+
 } // namespace cxx
 

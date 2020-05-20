@@ -63,11 +63,14 @@ protected:
   void visit_enum(const ClangCursor& cursor);
   void visit_enumconstant(const ClangCursor& cursor);
   void visit_function(const ClangCursor& cursor);
+  void visit_fielddecl(const ClangCursor& cursor);
 
   std::shared_ptr<cxx::Function> parseFunction(CXCursor cursor);
   void parseFunctionArgument(cxx::Function& func, CXCursor cursor);
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
+
+  cxx::Expression parseExpression(const ClangCursor& c);
 
   cxx::Type parseType(CXType t);
 

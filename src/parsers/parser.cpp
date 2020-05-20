@@ -7,6 +7,7 @@
 #include "cxx/parsers/restricted-parser.h"
 
 #include "cxx/clang/clang-translation-unit.h"
+#include "cxx/clang/clang-token.h"
 
 #include "cxx/name_p.h"
 
@@ -204,6 +205,8 @@ void LibClangParser::visit(const ClangCursor& cursor)
     return visit_function(cursor);
   case CXCursor_EnumConstantDecl:
     return visit_enumconstant(cursor);
+  case CXCursor_FieldDecl:
+    return visit_fielddecl(cursor);
   default:
     return;
   }
@@ -488,6 +491,24 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     entity->location = decl->location;
 }
 
+void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
+{
+  std::string name = cursor.getSpelling();
+  Type type = parseType(cursor.getType());
+
+  auto parent = std::static_pointer_cast<cxx::Class>(curNode().shared_from_this());
+  auto var = std::make_shared<Variable>(type, std::move(name), parent);
+  var->location = getCursorLocation(cursor);
+
+  // @TODO: allow access specifier on Variable
+  // var->setAccessSpecifier(m_access_specifier);
+
+  parent->members.push_back(var);
+
+  if (cursor.childCount() == 1)
+    var->defaultValue() = parseExpression(cursor.childAt(0));
+}
+
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
 {
   auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_program_stack.back()));
@@ -538,10 +559,11 @@ void LibClangParser::parseFunctionArgument(cxx::Function& func, CXCursor cursor)
   std::string name = getCursorSpelling(cursor);
 
   auto param = std::make_shared<cxx::FunctionParameter>(t, std::move(name), std::static_pointer_cast<cxx::Function>(func.shared_from_this()));
-  std::string default_value_expr;
 
   // Parse default-argument
   {
+    std::string default_value_expr;
+
     auto data = std::make_pair(this, &default_value_expr);
     clang_visitChildren(cursor, &LibClangParser::param_decl_visitor, &data);
 
@@ -584,6 +606,24 @@ static void remove_prefix(std::string& str, const std::string& prefix)
 {
   if (str.find(prefix) == 0)
     str.erase(0, prefix.size());
+}
+
+cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
+{
+  std::string spelling = c.getSpelling();
+
+  if(!spelling.empty())
+    return Expression{ std::move(spelling) };
+
+  CXSourceRange range = c.getExtent();
+  ClangTokenSet tokens = m_tu.tokenize(range);
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    spelling += tokens.at(i).getSpelling();
+  }
+
+  return Expression{ std::move(spelling) };
 }
 
 cxx::Type LibClangParser::parseType(CXType t)

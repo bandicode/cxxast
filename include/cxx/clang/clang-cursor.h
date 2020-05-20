@@ -106,6 +106,11 @@ public:
     return libclang->clang_getCursorExtent(this->cursor);
   }
 
+  CXType getType() const
+  {
+    return libclang->clang_getCursorType(this->cursor);
+  }
+
   template<typename T>
   struct VisitorData
   {
@@ -129,6 +134,7 @@ public:
   }
 
   size_t childCount() const;
+  ClangCursor childAt(size_t index) const;
 };
 
 inline bool operator==(const ClangCursor& lhs, const ClangCursor& rhs)
