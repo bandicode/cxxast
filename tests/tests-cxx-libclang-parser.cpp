@@ -73,6 +73,7 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     "struct Foo\n"
     "{\n"
     "  int n = 0;\n"
+    "  static int m = 1;\n"
     "  int bar() const;\n"
     "};\n"
     "\n"
@@ -93,16 +94,27 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 
   REQUIRE(Foo.name == "Foo");
 
-  REQUIRE(Foo.members.size() == 2);
+  REQUIRE(Foo.members.size() == 3);
 
-  REQUIRE(Foo.members.front()->is<cxx::Variable>());
+  REQUIRE(Foo.members.at(0)->is<cxx::Variable>());
 
   {
-    auto& n = static_cast<cxx::Variable&>(*Foo.members.front());
+    auto& n = static_cast<cxx::Variable&>(*Foo.members.at(0));
 
     REQUIRE(n.name == "n");
     REQUIRE(n.type().toString() == "int");
     REQUIRE(n.defaultValue().toString() == "0");
+  }
+
+  REQUIRE(Foo.members.at(1)->is<cxx::Variable>());
+
+  {
+    auto& m = static_cast<cxx::Variable&>(*Foo.members.at(1));
+
+    REQUIRE(m.name == "m");
+    REQUIRE(m.type().toString() == "int");
+    REQUIRE(m.defaultValue().toString() == "1");
+    REQUIRE(bool(m.specifiers() & cxx::VariableSpecifier::Static));
   }
 }
 

@@ -23,6 +23,7 @@ namespace cxx
 class Enum;
 class Namespace;
 class Type;
+class Variable;
 
 class FileSystem;
 class Program;
@@ -63,8 +64,10 @@ protected:
   void visit_enum(const ClangCursor& cursor);
   void visit_enumconstant(const ClangCursor& cursor);
   void visit_function(const ClangCursor& cursor);
+  void visit_vardecl(const ClangCursor& cursor);
   void visit_fielddecl(const ClangCursor& cursor);
 
+  std::shared_ptr<cxx::Variable> parseVariable(const ClangCursor& c);
   std::shared_ptr<cxx::Function> parseFunction(CXCursor cursor);
   void parseFunctionArgument(cxx::Function& func, CXCursor cursor);
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);

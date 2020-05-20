@@ -205,6 +205,8 @@ void LibClangParser::visit(const ClangCursor& cursor)
     return visit_function(cursor);
   case CXCursor_EnumConstantDecl:
     return visit_enumconstant(cursor);
+  case CXCursor_VarDecl:
+    return visit_vardecl(cursor);
   case CXCursor_FieldDecl:
     return visit_fielddecl(cursor);
   default:
@@ -491,22 +493,50 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     entity->location = decl->location;
 }
 
+void LibClangParser::visit_vardecl(const ClangCursor& cursor)
+{
+  auto var = parseVariable(cursor);
+  
+  if (curNode().is<cxx::Class>())
+  {
+    // @TODO: allow access specifier on Variable
+    // var->setAccessSpecifier(m_access_specifier);
+
+    var->specifiers() |= VariableSpecifier::Static;
+
+    curNode().appendChild(var);
+  }
+  else if (curNode().is<cxx::Namespace>())
+  {
+    curNode().appendChild(var);
+  }
+  else
+  {
+    // @TODO ?
+  }
+}
+
 void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
+{
+  assert(curNode().is<cxx::Class>());
+
+  auto var = parseVariable(cursor);
+  curNode().appendChild(var);
+}
+
+std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)
 {
   std::string name = cursor.getSpelling();
   Type type = parseType(cursor.getType());
 
-  auto parent = std::static_pointer_cast<cxx::Class>(curNode().shared_from_this());
+  auto parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
   auto var = std::make_shared<Variable>(type, std::move(name), parent);
   var->location = getCursorLocation(cursor);
 
-  // @TODO: allow access specifier on Variable
-  // var->setAccessSpecifier(m_access_specifier);
-
-  parent->members.push_back(var);
-
   if (cursor.childCount() == 1)
     var->defaultValue() = parseExpression(cursor.childAt(0));
+
+  return var;
 }
 
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)

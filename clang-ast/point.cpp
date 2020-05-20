@@ -2,7 +2,9 @@
 struct Point
 {
 public:
-  int x, y;
+  int x, y = 0;
+
+  static int n = 3;
 };
 
 Point operator+(const Point& lhs, const Point& rhs)
