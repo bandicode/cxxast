@@ -639,13 +639,7 @@ cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
   else
   {
     std::string file_name = toStdString(clang_getFileName(file));
-
-    for (char& c : file_name)
-    {
-      if (c == '\\')
-        c = '/';
-    }
-
+    File::normalizePath(file_name);
     auto result_file = getFile(file_name);
 
     return cxx::SourceLocation(result_file, line, col);

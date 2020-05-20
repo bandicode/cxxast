@@ -28,6 +28,8 @@ public:
   explicit File(std::string path);
 
   const std::string& path() const;
+
+  static void normalizePath(std::string& path);
 };
 
 } // namespace cxx
@@ -44,6 +46,15 @@ inline File::File(std::string path)
 inline const std::string& File::path() const
 {
   return m_path;
+}
+
+inline void File::normalizePath(std::string& path)
+{
+  for (char& c : path)
+  {
+    if (c == '\\')
+      c = '/';
+  }
 }
 
 } // namespace cxx
