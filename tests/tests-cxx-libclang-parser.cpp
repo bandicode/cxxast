@@ -70,8 +70,9 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     return;
 
   write_file("toast.cpp",
-    "struct Foo\n"
+    "class Foo\n"
     "{\n"
+    "public:"
     "  int n = 0;\n"
     "  static int m = 1;\n"
     "  int bar() const;\n"
@@ -115,6 +116,15 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     REQUIRE(m.type().toString() == "int");
     REQUIRE(m.defaultValue().toString() == "1");
     REQUIRE(bool(m.specifiers() & cxx::VariableSpecifier::Static));
+  }
+
+  REQUIRE(Foo.members.at(2)->is<cxx::Function>());
+
+  {
+    auto& bar = static_cast<cxx::Function&>(*Foo.members.at(2));
+
+    REQUIRE(bar.name == "bar");
+    REQUIRE(bar.access_specifier == cxx::AccessSpecifier::PUBLIC);
   }
 }
 

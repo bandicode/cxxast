@@ -209,6 +209,8 @@ void LibClangParser::visit(const ClangCursor& cursor)
     return visit_vardecl(cursor);
   case CXCursor_FieldDecl:
     return visit_fielddecl(cursor);
+  case CXCursor_CXXAccessSpecifier:
+    return visit_accessspecifier(cursor);
   default:
     return;
   }
@@ -522,6 +524,20 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
 
   auto var = parseVariable(cursor);
   curNode().appendChild(var);
+}
+
+void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
+{
+  ClangTokenSet tokens = m_tu.tokenize(cursor.getExtent());
+
+  std::string spelling = tokens.at(0).getSpelling();
+
+  if (spelling == "public")
+    m_access_specifier = cxx::AccessSpecifier::PUBLIC;
+  else if (spelling == "protected")
+    m_access_specifier = cxx::AccessSpecifier::PROTECTED;
+  else
+    m_access_specifier = cxx::AccessSpecifier::PRIVATE;
 }
 
 std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)
