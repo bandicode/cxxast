@@ -27,12 +27,16 @@ enum class NodeKind
   Typedef,
   Variable,
   /* Statements */
+  NullStatement,
   CompoundStatement,
+  IfStatement,
+  WhileLoop,
   ClassDeclaration,
   EnumDeclaration,
   FunctionDeclaration,
   NamespaceDeclaration,
   VariableDeclaration,
+  UnexposedStatement,
   /* Misc */
   MultilineComment,
   Documentation,

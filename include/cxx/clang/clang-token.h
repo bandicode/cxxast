@@ -46,6 +46,11 @@ public:
     libclang->clang_disposeString(str);
     return result;
   }
+
+  CXSourceRange getExtent() const
+  {
+    return libclang->clang_getTokenExtent(this->translation_unit, this->token);
+  }
 };
 
 class CXXAST_API ClangTokenSet

@@ -10,6 +10,7 @@
 
 #include "cxx/class.h"
 #include "cxx/namespace.h"
+#include "cxx/statements.h"
 #include "cxx/variable.h"
 
 #include <iostream>
@@ -53,6 +54,7 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
     "const int foo(int& i, int j = 0) { return i+j; }");
 
   cxx::parsers::LibClangParser parser;
+  parser.skip_function_bodies = true;
 
   bool result = parser.parse("test.cpp");
 
@@ -62,6 +64,45 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
 
   REQUIRE(prog->globalNamespace()->entities.size() == 1);
   REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+}
+
+TEST_CASE("The parser is able to parse a simple function body", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo(int n) {  if(n > 0){} }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  auto& foo = static_cast<cxx::Function&>(*(prog->globalNamespace()->entities.front()));
+
+  REQUIRE(foo.body->is<cxx::CompoundStatement>());
+
+  {
+    auto& statements = std::static_pointer_cast<cxx::CompoundStatement>(foo.body)->statements;
+
+    REQUIRE(statements.size() == 1);
+
+    REQUIRE(statements.front()->is<cxx::IfStatement>());
+    
+    {
+      auto if_stmt = std::static_pointer_cast<cxx::IfStatement>(statements.front());
+
+      REQUIRE(if_stmt->condition.toString() == "n>0");
+      REQUIRE(if_stmt->body->is<cxx::CompoundStatement>());
+    }
+  }
 }
 
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
@@ -81,6 +122,7 @@ TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
     "int Foo::bar() const { return -1 ; }\n");
 
   cxx::parsers::LibClangParser parser;
+  parser.skip_function_bodies = true;
 
   bool result = parser.parse("toast.cpp");
 
@@ -138,6 +180,7 @@ TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
     "std::vector<int> foo() { return {}; }\n");
 
   cxx::parsers::LibClangParser parser;
+  parser.skip_function_bodies = true;
 
   bool result = parser.parse("toast.cpp");
 

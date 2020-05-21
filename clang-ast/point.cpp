@@ -5,6 +5,12 @@ public:
   int x, y = 0;
 
   static int n = 3;
+
+  Point()
+    : x(0), y(1)
+  {
+
+  }
 };
 
 Point operator+(const Point& lhs, const Point& rhs)

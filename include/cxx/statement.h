@@ -26,6 +26,19 @@ public:
 
 typedef std::shared_ptr<Statement> StatementPtr;
 
+class CXXAST_API UnexposedStatement : public Statement
+{
+public:
+  std::string source;
+
+public:
+  explicit UnexposedStatement(std::string src);
+  UnexposedStatement(std::string src, SourceLocation loc);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::UnexposedStatement;
+  NodeKind node_kind() const override;
+};
+
 } // namespace cxx
 
 namespace cxx

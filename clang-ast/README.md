@@ -1,2 +1,2 @@
 
-Run `clang -Xclang -ast-dump file.cpp`
+Run `clang -Xclang -ast-dump -fsyntax-only file.cpp`

@@ -24,6 +24,7 @@ class Enum;
 class Namespace;
 class Type;
 class Variable;
+class Statement;
 
 class FileSystem;
 class Program;
@@ -36,6 +37,7 @@ class CXXAST_API LibClangParser : protected LibClang
 public:
   std::set<std::string> includedirs;
   std::map<std::string, std::string> defines;
+  bool skip_function_bodies = false;
 
 public:
   LibClangParser();
@@ -69,10 +71,17 @@ protected:
   void visit_accessspecifier(const ClangCursor& cursor);
 
   std::shared_ptr<cxx::Variable> parseVariable(const ClangCursor& c);
-  std::shared_ptr<cxx::Function> parseFunction(CXCursor cursor);
+  std::shared_ptr<cxx::Function> parseFunction(const ClangCursor& cursor);
   void parseFunctionArgument(cxx::Function& func, CXCursor cursor);
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
+
+  std::shared_ptr<cxx::Statement> parseStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::Statement> parseNullStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::Statement> parseCompoundStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::Statement> parseIf(const ClangCursor& c);
+  std::shared_ptr<cxx::Statement> parseWhile(const ClangCursor& c);
+  std::shared_ptr<cxx::Statement> parseUnexposedStatement(const ClangCursor& c);
 
   cxx::Expression parseExpression(const ClangCursor& c);
 

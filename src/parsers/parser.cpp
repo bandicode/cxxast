@@ -15,6 +15,7 @@
 #include "cxx/enum.h"
 #include "cxx/function.h"
 #include "cxx/namespace.h"
+#include "cxx/statements.h"
 
 #include "cxx/class-declaration.h"
 #include "cxx/enum-declaration.h"
@@ -140,7 +141,7 @@ bool LibClangParser::parse(const std::string& file)
 {
   try
   {
-    m_tu = m_index.parseTranslationUnit(file, includedirs, CXTranslationUnit_SkipFunctionBodies);
+    m_tu = m_index.parseTranslationUnit(file, includedirs, skip_function_bodies ? CXTranslationUnit_SkipFunctionBodies : CXTranslationUnit_None);
   }
   catch (...)
   {
@@ -555,7 +556,7 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
   return var;
 }
 
-std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
+std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& cursor)
 {
   auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_program_stack.back()));
 
@@ -596,6 +597,18 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(CXCursor cursor)
     parseFunctionArgument(*func, arg_cursor);
   }
 
+  // The children of a function seems to appear in the following order:
+  // - return type (optional)
+  // - parameters (CXCursor_ParmDecl)
+  // - body (CXCursor_CompoundStmt)
+
+  cursor.visitChildren([&](const ClangCursor& c) {
+
+    if (c.kind() == CXCursor_CompoundStmt)
+      func->body = parseStatement(c);
+
+    });
+  
   return func;
 }
 
@@ -648,10 +661,132 @@ CXChildVisitResult LibClangParser::visitFunctionParamDecl(CXCursor cursor, CXCur
   return CXChildVisit_Continue;
 }
 
-static void remove_prefix(std::string& str, const std::string& prefix)
+std::shared_ptr<cxx::Statement> LibClangParser::parseStatement(const ClangCursor& c)
 {
-  if (str.find(prefix) == 0)
-    str.erase(0, prefix.size());
+  CXCursorKind k = c.kind();
+
+  switch (k)
+  {
+  case CXCursor_NullStmt:
+    return parseNullStatement(c);
+  case CXCursor_CompoundStmt:
+    return parseCompoundStatement(c);
+  case CXCursor_IfStmt:
+    return parseIf(c);
+  case CXCursor_WhileStmt:
+    return parseWhile(c);
+  default:
+    return parseUnexposedStatement(c);
+  }
+}
+
+std::shared_ptr<cxx::Statement> LibClangParser::parseNullStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<NullStatement>();
+  result->location = getCursorLocation(c);
+  return result;
+}
+
+std::shared_ptr<cxx::Statement> LibClangParser::parseCompoundStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<CompoundStatement>();
+
+  c.visitChildren([&](const ClangCursor& child) {
+    result->statements.push_back(parseStatement(child));
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::Statement> LibClangParser::parseIf(const ClangCursor& c)
+{
+  auto result = std::make_shared<IfStatement>();
+
+  // The children if a CXCursor_IfStmt seems to appear in the following order:
+  // - condition
+  // - body
+  // - else-clause (optional)
+
+  enum IfParsingState
+  {
+    IfParsing_Cond,
+    IfParsing_Body,
+    IfParsing_Else,
+  };
+
+  IfParsingState state = IfParsing_Cond;
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (state == IfParsing_Cond)
+    {
+      result->condition = parseExpression(child);
+      state = IfParsing_Body;
+    }
+    else if (state == IfParsing_Body)
+    {
+      result->body = parseStatement(child);
+      state = IfParsing_Else;
+    }
+    else if (state == IfParsing_Else)
+    {
+      result->else_clause = parseStatement(child);
+    }
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c)
+{
+  auto result = std::make_shared<WhileLoop>();
+
+  // The children if a CXCursor_WhileStmt seems to appear in the following order:
+  // - condition
+  // - body
+
+  enum WhileParsingState
+  {
+    WhileParsing_Cond,
+    WhileParsing_Body,
+  };
+
+  WhileParsingState state = WhileParsing_Cond;
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (state == WhileParsing_Cond)
+    {
+      result->condition = parseExpression(child);
+    }
+    else if (state == WhileParsing_Body)
+    {
+      result->body = parseStatement(child);
+    }
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::Statement> LibClangParser::parseUnexposedStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<UnexposedStatement>(std::string());
+
+  CXSourceRange range = c.getExtent();
+  ClangTokenSet tokens = m_tu.tokenize(range);
+
+  std::string spelling;
+
+  for (size_t i = 0; i < tokens.size(); i++)
+  {
+    spelling += tokens.at(i).getSpelling();
+  }
+
+  result->source = spelling;
+
+  return result;
 }
 
 cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
@@ -670,6 +805,12 @@ cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
   }
 
   return Expression{ std::move(spelling) };
+}
+
+static void remove_prefix(std::string& str, const std::string& prefix)
+{
+  if (str.find(prefix) == 0)
+    str.erase(0, prefix.size());
 }
 
 cxx::Type LibClangParser::parseType(CXType t)
