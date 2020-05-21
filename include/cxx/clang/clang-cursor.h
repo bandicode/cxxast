@@ -8,6 +8,7 @@
 #include "cxx/libclang.h"
 
 #include <functional>
+#include <utility>
 
 namespace cxx
 {
@@ -116,25 +117,42 @@ public:
   {
     LibClang& libclang;
     T& functor;
+    bool should_break = false;
   };
 
+  struct VisitorSelector1 {};
+  struct VisitorSelector2 : VisitorSelector1 {};
+
+  template<typename F>
+  static void visitor_invoker(F&& func, bool& stop_token, const ClangCursor& cursor, VisitorSelector1)
+  {
+    func(cursor);
+  }
+
+  template<typename F, typename = decltype(std::declval<F>()(std::declval<bool&>(), std::declval<const ClangCursor&>()))>
+  static void visitor_invoker(F&& func, bool& stop_token, const ClangCursor& cursor, VisitorSelector2)
+  {
+    func(stop_token, cursor);
+  }
+
   template<typename T>
-  static CXChildVisitResult generic_visitor(CXCursor c, CXCursor p, CXClientData client_data)
+  static CXChildVisitResult generic_visit_callback(CXCursor c, CXCursor p, CXClientData client_data)
   {
     VisitorData<T>& data = *static_cast<VisitorData<T>*>(client_data);
-    data.functor(ClangCursor{ data.libclang, c });
-    return CXChildVisit_Continue;
+    visitor_invoker(data.functor, data.should_break, ClangCursor{ data.libclang, c }, VisitorSelector2{});
+    return data.should_break ? CXChildVisit_Break : CXChildVisit_Continue;
   }
 
   template<typename Func>
   void visitChildren(Func&& f) const
   {
-    VisitorData<Func> data{ *libclang, f };
-    libclang->clang_visitChildren(this->cursor, generic_visitor<Func>, &data);
+    VisitorData<Func> data{ *libclang, f, false };
+    libclang->clang_visitChildren(this->cursor, generic_visit_callback<Func>, &data);
   }
 
   size_t childCount() const;
   ClangCursor childAt(size_t index) const;
+  std::vector<ClangCursor> children() const;
 };
 
 inline bool operator==(const ClangCursor& lhs, const ClangCursor& rhs)

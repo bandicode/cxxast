@@ -22,10 +22,24 @@ ClangCursor ClangCursor::childAt(size_t index) const
 {
   ClangCursor result{ *libclang, this->cursor };
 
-  visitChildren([&result, &index](const ClangCursor& c) {
+  visitChildren([&result, &index](bool& stop_token, const ClangCursor& c) {
     if (index == 0)
+    {
       result = c;
+      stop_token = true;
+    }
     --index;
+    });
+
+  return result;
+}
+
+std::vector<ClangCursor> ClangCursor::children() const
+{
+  std::vector<ClangCursor> result;
+
+  visitChildren([&](const ClangCursor& c) {
+    result.push_back(c);
     });
 
   return result;
