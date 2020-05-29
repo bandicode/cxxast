@@ -19,6 +19,11 @@ bool Declaration::isDeclaration() const
   return true;
 }
 
+std::shared_ptr<Entity> Declaration::entity() const
+{
+  return nullptr;
+}
+
 size_t Declaration::childCount() const
 {
   return this->declarations.size();

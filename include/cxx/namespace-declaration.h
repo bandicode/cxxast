@@ -23,6 +23,8 @@ public:
 
   static constexpr NodeKind ClassNodeKind = NodeKind::NamespaceDeclaration;
   NodeKind node_kind() const override;
+
+  std::shared_ptr<Entity> entity() const override;
 };
 
 } // namespace cxx

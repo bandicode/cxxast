@@ -10,6 +10,8 @@
 namespace cxx
 {
 
+class Entity;
+
 class CXXAST_API Declaration : public Statement
 {
 public:
@@ -23,6 +25,8 @@ public:
   std::shared_ptr<Declaration> shared_from_this();
 
   bool isDeclaration() const override;
+
+  virtual std::shared_ptr<Entity> entity() const;
 
   size_t childCount() const override;
   std::shared_ptr<Node> childAt(size_t index) const override;

@@ -12,4 +12,9 @@ NodeKind NamespaceDeclaration::node_kind() const
   return NamespaceDeclaration::ClassNodeKind;
 }
 
+std::shared_ptr<Entity> NamespaceDeclaration::entity() const
+{
+  return this->namespace_;
+}
+
 } // namespace cxx

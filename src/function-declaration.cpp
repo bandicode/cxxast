@@ -12,4 +12,9 @@ NodeKind FunctionDeclaration::node_kind() const
   return FunctionDeclaration::ClassNodeKind;
 }
 
+std::shared_ptr<Entity> FunctionDeclaration::entity() const
+{
+  return this->function;
+}
+
 } // namespace cxx
