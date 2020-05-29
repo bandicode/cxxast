@@ -112,6 +112,11 @@ public:
     return libclang->clang_getCursorType(this->cursor);
   }
 
+  CX_CXXAccessSpecifier getCXXAccessSpecifier() const
+  {
+    return libclang->clang_getCXXAccessSpecifier(this->cursor);
+  }
+
   template<typename T>
   struct VisitorData
   {

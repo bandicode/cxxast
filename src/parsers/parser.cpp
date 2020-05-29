@@ -531,14 +531,9 @@ void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
 {
   ClangTokenSet tokens = m_tu.tokenize(cursor.getExtent());
 
-  std::string spelling = tokens.at(0).getSpelling();
+  CX_CXXAccessSpecifier aspec = cursor.getCXXAccessSpecifier();
 
-  if (spelling == "public")
-    m_access_specifier = cxx::AccessSpecifier::PUBLIC;
-  else if (spelling == "protected")
-    m_access_specifier = cxx::AccessSpecifier::PROTECTED;
-  else
-    m_access_specifier = cxx::AccessSpecifier::PRIVATE;
+  m_access_specifier = getAccessSpecifier(aspec);
 }
 
 std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)
