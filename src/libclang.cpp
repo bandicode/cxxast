@@ -433,7 +433,7 @@ std::string LibClang::getTokenSpelling(CXTranslationUnit tu, CXToken tok)
 
 bool LibClang::isForwardDeclaration(CXCursor cursor)
 {
-  return clang_equalCursors(clang_getCursorDefinition(cursor), clang_getNullCursor());
+  return !clang_equalCursors(clang_getCursorDefinition(cursor), cursor);
 }
 
 } // namespace cxx

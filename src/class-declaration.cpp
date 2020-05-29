@@ -17,4 +17,9 @@ std::shared_ptr<Entity> ClassDeclaration::entity() const
   return this->class_;
 }
 
+bool ClassDeclaration::isForwardDeclaration() const
+{
+  return this->class_->location != this->location;
+}
+
 } // namespace cxx

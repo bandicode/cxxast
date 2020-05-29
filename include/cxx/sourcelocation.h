@@ -30,6 +30,16 @@ public:
   int column() const;
 };
 
+inline bool operator==(const SourceLocation& lhs, const SourceLocation& rhs)
+{
+  return lhs.file() == rhs.file() && lhs.line() == rhs.line() && lhs.column() == rhs.column();
+}
+
+inline bool operator!=(const SourceLocation& lhs, const SourceLocation& rhs)
+{
+  return !(lhs == rhs);
+}
+
 } // namespace cxx
 
 namespace cxx

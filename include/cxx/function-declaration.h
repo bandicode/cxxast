@@ -25,6 +25,8 @@ public:
   NodeKind node_kind() const override;
 
   std::shared_ptr<Entity> entity() const override;
+
+  bool isForwardDeclaration() const;
 };
 
 } // namespace cxx

@@ -17,4 +17,9 @@ std::shared_ptr<Entity> FunctionDeclaration::entity() const
   return this->function;
 }
 
+bool FunctionDeclaration::isForwardDeclaration() const
+{
+  return this->function->location != this->location;
+}
+
 } // namespace cxx
