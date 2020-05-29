@@ -437,7 +437,19 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   // We must create the Function nonetheless, even without the body.
   // Further declarations may provide the body or additional default parameters.
 
-  auto entity = parseFunction(cursor);
+  std::shared_ptr<Function> entity;
+
+  try
+  {
+    entity = parseFunction(cursor);
+  }
+  catch (std::runtime_error & err)
+  {
+    (void)err;
+    // @TODO: do not silently ignore this declaration
+    return;
+  }
+  
 
   auto decl = std::make_shared<FunctionDeclaration>(entity);
   decl->location = getCursorLocation(cursor);
@@ -464,8 +476,28 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     }
   }();
 
-  std::shared_ptr<cxx::Node> semantic_parent = is_member ?
-    m_cursor_entity_map.at(cursor.getSemanticParent()) : curNode().shared_from_this();
+  auto semantic_parent = [&]() -> std::shared_ptr<cxx::Node> {
+    if (is_member)
+    {
+      ClangCursor parent = cursor.getSemanticParent();
+      auto it = m_cursor_entity_map.find(parent);
+
+      if (it == m_cursor_entity_map.end())
+        return nullptr;
+
+      return it->second;
+    }
+    else
+    {
+      return curNode().shared_from_this();
+    }
+  }();
+
+  if (semantic_parent == nullptr)
+  {
+    // @TODO: do not silently ignore this declaration
+    return;
+  }
 
   auto func = find_equiv_func(*semantic_parent, *entity);
 
@@ -498,8 +530,21 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
 
 void LibClangParser::visit_vardecl(const ClangCursor& cursor)
 {
-  auto var = parseVariable(cursor);
-  
+  std::shared_ptr<Variable> var;
+
+  try
+  {
+    var = parseVariable(cursor);
+  }
+  catch (std::runtime_error & err)
+  {
+    (void)err;
+    // @TODO: do not silently ignore this declaration
+    // Example of declaration that fails:
+    // const typename _Iosb<_Dummy>::_Fmtflags count_ = 8;
+    return;
+  }
+
   if (curNode().is<cxx::Class>())
   {
     // @TODO: allow access specifier on Variable
@@ -523,8 +568,19 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
 {
   assert(curNode().is<cxx::Class>());
 
-  auto var = parseVariable(cursor);
-  curNode().appendChild(var);
+  try
+  {
+    auto var = parseVariable(cursor);
+    curNode().appendChild(var);
+  }
+  catch (std::runtime_error & err)
+  {
+    (void)err;
+    // @TODO: do not silently ignore the field declaration
+
+    // Example of field that will fail:
+    // struct { int n; } my_field;
+  }
 }
 
 void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
