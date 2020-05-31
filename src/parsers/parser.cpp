@@ -139,6 +139,8 @@ std::shared_ptr<Program> LibClangParser::program() const
 
 bool LibClangParser::parse(const std::string& file)
 {
+  this->skipped_declarations.clear();
+
   try
   {
     m_tu = m_index.parseTranslationUnit(file, includedirs, skip_function_bodies ? CXTranslationUnit_SkipFunctionBodies : CXTranslationUnit_None);
@@ -446,7 +448,10 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   catch (std::runtime_error & err)
   {
     (void)err;
-    // @TODO: do not silently ignore this declaration
+    SkippedDeclaration decl;
+    decl.loc = getCursorLocation(cursor);
+    decl.content = cursor.getSpelling();
+    this->skipped_declarations.push_back(std::move(decl));
     return;
   }
   
@@ -539,9 +544,12 @@ void LibClangParser::visit_vardecl(const ClangCursor& cursor)
   catch (std::runtime_error & err)
   {
     (void)err;
-    // @TODO: do not silently ignore this declaration
     // Example of declaration that fails:
     // const typename _Iosb<_Dummy>::_Fmtflags count_ = 8;
+    SkippedDeclaration decl;
+    decl.loc = getCursorLocation(cursor);
+    decl.content = cursor.getSpelling();
+    this->skipped_declarations.push_back(std::move(decl));
     return;
   }
 
@@ -576,10 +584,12 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
   catch (std::runtime_error & err)
   {
     (void)err;
-    // @TODO: do not silently ignore the field declaration
-
     // Example of field that will fail:
     // struct { int n; } my_field;
+    SkippedDeclaration decl;
+    decl.loc = getCursorLocation(cursor);
+    decl.content = cursor.getSpelling();
+    this->skipped_declarations.push_back(std::move(decl));
   }
 }
 

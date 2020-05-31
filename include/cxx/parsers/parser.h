@@ -39,6 +39,14 @@ public:
   std::map<std::string, std::string> defines;
   bool skip_function_bodies = false;
 
+  struct SkippedDeclaration
+  {
+    cxx::SourceLocation loc;
+    std::string content;
+  };
+
+  std::vector<SkippedDeclaration> skipped_declarations;
+
 public:
   LibClangParser();
   ~LibClangParser();
