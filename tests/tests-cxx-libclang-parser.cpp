@@ -72,7 +72,7 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
     return;
 
   write_file("test.cpp",
-    "void foo(int n) {  if(n > 0){} }");
+    "void foo(int n) noexcept {  if(n > 0){} }");
 
   cxx::parsers::LibClangParser parser;
 
@@ -86,6 +86,8 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
   REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
 
   auto& foo = static_cast<cxx::Function&>(*(prog->globalNamespace()->entities.front()));
+
+  REQUIRE(foo.isNoexcept());
 
   REQUIRE(foo.body->is<cxx::CompoundStatement>());
 

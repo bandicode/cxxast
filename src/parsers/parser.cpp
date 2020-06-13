@@ -626,6 +626,8 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& 
   if (kind == CXCursor_Constructor)
   {
     func->kind = FunctionKind::Constructor;
+
+    // @TODO: handle 'explicit' specifier
   }
   else if (kind == CXCursor_Destructor)
   {
@@ -637,7 +639,16 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& 
       func->specifiers |= FunctionSpecifier::Const;
     if (clang_CXXMethod_isStatic(cursor))
       func->specifiers |= FunctionSpecifier::Static;
+    if (clang_CXXMethod_isVirtual(cursor))
+      func->specifiers |= FunctionSpecifier::Virtual;
+    if (clang_CXXMethod_isPureVirtual(cursor))
+      func->specifiers |= FunctionSpecifier::Pure;
   }
+
+  int exception_spec_type = cursor.getExceptionSpecificationType();
+
+  if (exception_spec_type == CXCursor_ExceptionSpecificationKind_BasicNoexcept)
+    func->specifiers |= FunctionSpecifier::Noexcept;
 
   CXType function_type = clang_getCursorType(cursor);
 

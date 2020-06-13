@@ -563,6 +563,7 @@ const Keyword l7k[] = {
 const Keyword l8k[] = {
   { "continue", TokenType::Continue },
   { "explicit", TokenType::Explicit },
+  { "noexcept", TokenType::Noexcept },
   { "operator", TokenType::Operator },
   { "override", TokenType::Override },
   { "template", TokenType::Template },

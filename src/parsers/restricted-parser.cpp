@@ -684,6 +684,19 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
   if (tok == TokenType::Semicolon)
     return ret;
 
+  if (tok == TokenType::Noexcept)
+  {
+    ret->specifiers |= FunctionSpecifier::Noexcept;
+
+    if (atEnd())
+      return ret;
+
+    tok = read();
+
+    if (tok == TokenType::Semicolon)
+      return ret;
+  }
+
   if (tok == TokenType::Override)
   {
     ret->specifiers |= FunctionSpecifier::Override;

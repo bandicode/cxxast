@@ -31,6 +31,7 @@ public:
     Final = 32,
     Const = 64,
     Pure = 128,
+    Noexcept = 256,
   };
 };
 
@@ -103,6 +104,7 @@ public:
   bool isOverride() const;
   bool isFinal() const;
   bool isConst() const;
+  bool isNoexcept() const;
 
   bool isConstructor() const;
   bool isDestructor() const;
@@ -162,6 +164,11 @@ inline bool Function::isFinal() const
 inline bool Function::isConst() const
 {
   return specifiers & FunctionSpecifier::Const;
+}
+
+inline bool Function::isNoexcept() const
+{
+  return specifiers & FunctionSpecifier::Noexcept;
 }
 
 inline bool Function::isConstructor() const

@@ -117,6 +117,11 @@ public:
     return libclang->clang_getCXXAccessSpecifier(this->cursor);
   }
 
+  int getExceptionSpecificationType() const
+  {
+    return libclang->clang_getCursorExceptionSpecificationType(this->cursor);
+  }
+
   template<typename T>
   struct VisitorData
   {

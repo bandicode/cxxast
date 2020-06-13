@@ -45,11 +45,12 @@ TEST_CASE("The parser is able to parse simple function declarations", "[restrict
   REQUIRE(func->parameters.empty());
   REQUIRE(func->isConst());
 
-  func = cxx::parsers::RestrictedParser::parseFunctionSignature("inline int max(int a, int b);");
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("inline int max(int a, int b) noexcept;");
   REQUIRE(func->return_type.toString() == "int");
   REQUIRE(func->name == "max");
   REQUIRE(func->parameters.size() == 2);
   REQUIRE(func->isInline());
+  REQUIRE(func->isNoexcept());
 
   func = cxx::parsers::RestrictedParser::parseFunctionSignature("virtual void draw() = 0;");
   REQUIRE(func->return_type.toString() == "void");
