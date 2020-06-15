@@ -77,6 +77,7 @@ protected:
   void visit_vardecl(const ClangCursor& cursor);
   void visit_fielddecl(const ClangCursor& cursor);
   void visit_accessspecifier(const ClangCursor& cursor);
+  void visit_template_type_parameter(const ClangCursor& cursor);
 
   std::shared_ptr<cxx::Variable> parseVariable(const ClangCursor& c);
   std::shared_ptr<cxx::Function> parseFunction(const ClangCursor& cursor);

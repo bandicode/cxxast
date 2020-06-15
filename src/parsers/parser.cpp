@@ -198,6 +198,7 @@ void LibClangParser::visit(const ClangCursor& cursor)
     return visit_namespace(cursor);
   case CXCursor_ClassDecl:
   case CXCursor_StructDecl:
+  case CXCursor_ClassTemplate:
     return visit_class(cursor);
   case CXCursor_EnumDecl:
     return visit_enum(cursor);
@@ -214,6 +215,8 @@ void LibClangParser::visit(const ClangCursor& cursor)
     return visit_fielddecl(cursor);
   case CXCursor_CXXAccessSpecifier:
     return visit_accessspecifier(cursor);
+  case CXCursor_TemplateTypeParameter:
+    return visit_template_type_parameter(cursor);
   default:
     return;
   }
@@ -274,15 +277,27 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
 {
   std::string name = cursor.getSpelling();
 
-  std::shared_ptr<Class> entity = [&]() {
+  const bool is_template = cursor.kind() == CXCursor_ClassTemplate;
+
+  auto entity = [&]() -> std::shared_ptr<Class> {
     if (curNode().is<Namespace>())
-      return static_cast<Namespace&>(curNode()).getOrCreateClass(name);
-    
-    Class& cla = static_cast<Class&>(curNode());
-    auto result = std::make_shared<Class>(std::move(name), cla.shared_from_this());
-    result->setAccessSpecifier(m_access_specifier);
-    cla.members.push_back(result);
-    return result;
+    {
+      auto& ns = static_cast<Namespace&>(curNode());
+
+      if (is_template)
+        return ns.getOrCreate<ClassTemplate>(name, std::vector<std::shared_ptr<TemplateParameter>>(), std::move(name));
+      else
+        return ns.getOrCreate<Class>(name, std::move(name));
+    }
+    else
+    {
+      Class& cla = static_cast<Class&>(curNode());
+      std::shared_ptr<Class> result = !is_template ? (std::make_shared<Class>(std::move(name), cla.shared_from_this())) :
+        (std::make_shared<ClassTemplate>(std::vector<std::shared_ptr<TemplateParameter>>(), std::move(name), cla.shared_from_this()));
+      result->setAccessSpecifier(m_access_specifier);
+      cla.members.push_back(result);
+      return result;
+    }
   }();
 
   auto decl = std::make_shared<ClassDeclaration>(entity);
@@ -600,6 +615,18 @@ void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
   CX_CXXAccessSpecifier aspec = cursor.getCXXAccessSpecifier();
 
   m_access_specifier = getAccessSpecifier(aspec);
+}
+
+void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor)
+{
+  if (!curNode().is<ClassTemplate>())
+    throw std::runtime_error{ "Not implemented" };
+
+  ClassTemplate& ct = static_cast<ClassTemplate&>(curNode());
+
+  auto ttparam = std::make_shared<TemplateParameter>(cursor.getSpelling());
+  ttparam->weak_parent = ct.shared_from_this();
+  ct.template_parameters.push_back(ttparam);
 }
 
 std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)

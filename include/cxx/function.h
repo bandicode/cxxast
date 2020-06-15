@@ -72,7 +72,6 @@ public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
   Type return_type;
   std::vector<std::shared_ptr<FunctionParameter>> parameters;
-  std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
   int specifiers = FunctionSpecifier::None;
   FunctionKind::Value kind = FunctionKind::None;
   std::shared_ptr<Node> body;
@@ -94,7 +93,8 @@ public:
 
   typedef FunctionParameter Parameter;
 
-  bool isTemplate() const;
+  virtual bool isTemplate() const;
+  virtual const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
 
   bool isInline() const;
   bool isStatic() const;
@@ -110,6 +110,25 @@ public:
   bool isDestructor() const;
 };
 
+class CXXAST_API FunctionTemplate : public Function
+{
+public:
+  std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
+
+public:
+  FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent = nullptr);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::FunctionTemplate;
+  NodeKind node_kind() const override;
+
+  size_t childCount() const override;
+  std::shared_ptr<Node> childAt(size_t index) const override;
+  void appendChild(std::shared_ptr<Node> n) override;
+
+  bool isTemplate() const override;
+  const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const override;
+};
+
 } // namespace cxx
 
 namespace cxx
@@ -119,11 +138,6 @@ inline Function::Function(std::string name, std::shared_ptr<Entity> parent)
   : Entity{std::move(name), std::move(parent)}
 {
 
-}
-
-inline bool Function::isTemplate() const
-{
-  return !template_parameters.empty();
 }
 
 inline bool Function::isInline() const

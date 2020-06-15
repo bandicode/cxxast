@@ -195,3 +195,36 @@ TEST_CASE("The parser handles #include <vector>", "[libclang-parser]")
   auto foo = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.back());
   REQUIRE(foo->name == "foo");
 }
+
+TEST_CASE("The parser is able to parse a simple class template", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "template<typename T> struct Foo { T value; }; ");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Class>());
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::ClassTemplate>());
+
+  auto& Foo = static_cast<cxx::ClassTemplate&>(*(prog->globalNamespace()->entities.front()));
+
+  REQUIRE(Foo.templateParameters().size() == 1);
+
+  REQUIRE(Foo.templateParameters().front()->name == "T");
+
+  REQUIRE(Foo.members.size() == 1);
+
+  REQUIRE(Foo.members.front()->is<cxx::Variable>());
+  REQUIRE(Foo.members.front()->name == "value");
+  REQUIRE(std::static_pointer_cast<cxx::Variable>(Foo.members.front())->type().toString() == "T");
+}

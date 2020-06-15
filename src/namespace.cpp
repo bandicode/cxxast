@@ -5,7 +5,6 @@
 #include "cxx/enum.h"
 #include "cxx/function.h"
 
-#include <algorithm>
 #include <stdexcept>
 
 namespace cxx
@@ -43,7 +42,7 @@ std::shared_ptr<Namespace> Namespace::getOrCreateNamespace(const std::string& na
   if (it != entities.end())
     return std::static_pointer_cast<Namespace>(*it);
 
-  auto result = std::make_shared< Namespace>(name, shared_from_this());
+  auto result = std::make_shared<Namespace>(name, shared_from_this());
   entities.push_back(result);
   return result;
 }

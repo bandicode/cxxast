@@ -13,13 +13,18 @@
 namespace cxx
 {
 
+class Class;
+class Function;
+
 enum class NodeKind
 {
   /* Entities */
   Class,
+  ClassTemplate,
   Enum,
   EnumValue,
   Function,
+  FunctionTemplate,
   FunctionParameter,
   Macro,
   Namespace,
@@ -72,6 +77,18 @@ template<typename T>
 bool test_node_kind(const Node& n)
 {
   return T::ClassNodeKind == n.kind();
+}
+
+template<>
+inline bool test_node_kind<Class>(const Node& n)
+{
+  return n.kind() == NodeKind::Class || n.kind() == NodeKind::ClassTemplate;
+}
+
+template<>
+inline bool test_node_kind<Function>(const Node& n)
+{
+  return n.kind() == NodeKind::Function || n.kind() == NodeKind::FunctionTemplate;
 }
 
 class CXXAST_API AstNode : public Node

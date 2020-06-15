@@ -7,6 +7,7 @@
 
 #include "cxx/entity.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
@@ -40,6 +41,21 @@ public:
   std::shared_ptr<Class> getOrCreateClass(const std::string& name);
   std::shared_ptr<Enum> createEnum(std::string name);
   std::shared_ptr<Function> createFunction(std::string name);
+
+  template<typename T, typename...Args>
+  std::shared_ptr<T> getOrCreate(const std::string& name, Args&&... args)
+  {
+    auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<Entity>& e) {
+      return e->is<T>() && e->name == name;
+      });
+
+    if (it != entities.end())
+      return std::static_pointer_cast<T>(*it);
+
+    auto result = std::make_shared<T>(std::forward<Args>(args)..., shared_from_this());
+    entities.push_back(result);
+    return result;
+  }
 };
 
 } // namespace cxx

@@ -6,6 +6,7 @@
 #define CXXAST_CLASS_H
 
 #include "cxx/entity.h"
+#include "cxx/template.h"
 
 #include <utility>
 #include <vector>
@@ -34,6 +35,28 @@ public:
 
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
+
+  virtual bool isTemplate() const;
+  virtual const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
+};
+
+class CXXAST_API ClassTemplate : public Class
+{
+public:
+  std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
+
+public:
+  ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent = nullptr);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::ClassTemplate;
+  NodeKind node_kind() const override;
+
+  size_t childCount() const override;
+  std::shared_ptr<Node> childAt(size_t index) const override;
+  void appendChild(std::shared_ptr<Node> n) override;
+
+  bool isTemplate() const override;
+  const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const override;
 };
 
 } // namespace cxx
