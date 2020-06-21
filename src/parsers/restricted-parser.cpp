@@ -610,7 +610,8 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
   int specifiers = FunctionSpecifier::None;
 
   while (peek() == TokenType::Virtual || peek() == TokenType::Static 
-    || peek() == TokenType::Inline || peek() == TokenType::Constexpr)
+    || peek() == TokenType::Inline || peek() == TokenType::Constexpr
+    || peek() == TokenType::Explicit)
   {
     if (unsafe_peek() == TokenType::Virtual)
     {
@@ -627,10 +628,15 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
       unsafe_read();
       specifiers |= FunctionSpecifier::Inline;
     }
-    else
+    else if (unsafe_peek() == TokenType::Constexpr)
     {
       unsafe_read();
       specifiers |= FunctionSpecifier::Constexpr;
+    }
+    else if (unsafe_peek() == TokenType::Explicit)
+    {
+      unsafe_read();
+      specifiers |= FunctionSpecifier::Explicit;
     }
   }
 

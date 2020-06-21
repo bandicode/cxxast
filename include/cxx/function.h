@@ -32,6 +32,9 @@ public:
     Const = 64,
     Pure = 128,
     Noexcept = 256,
+    Explicit = 512,
+    Default = 1024,
+    Delete = 2048,
   };
 };
 
@@ -105,6 +108,7 @@ public:
   bool isFinal() const;
   bool isConst() const;
   bool isNoexcept() const;
+  bool isExplicit() const;
 
   bool isConstructor() const;
   bool isDestructor() const;
@@ -183,6 +187,11 @@ inline bool Function::isConst() const
 inline bool Function::isNoexcept() const
 {
   return specifiers & FunctionSpecifier::Noexcept;
+}
+
+inline bool Function::isExplicit() const
+{
+  return specifiers & FunctionSpecifier::Explicit;
 }
 
 inline bool Function::isConstructor() const
