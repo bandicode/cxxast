@@ -14,12 +14,37 @@
 namespace cxx
 {
 
+class Class;
+
+struct BaseClass
+{
+  AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+  std::shared_ptr<Class> base;
+
+  bool isPublicBase() const
+  {
+    return access_specifier == AccessSpecifier::PUBLIC;
+  }
+
+  bool isProtectedBase() const
+  {
+    return access_specifier == AccessSpecifier::PROTECTED;
+  }
+
+  bool isPrivateBase() const
+  {
+    return access_specifier == AccessSpecifier::PRIVATE;
+  }
+};
+
 class CXXAST_API Class : public Entity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
+  std::vector<BaseClass> bases;
   std::vector<std::shared_ptr<Entity>> members;
   bool is_struct = false;
+  bool is_final = false;
 
 public:
   ~Class() = default;
