@@ -38,6 +38,7 @@ class CXXAST_API Enum : public Entity
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
   std::vector<std::shared_ptr<EnumValue>> values;
+  bool enum_class = false;
 
 public:
   ~Enum() = default;
