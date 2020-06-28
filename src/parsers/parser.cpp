@@ -343,6 +343,7 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
 
     Class& cla = static_cast<Class&>(curNode());
     auto result = std::make_shared<Enum>(std::move(name), cla.shared_from_this());
+    result->enum_class = clang_EnumDecl_isScoped(cursor);
     result->setAccessSpecifier(m_access_specifier);
     cla.members.push_back(result);
     return result;
