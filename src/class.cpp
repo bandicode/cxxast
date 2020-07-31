@@ -27,9 +27,11 @@ std::shared_ptr<Node> Class::childAt(size_t index) const
 void Class::appendChild(std::shared_ptr<Node> n)
 {
   if (!n->isEntity())
-    throw std::runtime_error{ "bad call Namespace::appendChild()" };
+    throw std::runtime_error{ "bad call Class::appendChild()" };
 
-  this->members.push_back(std::static_pointer_cast<Entity>(n));
+  auto e = std::static_pointer_cast<Entity>(n);
+  this->members.push_back(e);
+  e->weak_parent = shared_from_this();
 }
 
 AccessSpecifier Class::getAccessSpecifier() const

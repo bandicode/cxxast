@@ -30,7 +30,9 @@ void Namespace::appendChild(std::shared_ptr<Node> n)
   if (!n->isEntity())
     throw std::runtime_error{ "bad call Namespace::appendChild()" };
 
-  this->entities.push_back(std::static_pointer_cast<Entity>(n));
+  auto e = std::static_pointer_cast<Entity>(n);
+  this->entities.push_back(e);
+  e->weak_parent = shared_from_this();
 }
 
 std::shared_ptr<Namespace> Namespace::getOrCreateNamespace(const std::string& name)
