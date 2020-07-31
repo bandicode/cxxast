@@ -245,6 +245,11 @@ std::string Name::toString() const
   return d->toString();
 }
 
+Name Name::fromSimpleIdentifier(std::string name)
+{
+  return Name(std::make_shared<details::Identifier>(std::move(name)));
+}
+
 std::shared_ptr<const details::IName> Name::impl() const
 {
   return d;

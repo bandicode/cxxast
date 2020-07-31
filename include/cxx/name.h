@@ -62,6 +62,8 @@ public:
 
   std::string toString() const;
 
+  static Name fromSimpleIdentifier(std::string name);
+
   std::shared_ptr<const details::IName> impl() const;
 
   Name& operator=(const Name&) = default;
