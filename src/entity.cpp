@@ -14,6 +14,11 @@ std::shared_ptr<Entity> Entity::shared_from_this()
   return std::static_pointer_cast<Entity>(Node::shared_from_this());
 }
 
+std::shared_ptr<const Entity> Entity::shared_from_this() const
+{
+  return std::static_pointer_cast<const Entity>(Node::shared_from_this());
+}
+
 bool Entity::isEntity() const
 {
   return true;

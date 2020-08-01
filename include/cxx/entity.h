@@ -25,6 +25,7 @@ public:
   explicit Entity(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
   std::shared_ptr<Entity> shared_from_this();
+  std::shared_ptr<const Entity> shared_from_this() const;
 
   bool isEntity() const override;
 
