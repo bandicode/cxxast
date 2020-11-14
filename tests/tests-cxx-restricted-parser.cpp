@@ -70,6 +70,20 @@ TEST_CASE("The parser is able to parse simple function declarations", "[restrict
   REQUIRE(func->name == "draw");
   REQUIRE(func->parameters.empty());
   REQUIRE(func->isFinal());
+
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("std::vector<std::shared_ptr<Foo>> bar() const;");
+  REQUIRE(func->return_type.toString() == "std::vector<std::shared_ptr<Foo>>");
+  REQUIRE(func->name == "bar");
+  REQUIRE(func->parameters.empty());
+  REQUIRE(func->isConst());
+
+  func = cxx::parsers::RestrictedParser::parseFunctionSignature("static int foo(vector<shared_ptr<std::variant<bool, float, int>>> a, const float & b);");
+  REQUIRE(func->return_type.toString() == "int");
+  REQUIRE(func->name == "foo");
+  REQUIRE(func->parameters.size() == 2);
+  REQUIRE(func->parameters.at(0)->type.toString() == "vector<shared_ptr<std::variant<bool, float, int>>>");
+  REQUIRE(func->parameters.at(1)->type.toString() == "const float&");
+  REQUIRE(func->isStatic());
 }
 
 TEST_CASE("The parser is able to parse simple typedef declarations", "[restricted-parser]")

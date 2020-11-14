@@ -123,8 +123,13 @@ public:
 class TemplateAngleView : public ParserViewRAII
 {
 public:
-  TemplateAngleView(const std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos)
-    : ParserViewRAII(view)
+  bool split_right_shift = false;
+  std::vector<Token>& tokens;
+
+public:
+  TemplateAngleView(std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos)
+    : ParserViewRAII(view),
+      tokens(toks)
   {
     size_t bracket_depth = 0;
     size_t paren_depth = 0;
@@ -148,6 +153,23 @@ public:
           }
 
           --angle_depth;
+        }
+      }
+      else if (it->type() == TokenType::RightShift)
+      {
+        if (bracket_depth == 0 && paren_depth == 0)
+        {
+          if (angle_depth == 1)
+          {
+            Token tok = *it;
+            *it = Token(TokenType::RightAngle, StringView(tok.text().data() + 1, 1));
+            it = toks.insert(it, Token(TokenType::RightAngle, StringView(tok.text().data(), 1)));
+            view = std::make_pair(pos, std::distance(toks.begin(), it) + 1);
+            split_right_shift = true;
+            return;
+          }
+
+          angle_depth -= 2;
         }
       }
       else if (it->type() == TokenType::Less)
@@ -186,6 +208,15 @@ public:
     throw RestrictedParserError{ "no matching angle bracket" };
   }
 
+  ~TemplateAngleView()
+  {
+    if (split_right_shift)
+    {
+      Token tok = tokens.at(m_view.second - 1);
+      tokens.erase(tokens.begin() + m_view.second);
+      tokens[m_view.second - 1] = Token(TokenType::RightShift, StringView(tok.text().data(), 2));
+    }
+  }
 };
 
 class ListView : public ParserViewRAII
@@ -229,6 +260,13 @@ public:
         if (!ignore_angle && bracket_depth == 0 && paren_depth == 0 && brace_depth == 0)
         {
           ++angle_depth;
+        }
+      }
+      else if (it->type() == TokenType::RightShift)
+      {
+        if (!ignore_angle && bracket_depth == 0 && paren_depth == 0 && brace_depth == 0)
+        {
+          angle_depth -= 2;
         }
       }
       else if (it->type() == TokenType::RightBracket)
@@ -584,8 +622,14 @@ Name RestrictedParser::readTemplateArguments(const Name base)
 
   std::vector<TemplateArgument> params;
 
+  bool need_read_right_angle = true;
+
   {
     TemplateAngleView main_view{ m_buffer, m_view, m_index };
+    // If a '>>' was splitted in two by the TemplateAngleView, its 
+    // destructor will implicitely consume the second '>' so there is no 
+    // need to read() it afterward.
+    need_read_right_angle = !main_view.split_right_shift;
 
     while (!atEnd())
     {
@@ -599,8 +643,8 @@ Name RestrictedParser::readTemplateArguments(const Name base)
     }
   }
 
-  read(TokenType::RightAngle);
-
+  if(need_read_right_angle)
+    read(TokenType::RightAngle);
 
   return Name{ std::make_shared<details::TemplateName>(base.toString(), std::move(params)) };
 }
@@ -655,7 +699,8 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
     while (!atEnd())
     {
       {
-        ListView param_view{ m_buffer, m_view,  m_index };
+        constexpr bool ignore_angle = false;
+        ListView param_view{ m_buffer, m_view,  m_index, ignore_angle };
 
         ret->parameters.push_back(parseFunctionParameter());
         ret->parameters.back()->weak_parent = ret;
