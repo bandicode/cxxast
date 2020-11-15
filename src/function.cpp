@@ -78,6 +78,76 @@ const std::vector<std::shared_ptr<TemplateParameter>>& Function::templateParamet
   return static_instance;
 }
 
+static void write_params(const Function& f, std::string& out)
+{
+  for (auto p : f.parameters)
+  {
+    out += p->type.toString();
+
+    if (!p->name.empty())
+      out += " " + p->name;
+
+    out += ", ";
+  }
+
+  if (!f.parameters.empty())
+  {
+    out.pop_back();
+    out.pop_back();
+  }
+}
+
+std::string Function::signature() const
+{
+  if (isConstructor())
+  {
+    std::string result;
+    if (isExplicit())
+      result += "explicit ";
+    result += this->name;
+    result += "(";
+    write_params(*this, result);
+    result += ")";
+
+    if (this->specifiers & cxx::FunctionSpecifier::Delete)
+      result += " = delete";
+
+    return result;
+  }
+  else if (isDestructor())
+  {
+    std::string result;
+
+    result += this->name;
+    result += "()";
+
+    if (this->specifiers & cxx::FunctionSpecifier::Delete)
+      result += " = delete";
+
+    return result;
+  }
+
+  std::string result;
+  if (isExplicit())
+    result += "explicit ";
+  if (isStatic())
+    result += "static ";
+
+  result += this->return_type.toString();
+  result += " " + this->name;
+  result += "(";
+  write_params(*this, result);
+  result += ")";
+
+  if (isConst())
+    result += " const";
+
+  if (this->specifiers & cxx::FunctionSpecifier::Delete)
+    result += " = delete";
+
+  return result;
+}
+
 FunctionTemplate::FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent)
   : Function(std::move(name), parent),
     template_parameters(std::move(tparams))

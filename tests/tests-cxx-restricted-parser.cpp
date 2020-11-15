@@ -38,6 +38,7 @@ TEST_CASE("The parser is able to parse simple function declarations", "[restrict
   REQUIRE(func->return_type.toString() == "int");
   REQUIRE(func->name == "foo");
   REQUIRE(func->parameters.size() == 2);
+  REQUIRE(func->signature() == "int foo(int n, int)");
 
   func = cxx::parsers::RestrictedParser::parseFunctionSignature("std::vector<bool> vec_of_bool() const;");
   REQUIRE(func->return_type.toString() == "std::vector<bool>");

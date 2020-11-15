@@ -112,6 +112,8 @@ public:
 
   bool isConstructor() const;
   bool isDestructor() const;
+
+  std::string signature() const;
 };
 
 class CXXAST_API FunctionTemplate : public Function
