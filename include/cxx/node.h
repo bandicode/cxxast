@@ -67,9 +67,6 @@ public:
   template<typename T>
   bool is() const;
 
-  virtual size_t childCount() const;
-  virtual std::shared_ptr<Node> childAt(size_t index) const;
-  virtual void appendChild(std::shared_ptr<Node> n);
 };
 
 

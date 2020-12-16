@@ -14,26 +14,6 @@ NodeKind Class::node_kind() const
   return ClassNodeKind;
 }
 
-size_t Class::childCount() const
-{
-  return this->members.size();
-}
-
-std::shared_ptr<Node> Class::childAt(size_t index) const
-{
-  return this->members.at(index);
-}
-
-void Class::appendChild(std::shared_ptr<Node> n)
-{
-  if (!n->isEntity())
-    throw std::runtime_error{ "bad call Class::appendChild()" };
-
-  auto e = std::static_pointer_cast<Entity>(n);
-  this->members.push_back(e);
-  e->weak_parent = shared_from_this();
-}
-
 AccessSpecifier Class::getAccessSpecifier() const
 {
   return access_specifier;
@@ -64,26 +44,6 @@ ClassTemplate::ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tpa
 NodeKind ClassTemplate::node_kind() const
 {
   return ClassTemplate::ClassNodeKind;
-}
-
-size_t ClassTemplate::childCount() const
-{
-  return this->members.size() + this->template_parameters.size();
-}
-
-std::shared_ptr<Node> ClassTemplate::childAt(size_t index) const
-{
-  if (index < this->template_parameters.size())
-    return this->template_parameters.at(index);
-  return Class::childAt(index - this->template_parameters.size());
-}
-
-void ClassTemplate::appendChild(std::shared_ptr<Node> n)
-{
-  if (n->is<TemplateParameter>())
-    this->template_parameters.push_back(std::static_pointer_cast<TemplateParameter>(n));
-  else
-    Class::appendChild(n);
 }
 
 bool ClassTemplate::isTemplate() const

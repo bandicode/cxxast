@@ -27,10 +27,6 @@ public:
   bool isDeclaration() const override;
 
   virtual std::shared_ptr<Entity> entity() const;
-
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
 };
 
 } // namespace cxx

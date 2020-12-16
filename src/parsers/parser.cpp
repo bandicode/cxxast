@@ -188,6 +188,51 @@ cxx::Node& LibClangParser::curNode()
   return *m_program_stack.back();
 }
 
+void LibClangParser::astWrite(std::shared_ptr<Declaration> n)
+{
+  if (m_ast_stack.empty())
+  {
+    m_current_file->nodes.push_back(n);
+  }
+  else
+  {
+    cxx::AstNode& cur = *m_ast_stack.back();
+
+    switch (cur.kind())
+    {
+    case NodeKind::NamespaceDeclaration:
+      static_cast<cxx::NamespaceDeclaration&>(cur).declarations.push_back(n);
+      break;
+    case NodeKind::ClassDeclaration:
+      static_cast<cxx::ClassDeclaration&>(cur).declarations.push_back(n);
+      break;
+    default:
+      throw std::runtime_error{ "LibClangParser::astWrite() failed" };
+    }
+  }
+}
+
+void LibClangParser::write(std::shared_ptr<Entity> e)
+{
+  switch (curNode().kind())
+  {
+  case NodeKind::Namespace:
+    static_cast<cxx::Namespace&>(curNode()).entities.push_back(e);
+    break;
+  case NodeKind::Class:
+  case NodeKind::ClassTemplate:
+    static_cast<cxx::Class&>(curNode()).members.push_back(e);
+    break;
+  case NodeKind::Enum:
+    static_cast<cxx::Enum&>(curNode()).values.push_back(std::static_pointer_cast<cxx::EnumValue>(e));
+    break;
+  default:
+    throw std::runtime_error{ "LibClangParser::write() failed" };
+  }
+
+  e->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+}
+
 void LibClangParser::visit(const ClangCursor& cursor)
 {
   CXCursorKind kind = cursor.kind();
@@ -259,10 +304,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
 
   decl->location = getCursorLocation(cursor);
 
-  if (m_ast_stack.empty())
-    m_current_file->nodes.push_back(decl);
-  else
-    m_ast_stack.back()->appendChild(decl);
+  astWrite(decl);
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
@@ -303,10 +345,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   auto decl = std::make_shared<ClassDeclaration>(entity);
   decl->location = getCursorLocation(cursor);
 
-  if (m_ast_stack.empty())
-    m_current_file->nodes.push_back(decl);
-  else
-    m_ast_stack.back()->appendChild(decl);
+  astWrite(decl);
 
   if (isForwardDeclaration(cursor))
     return;
@@ -352,10 +391,7 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
   auto decl = std::make_shared<EnumDeclaration>(entity);
   decl->location = getCursorLocation(cursor);
 
-  if (m_ast_stack.empty())
-    m_current_file->nodes.push_back(decl);
-  else
-    m_ast_stack.back()->appendChild(decl);
+  astWrite(decl);
 
   entity->location = getCursorLocation(cursor);
 
@@ -475,10 +511,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   auto decl = std::make_shared<FunctionDeclaration>(entity);
   decl->location = getCursorLocation(cursor);
 
-  if (m_ast_stack.empty())
-    m_current_file->nodes.push_back(decl);
-  else
-    m_ast_stack.back()->appendChild(decl);
+  astWrite(decl);
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
@@ -576,11 +609,11 @@ void LibClangParser::visit_vardecl(const ClangCursor& cursor)
 
     var->specifiers() |= VariableSpecifier::Static;
 
-    curNode().appendChild(var);
+    write(var);
   }
   else if (curNode().is<cxx::Namespace>())
   {
-    curNode().appendChild(var);
+    write(var);
   }
   else
   {
@@ -595,7 +628,7 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
   try
   {
     auto var = parseVariable(cursor);
-    curNode().appendChild(var);
+    write(var);
   }
   catch (std::runtime_error & err)
   {

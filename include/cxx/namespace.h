@@ -32,10 +32,6 @@ public:
 
   explicit Namespace(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
-
   std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
   std::shared_ptr<Class> createClass(std::string name);
   std::shared_ptr<Class> getOrCreateClass(const std::string& name);

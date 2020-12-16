@@ -39,24 +39,6 @@ NodeKind Function::node_kind() const
   return ClassNodeKind;
 }
 
-size_t Function::childCount() const
-{
-  return this->parameters.size();
-}
-
-std::shared_ptr<Node> Function::childAt(size_t index) const
-{
-  return this->parameters.at(index);
-}
-
-void Function::appendChild(std::shared_ptr<Node> n)
-{
-  if (n->is<FunctionParameter>())
-    this->parameters.push_back(std::static_pointer_cast<FunctionParameter>(n));
-  else
-    throw std::runtime_error{ "bad call to Function::appendChild()" };
-}
-
 AccessSpecifier Function::getAccessSpecifier() const
 {
   return access_specifier;
@@ -157,28 +139,6 @@ FunctionTemplate::FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter
 NodeKind FunctionTemplate::node_kind() const
 {
   return FunctionTemplate::ClassNodeKind;
-}
-
-size_t FunctionTemplate::childCount() const
-{
-  return this->parameters.size() + this->template_parameters.size();
-}
-
-std::shared_ptr<Node> FunctionTemplate::childAt(size_t index) const
-{
-  if (index < this->template_parameters.size())
-    return this->template_parameters.at(index);
-
-  index -= this->template_parameters.size();
-  return this->parameters.at(index);
-}
-
-void FunctionTemplate::appendChild(std::shared_ptr<Node> n)
-{
-  if (n->is<TemplateParameter>())
-    this->template_parameters.push_back(std::static_pointer_cast<TemplateParameter>(n));
-  else
-    Function::appendChild(n);
 }
 
 bool FunctionTemplate::isTemplate() const

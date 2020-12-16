@@ -15,26 +15,6 @@ NodeKind Namespace::node_kind() const
   return ClassNodeKind;
 }
 
-size_t Namespace::childCount() const
-{
-  return this->entities.size();
-}
-
-std::shared_ptr<Node> Namespace::childAt(size_t index) const
-{
-  return this->entities.at(index);
-}
-
-void Namespace::appendChild(std::shared_ptr<Node> n)
-{
-  if (!n->isEntity())
-    throw std::runtime_error{ "bad call Namespace::appendChild()" };
-
-  auto e = std::static_pointer_cast<Entity>(n);
-  this->entities.push_back(e);
-  e->weak_parent = shared_from_this();
-}
-
 std::shared_ptr<Namespace> Namespace::getOrCreateNamespace(const std::string& name)
 {
   auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<Entity>& e) {

@@ -87,10 +87,6 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::Function;
   NodeKind node_kind() const override;
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
-
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
 
@@ -126,10 +122,6 @@ public:
 
   static constexpr NodeKind ClassNodeKind = NodeKind::FunctionTemplate;
   NodeKind node_kind() const override;
-
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
 
   bool isTemplate() const override;
   const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const override;
