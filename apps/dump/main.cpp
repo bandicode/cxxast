@@ -24,19 +24,35 @@ void visit(ClangCursor c)
 
   std::string spelling = c.getSpelling();
 
+  CXSourceRange range = c.getExtent();
+
   if (!spelling.empty())
   {
     std::cout << spelling;
   }
   else
   {
-    CXSourceRange range = c.getExtent();
     ClangTokenSet tokens = gTranslationUnit->tokenize(range);
 
     for (size_t i(0); i < tokens.size(); ++i)
     {
       std::cout << tokens.at(i).getSpelling();
     }
+  }
+
+  std::cout << " ";
+
+  {
+    CXFile file;
+    unsigned int line, col, offset;
+
+    CXSourceLocation start = c.libclang->clang_getRangeStart(range);
+    c.libclang->clang_getSpellingLocation(start, &file, &line, &col, &offset);
+    std::cout << "(" << line << ":" << col << "->";
+
+    CXSourceLocation end = c.libclang->clang_getRangeEnd(range);
+    c.libclang->clang_getSpellingLocation(end, &file, &line, &col, &offset);
+    std::cout << line << ":" << col << ")";
   }
 
   std::cout << std::endl;
