@@ -34,19 +34,4 @@ bool Node::isDeclaration() const
   return false;
 }
 
-size_t Node::childCount() const
-{
-  return 0;
-}
-
-std::shared_ptr<Node> Node::childAt(size_t) const
-{
-  throw std::runtime_error{ "bad call to Node::childAt()" };
-}
-
-void Node::appendChild(std::shared_ptr<Node>)
-{
-  throw std::runtime_error{ "bad call to Node::appendChild()" };
-}
-
 } // namespace cxx

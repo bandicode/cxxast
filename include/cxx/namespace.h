@@ -32,10 +32,6 @@ public:
 
   explicit Namespace(std::string name, std::shared_ptr<Entity> parent = nullptr);
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
-
   std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
   std::shared_ptr<Class> createClass(std::string name);
   std::shared_ptr<Class> getOrCreateClass(const std::string& name);
@@ -56,6 +52,19 @@ public:
     entities.push_back(result);
     return result;
   }
+
+  struct Entities : public priv::Field<Namespace, std::vector<std::shared_ptr<Entity>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).entities;
+    }
+
+    static void set(Node& n, field_type entities)
+    {
+      down_cast(n).entities = std::move(entities);
+    }
+  };
 };
 
 } // namespace cxx

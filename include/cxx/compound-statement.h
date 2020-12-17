@@ -25,9 +25,18 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::CompoundStatement;
   NodeKind node_kind() const override;
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
+  struct Statements : public priv::Field<CompoundStatement, std::vector<StatementPtr>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).statements;
+    }
+
+    static void set(Node& n, field_type val)
+    {
+      down_cast(n).statements = std::move(val);
+    }
+  };
 };
 
 } // namespace cxx

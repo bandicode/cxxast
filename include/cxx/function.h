@@ -87,10 +87,6 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::Function;
   NodeKind node_kind() const override;
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
-
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
 
@@ -114,6 +110,32 @@ public:
   bool isDestructor() const;
 
   std::string signature() const;
+
+  struct ReturnType : public priv::Field<Function, Type>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).return_type;
+    }
+
+    static void set(Node& n, field_type val)
+    {
+      down_cast(n).return_type = std::move(val);
+    }
+  };
+
+  struct Parameters : public priv::Field<Function, std::vector<std::shared_ptr<FunctionParameter>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).parameters;
+    }
+
+    static void set(Node& n, field_type val)
+    {
+      down_cast(n).parameters = std::move(val);
+    }
+  };
 };
 
 class CXXAST_API FunctionTemplate : public Function
@@ -126,10 +148,6 @@ public:
 
   static constexpr NodeKind ClassNodeKind = NodeKind::FunctionTemplate;
   NodeKind node_kind() const override;
-
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
 
   bool isTemplate() const override;
   const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const override;

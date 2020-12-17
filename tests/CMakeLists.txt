@@ -16,7 +16,7 @@ if(BUILD_CXXAST_TESTS)
 
   endif()
 
-  add_executable(TEST_cxxast "main.cpp" "tests-cxx-restricted-parser.cpp" "tests-cxx-libclang-parser.cpp" ${CATCH2_SINGLE_HEADER_FILE})
+  add_executable(TEST_cxxast "main.cpp" "tests-api.cpp" "tests-cxx-restricted-parser.cpp" "tests-cxx-libclang-parser.cpp" ${CATCH2_SINGLE_HEADER_FILE})
   add_dependencies(TEST_cxxast cxxast)
   target_include_directories(TEST_cxxast PUBLIC "../include")
   target_link_libraries(TEST_cxxast cxxast)

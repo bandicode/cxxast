@@ -27,9 +27,7 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::WhileLoop;
   NodeKind node_kind() const override;
 
-  size_t childCount() const override;
-  std::shared_ptr<Node> childAt(size_t index) const override;
-  void appendChild(std::shared_ptr<Node> n) override;
+  struct Condition : priv::FieldEx<WhileLoop, Expression, &WhileLoop::condition> { };
 };
 
 } // namespace cxx
