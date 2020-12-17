@@ -162,12 +162,12 @@ struct FieldEx : public Field<C, T>
 
   static field_type& get(Node& n)
   {
-    return down_cast(n).*member;
+    return FieldOfClass<C>::down_cast(n).*member;
   }
 
   static void set(Node& n, field_type val)
   {
-    down_cast(n).*member = std::move(val);
+    FieldOfClass<C>::down_cast(n).*member = std::move(val);
   }
 };
 
@@ -196,7 +196,7 @@ inline typename F::field_type& Node::get()
 }
 
 template<typename F, typename Arg>
-inline void set(Arg&& arg)
+inline void Node::set(Arg&& arg)
 {
   F::set(*this, std::forward<Arg>(arg));
 }
