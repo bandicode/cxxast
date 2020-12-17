@@ -59,6 +59,19 @@ public:
 
   virtual bool isTemplate() const;
   virtual const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
+
+  struct Members : public priv::Field<Class, std::vector<std::shared_ptr<Entity>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).members;
+    }
+
+    static void set(Node& n, field_type members)
+    {
+      down_cast(n).members = std::move(members);
+    }
+  };
 };
 
 class CXXAST_API ClassTemplate : public Class

@@ -47,6 +47,16 @@ enum class NodeKind
   Documentation,
 };
 
+namespace priv
+{
+
+struct CXXAST_API IField
+{
+
+};
+
+} // namespace priv
+
 class CXXAST_API Node : public std::enable_shared_from_this<Node>
 {
 public:
@@ -67,8 +77,47 @@ public:
   template<typename T>
   bool is() const;
 
+  template<typename F>
+  typename F::field_type& get();
+
+  template<typename F, typename Arg>
+  void set(Arg&& arg);
 };
 
+class CXXAST_API Handle
+{
+public:
+  std::shared_ptr<Node> node_ptr;
+
+public:
+  Handle() = default;
+  Handle(const Handle&) = default;
+  ~Handle() = default;
+
+  explicit Handle(std::shared_ptr<Node> n)
+    : node_ptr(std::move(n))
+  {
+
+  }
+
+  NodeKind kind() const { return node_ptr->node_kind(); }
+
+  bool isEntity() const { return node_ptr->isEntity(); }
+  bool isDocumentation() const { return node_ptr->isDocumentation(); }
+  bool isStatement() const { return node_ptr->isStatement(); }
+  bool isDeclaration() const { return node_ptr->isDeclaration(); }
+
+  template<typename T>
+  bool is() const { return node_ptr->is<T>(); }
+
+  template<typename F>
+  typename F::field_type& get() const { return node_ptr->get<F>(); }
+
+  template<typename F, typename Arg>
+  void set(Arg&& value) { return node_ptr->set<F>(std::forward<Arg>(value)); }
+
+  Handle& operator=(const Handle&) = default;
+};
 
 template<typename T>
 bool test_node_kind(const Node& n)
@@ -88,6 +137,26 @@ inline bool test_node_kind<Function>(const Node& n)
   return n.kind() == NodeKind::Function || n.kind() == NodeKind::FunctionTemplate;
 }
 
+namespace priv
+{
+
+template<typename T>
+struct FieldOfClass : public IField
+{
+  static T& down_cast(Node& self)
+  {
+    return static_cast<T&>(self);
+  }
+};
+
+template<typename C, typename T>
+struct Field : public FieldOfClass<C>
+{
+  typedef T field_type;
+};
+
+} // namespace priv
+
 class CXXAST_API AstNode : public Node
 {
   using Node::Node;
@@ -102,6 +171,18 @@ template<typename T>
 inline bool Node::is() const
 {
   return test_node_kind<T>(*this);
+}
+
+template<typename F>
+inline typename F::field_type& Node::get()
+{
+  return F::get(*this);
+}
+
+template<typename F, typename Arg>
+inline void set(Arg&& arg)
+{
+  F::set(*this, std::forward<Arg>(arg));
 }
 
 } // namespace cxx

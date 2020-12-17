@@ -52,6 +52,19 @@ public:
     entities.push_back(result);
     return result;
   }
+
+  struct Entities : public priv::Field<Namespace, std::vector<std::shared_ptr<Entity>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).entities;
+    }
+
+    static void set(Node& n, field_type entities)
+    {
+      down_cast(n).entities = std::move(entities);
+    }
+  };
 };
 
 } // namespace cxx

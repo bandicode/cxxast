@@ -50,6 +50,19 @@ public:
 
   AccessSpecifier getAccessSpecifier() const override;
   void setAccessSpecifier(AccessSpecifier aspec) override;
+
+  struct Values : public priv::Field<Enum, std::vector<std::shared_ptr<EnumValue>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).values;
+    }
+
+    static void set(Node& n, field_type values)
+    {
+      down_cast(n).values = std::move(values);
+    }
+  };
 };
 
 } // namespace cxx

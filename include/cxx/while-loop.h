@@ -27,6 +27,18 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::WhileLoop;
   NodeKind node_kind() const override;
 
+  struct Condition : public priv::Field<WhileLoop, Expression>
+  {
+    static Expression& get(Node& n)
+    {
+      return down_cast(n).condition;
+    }
+    
+    static void set(Node& n, const Expression& expr)
+    {
+      down_cast(n).condition = expr;
+    }
+  };
 };
 
 } // namespace cxx
