@@ -110,6 +110,32 @@ public:
   bool isDestructor() const;
 
   std::string signature() const;
+
+  struct ReturnType : public priv::Field<Function, Type>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).return_type;
+    }
+
+    static void set(Node& n, field_type val)
+    {
+      down_cast(n).return_type = std::move(val);
+    }
+  };
+
+  struct Parameters : public priv::Field<Function, std::vector<std::shared_ptr<FunctionParameter>>>
+  {
+    static field_type& get(Node& n)
+    {
+      return down_cast(n).parameters;
+    }
+
+    static void set(Node& n, field_type val)
+    {
+      down_cast(n).parameters = std::move(val);
+    }
+  };
 };
 
 class CXXAST_API FunctionTemplate : public Function

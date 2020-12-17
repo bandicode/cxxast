@@ -155,6 +155,22 @@ struct Field : public FieldOfClass<C>
   typedef T field_type;
 };
 
+template<typename C, typename T, T C::*member>
+struct FieldEx : public Field<C, T>
+{
+  typedef T field_type;
+
+  static field_type& get(Node& n)
+  {
+    return down_cast(n).*member;
+  }
+
+  static void set(Node& n, field_type val)
+  {
+    down_cast(n).*member = std::move(val);
+  }
+};
+
 } // namespace priv
 
 class CXXAST_API AstNode : public Node

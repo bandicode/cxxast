@@ -33,6 +33,19 @@ public:
 
   virtual AccessSpecifier getAccessSpecifier() const;
   virtual void setAccessSpecifier(AccessSpecifier aspec);
+
+  struct Name : public priv::Field<Entity, std::string>
+  {
+    static std::string& get(Node& n)
+    {
+      return down_cast(n).name;
+    }
+
+    static void set(Node& n, std::string name)
+    {
+      down_cast(n).name = std::move(name);
+    }
+  };
 };
 
 } // namespace cxx
