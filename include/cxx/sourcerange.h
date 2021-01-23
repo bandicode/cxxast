@@ -15,7 +15,7 @@ namespace cxx
 class SourceRange
 {
 public:
-  std::shared_ptr<File> file;
+  std::weak_ptr<File> file;
   
   struct Position
   {
@@ -60,12 +60,12 @@ inline SourceRange::SourceRange(SourceLocation b, SourceLocation e)
 
 inline SourceLocation SourceRange::locbegin() const
 {
-  return SourceLocation{ file, begin.line, begin.column };
+  return SourceLocation{ file.lock(), begin.line, begin.column };
 }
 
 inline SourceLocation SourceRange::locend() const
 {
-  return SourceLocation{ file, end.line, end.column };
+  return SourceLocation{ file.lock(), end.line, end.column };
 }
 
 } // namespace cxx
