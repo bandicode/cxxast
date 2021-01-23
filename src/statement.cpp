@@ -23,13 +23,6 @@ UnexposedStatement::UnexposedStatement(std::string src) :
 
 }
 
-UnexposedStatement::UnexposedStatement(std::string src, SourceLocation loc)
-  : Statement(loc),
-    source(std::move(src))
-{
-
-}
-
 NodeKind UnexposedStatement::node_kind() const
 {
   return UnexposedStatement::ClassNodeKind;

@@ -17,8 +17,6 @@ class CXXAST_API Statement : public AstNode
 public:
   Statement() = default;
 
-  [[deprecated("use default ctor")]] explicit Statement(SourceLocation loc);
-
   std::shared_ptr<Statement> shared_from_this();
 
   bool isStatement() const override;
@@ -33,22 +31,10 @@ public:
 
 public:
   explicit UnexposedStatement(std::string src);
-  UnexposedStatement(std::string src, SourceLocation loc);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::UnexposedStatement;
   NodeKind node_kind() const override;
 };
-
-} // namespace cxx
-
-namespace cxx
-{
-
-inline Statement::Statement(SourceLocation loc)
-{
-  // @TODO: remove this constructor
-  //location = loc;
-}
 
 } // namespace cxx
 

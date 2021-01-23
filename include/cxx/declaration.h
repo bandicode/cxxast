@@ -20,25 +20,12 @@ public:
 public:
   Declaration() = default;
 
-  [[deprecated("use default ctor")]] explicit Declaration(SourceLocation loc);
-
   std::shared_ptr<Declaration> shared_from_this();
 
   bool isDeclaration() const override;
 
   virtual std::shared_ptr<Entity> entity() const;
 };
-
-} // namespace cxx
-
-namespace cxx
-{
-
-inline Declaration::Declaration(SourceLocation loc)
-  : Statement(loc)
-{
-
-}
 
 } // namespace cxx
 
