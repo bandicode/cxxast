@@ -20,7 +20,7 @@ public:
 public:
   Declaration() = default;
 
-  explicit Declaration(SourceLocation loc);
+  [[deprecated("use default ctor")]] explicit Declaration(SourceLocation loc);
 
   std::shared_ptr<Declaration> shared_from_this();
 

@@ -16,17 +16,20 @@
 namespace cxx
 {
 
+class AstNode;
 class Entity;
 class File;
 class Macro;
 class Name;
 class Namespace;
+class Node;
 class Type;
 
 class CXXAST_API Program
 {
 public:
   std::vector<std::shared_ptr<Macro>> macros;
+  std::map<Node*, std::shared_ptr<AstNode>> astmap;
 
 public:
   Program();

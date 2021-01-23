@@ -14,7 +14,7 @@
 namespace cxx
 {
 
-class CXXAST_API Documentation : public Node
+class CXXAST_API Documentation : public AstNode
 {
 public:
   Documentation() = default;
@@ -44,8 +44,9 @@ namespace cxx
 {
 
 inline Documentation::Documentation(const SourceLocation& loc)
+  : AstNode(SourceRange(loc, loc))
 {
-  location = loc;
+
 }
 
 inline MultilineComment::MultilineComment(std::string srctext, const SourceLocation& loc)

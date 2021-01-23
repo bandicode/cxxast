@@ -101,6 +101,8 @@ protected:
   cxx::Type parseType(CXType t);
 
   cxx::SourceLocation getCursorLocation(CXCursor cursor);
+  cxx::SourceLocation getLocation(const CXSourceLocation& loc);
+  cxx::SourceRange getCursorExtent(CXCursor cursor);
 
 private:
   cxx::FileSystem& m_filesystem;

@@ -5,7 +5,7 @@
 #ifndef CXXAST_NODE_H
 #define CXXAST_NODE_H
 
-#include "cxx/sourcelocation.h"
+#include "cxx/sourcerange.h"
 
 #include <memory>
 #include <string>
@@ -59,9 +59,6 @@ struct CXXAST_API IField
 
 class CXXAST_API Node : public std::enable_shared_from_this<Node>
 {
-public:
-  SourceLocation location;
-
 public:
   Node() = default;
   virtual ~Node();
@@ -175,7 +172,19 @@ struct FieldEx : public Field<C, T>
 
 class CXXAST_API AstNode : public Node
 {
-  using Node::Node;
+public:
+  SourceRange sourcerange;
+  std::vector<std::shared_ptr<AstNode>> children;
+
+public:
+  
+  AstNode() = default;
+  
+  explicit AstNode(const SourceRange& sr)
+    : sourcerange(sr)
+  {
+
+  }
 };
 
 } // namespace cxx

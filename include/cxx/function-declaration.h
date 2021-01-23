@@ -26,7 +26,7 @@ public:
 
   std::shared_ptr<Entity> entity() const override;
 
-  bool isForwardDeclaration() const;
+  // bool isForwardDeclaration() const;
 };
 
 } // namespace cxx

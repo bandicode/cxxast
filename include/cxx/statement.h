@@ -17,7 +17,7 @@ class CXXAST_API Statement : public AstNode
 public:
   Statement() = default;
 
-  explicit Statement(SourceLocation loc);
+  [[deprecated("use default ctor")]] explicit Statement(SourceLocation loc);
 
   std::shared_ptr<Statement> shared_from_this();
 
@@ -46,7 +46,8 @@ namespace cxx
 
 inline Statement::Statement(SourceLocation loc)
 {
-  location = loc;
+  // @TODO: remove this constructor
+  //location = loc;
 }
 
 } // namespace cxx

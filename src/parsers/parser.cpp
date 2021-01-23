@@ -302,7 +302,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
   auto entity = static_cast<Namespace*>(m_program_stack.back().get())->getOrCreateNamespace(name);
   auto decl = std::make_shared<NamespaceDeclaration>(entity);
 
-  decl->location = getCursorLocation(cursor);
+  decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
 
@@ -343,14 +343,15 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   }();
 
   auto decl = std::make_shared<ClassDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
+  decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
 
   if (isForwardDeclaration(cursor))
     return;
 
-  entity->location = getCursorLocation(cursor);
+  program()->astmap[entity.get()] = decl;
+
   m_cursor_entity_map[cursor] = entity;
 
   cxx::AccessSpecifier default_access = [&]() {
@@ -389,11 +390,11 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
   }();
 
   auto decl = std::make_shared<EnumDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
+  decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
 
-  entity->location = getCursorLocation(cursor);
+  program()->astmap[entity.get()] = decl;
 
   {
     StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
@@ -410,7 +411,8 @@ void LibClangParser::visit_enumconstant(const ClangCursor& cursor)
 
   auto& en = static_cast<Enum&>(curNode());
   auto val = std::make_shared<EnumValue>(std::move(n), std::static_pointer_cast<cxx::Enum>(en.shared_from_this()));
-  val->location = getCursorLocation(cursor);
+  // @TODO: map statement to ast statement node
+  // val->location = getCursorLocation(cursor);
   en.values.push_back(val);
 }
 
@@ -509,7 +511,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   
 
   auto decl = std::make_shared<FunctionDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
+  decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
 
@@ -578,8 +580,12 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     update_func(*func, *entity);
   }
 
+  // @TODO: map statement to ast statement node
+  //if (!isForwardDeclaration(cursor))
+    // entity->location = decl->location;
+  // proposal hereafter:
   if (!isForwardDeclaration(cursor))
-    entity->location = decl->location;
+    program()->astmap[entity.get()] = decl;
 }
 
 void LibClangParser::visit_vardecl(const ClangCursor& cursor)
@@ -670,7 +676,8 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
 
   auto parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
   auto var = std::make_shared<Variable>(type, std::move(name), parent);
-  var->location = getCursorLocation(cursor);
+  // @TODO: map statement to ast statement node
+  //var->location = getCursorLocation(cursor);
 
   if (cursor.childCount() == 1)
     var->defaultValue() = parseExpression(cursor.childAt(0));
@@ -816,7 +823,8 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseStatement(const ClangCursor
 std::shared_ptr<cxx::Statement> LibClangParser::parseNullStatement(const ClangCursor& c)
 {
   auto result = std::make_shared<NullStatement>();
-  result->location = getCursorLocation(c);
+  // @TODO: map statement to ast statement node
+  // result->location = getCursorLocation(c);
   return result;
 }
 
@@ -987,7 +995,11 @@ cxx::Type LibClangParser::parseType(CXType t)
 cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
 {
   CXSourceLocation location = clang_getCursorLocation(cursor);
+  return getLocation(location);
+}
 
+cxx::SourceLocation LibClangParser::getLocation(const CXSourceLocation& location)
+{
   CXFile file;
   unsigned int line, col, offset;
   clang_getSpellingLocation(location, &file, &line, &col, &offset);
@@ -1004,6 +1016,16 @@ cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
 
     return cxx::SourceLocation(result_file, line, col);
   }
+}
+
+cxx::SourceRange LibClangParser::getCursorExtent(CXCursor cursor)
+{
+  CXSourceRange range = clang_getCursorExtent(cursor);
+
+  cxx::SourceLocation start = getLocation(clang_getRangeStart(range));
+  cxx::SourceLocation end = getLocation(clang_getRangeEnd(range));
+
+  return cxx::SourceRange(start, end);
 }
 
 } // namespace parsers
