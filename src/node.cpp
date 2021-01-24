@@ -4,6 +4,9 @@
 
 #include "cxx/node.h"
 
+#include "cxx/entity.h"
+#include "cxx/statement.h"
+
 #include <stdexcept>
 
 namespace cxx
@@ -32,6 +35,16 @@ bool INode::isStatement() const
 bool INode::isDeclaration() const
 {
   return false;
+}
+
+Entity Handle::toEntity() const
+{
+  return isEntity() ? Entity{ std::static_pointer_cast<IEntity>(node_ptr) } : Entity{};
+}
+
+Statement Handle::toStatement() const
+{
+  return isStatement() ? Statement{ std::static_pointer_cast<IStatement>(node_ptr) } : Statement{};
 }
 
 NodeKind AstNode::node_kind() const

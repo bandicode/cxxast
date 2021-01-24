@@ -9,7 +9,7 @@
 namespace cxx
 {
 
-IfStatement::IfStatement(const Expression& expr, StatementPtr b)
+IfStatement::IfStatement(const Expression& expr, Statement b)
   : condition(expr), body(b)
 {
 

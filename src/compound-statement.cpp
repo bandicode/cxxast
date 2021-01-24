@@ -9,7 +9,7 @@
 namespace cxx
 {
 
-CompoundStatement::CompoundStatement(std::vector<StatementPtr> stmts)
+CompoundStatement::CompoundStatement(std::vector<Statement> stmts)
   : statements(std::move(stmts))
 {
 

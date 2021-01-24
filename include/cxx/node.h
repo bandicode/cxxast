@@ -14,6 +14,8 @@ namespace cxx
 {
 
 class Class;
+class Entity;
+class Statement;
 class Function;
 
 enum class NodeKind
@@ -107,6 +109,9 @@ public:
   bool isStatement() const { return node_ptr->isStatement(); }
   bool isDeclaration() const { return node_ptr->isDeclaration(); }
 
+  Entity toEntity() const;
+  Statement toStatement() const;
+
   template<typename T>
   bool is() const { return node_ptr->is<T>(); }
 
@@ -118,6 +123,8 @@ public:
 
   Handle& operator=(const Handle&) = default;
 };
+
+typedef Handle Node;
 
 template<typename T>
 bool test_node_kind(const INode& n)

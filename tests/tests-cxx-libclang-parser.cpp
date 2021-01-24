@@ -89,20 +89,20 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
 
   REQUIRE(foo.isNoexcept());
 
-  REQUIRE(foo.body->is<cxx::CompoundStatement>());
+  REQUIRE(foo.body.is<cxx::CompoundStatement>());
 
   {
-    auto& statements = std::static_pointer_cast<cxx::CompoundStatement>(foo.body)->statements;
+    auto& statements = foo.body.get<cxx::CompoundStatement::Statements>();
 
     REQUIRE(statements.size() == 1);
 
-    REQUIRE(statements.front()->is<cxx::IfStatement>());
+    REQUIRE(statements.front().is<cxx::IfStatement>());
     
     {
-      auto if_stmt = std::static_pointer_cast<cxx::IfStatement>(statements.front());
+      cxx::Statement if_stmt = statements.front();
 
-      REQUIRE(if_stmt->condition.toString() == "n>0");
-      REQUIRE(if_stmt->body->is<cxx::CompoundStatement>());
+      REQUIRE(if_stmt.get<cxx::IfStatement::Condition>().toString() == "n>0");
+      REQUIRE(if_stmt.get<cxx::IfStatement::Body>().is<cxx::CompoundStatement>());
     }
   }
 }

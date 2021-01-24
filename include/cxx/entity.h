@@ -48,6 +48,54 @@ public:
   };
 };
 
+class CXXAST_API Entity
+{
+protected:
+  std::shared_ptr<IEntity> d;
+
+public:
+  Entity() = default;
+  Entity(const Entity&) = default;
+  ~Entity() = default;
+
+  Entity(std::shared_ptr<IEntity> impl)
+    : d(std::move(impl))
+  {
+
+  }
+
+  bool isNull() const { return d == nullptr; }
+
+  NodeKind kind() const { return d->node_kind(); }
+
+  Entity parent() const { return d->parent(); }
+
+  AccessSpecifier accessSpecifier() const { return d->getAccessSpecifier(); }
+
+  template<typename T>
+  bool is() const { return d->is<T>(); }
+
+  template<typename F>
+  typename F::field_type& get() const { return d->get<F>(); }
+
+  template<typename F, typename Arg>
+  void set(Arg&& value) { return d->set<F>(std::forward<Arg>(value)); }
+
+  const std::shared_ptr<IEntity>& impl() const { return d; }
+
+  Entity& operator=(const Entity&) = default;
+};
+
+inline bool operator==(const Entity& lhs, const Entity& rhs)
+{
+  return lhs.impl() == rhs.impl();
+}
+
+inline bool operator!=(const Entity& lhs, const Entity& rhs)
+{
+  return lhs.impl() != rhs.impl();
+}
+
 } // namespace cxx
 
 namespace cxx

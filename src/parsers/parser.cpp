@@ -474,7 +474,7 @@ static void update_func(cxx::Function& func, const cxx::Function& new_one)
     }
   }
 
-  if (func.body == nullptr && new_one.body != nullptr)
+  if (func.body.isNull() && !new_one.body.isNull())
   {
     func.body = new_one.body;
   }
@@ -796,7 +796,7 @@ CXChildVisitResult LibClangParser::visitFunctionParamDecl(CXCursor cursor, CXCur
   return CXChildVisit_Continue;
 }
 
-std::shared_ptr<cxx::IStatement> LibClangParser::parseStatement(const ClangCursor& c)
+Statement LibClangParser::parseStatement(const ClangCursor& c)
 {
   CXCursorKind k = c.kind();
 

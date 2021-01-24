@@ -15,17 +15,17 @@ namespace cxx
 class CXXAST_API CompoundStatement : public IStatement
 {
 public:
-  std::vector<StatementPtr> statements;
+  std::vector<Statement> statements;
   
 public:
   CompoundStatement() = default;
 
-  explicit CompoundStatement(std::vector<StatementPtr> stmts);
+  explicit CompoundStatement(std::vector<Statement> stmts);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::CompoundStatement;
   NodeKind node_kind() const override;
 
-  struct Statements : public priv::Field<CompoundStatement, std::vector<StatementPtr>>
+  struct Statements : public priv::Field<CompoundStatement, std::vector<Statement>>
   {
     static field_type& get(INode& n)
     {

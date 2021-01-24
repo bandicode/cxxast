@@ -17,17 +17,18 @@ class CXXAST_API WhileLoop : public IStatement
 {
 public:
   Expression condition;
-  std::shared_ptr<IStatement> body;
+  Statement body;
   
 public:
   WhileLoop() = default;
 
-  WhileLoop(const Expression& cond, std::shared_ptr<IStatement> b);
+  WhileLoop(const Expression& cond, const Statement& b);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::WhileLoop;
   NodeKind node_kind() const override;
 
   struct Condition : priv::FieldEx<WhileLoop, Expression, &WhileLoop::condition> { };
+  struct Body : priv::FieldEx<WhileLoop, Statement, &WhileLoop::body> { };
 };
 
 } // namespace cxx

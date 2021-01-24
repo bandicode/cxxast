@@ -8,6 +8,7 @@
 #include "cxx/entity.h"
 
 #include "cxx/expression.h"
+#include "cxx/statement.h"
 #include "cxx/type.h"
 #include "cxx/template.h"
 
@@ -77,7 +78,7 @@ public:
   std::vector<std::shared_ptr<FunctionParameter>> parameters;
   int specifiers = FunctionSpecifier::None;
   FunctionKind::Value kind = FunctionKind::None;
-  std::shared_ptr<INode> body;
+  Statement body;
 
 public:
   ~Function() = default;
@@ -136,6 +137,8 @@ public:
       down_cast(n).parameters = std::move(val);
     }
   };
+
+  struct Body : priv::FieldEx<Function, Statement, &Function::body> { };
 };
 
 class CXXAST_API FunctionTemplate : public Function

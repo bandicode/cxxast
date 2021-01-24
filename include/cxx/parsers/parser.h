@@ -93,7 +93,7 @@ protected:
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
 
-  std::shared_ptr<cxx::IStatement> parseStatement(const ClangCursor& c);
+  Statement parseStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
   std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
   std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
