@@ -100,6 +100,9 @@ protected:
   std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
   std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
 
+  void recursiveUnexposedParse(const ClangCursor& c);
+  std::string getSpelling(const ClangTokenSet& tokens);
+
   cxx::Expression parseExpression(const ClangCursor& c);
 
   cxx::Type parseType(CXType t);

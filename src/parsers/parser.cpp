@@ -919,8 +919,51 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseWhile(const ClangCursor& c
 std::shared_ptr<cxx::IStatement> LibClangParser::parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<UnexposedStatement>();
-  // @TODO: since this statement is unexposed, its astnode should be fully parsed
+ 
   bind(astnode, result);
+
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
+
+  return result;
+}
+
+void LibClangParser::recursiveUnexposedParse(const ClangCursor& c)
+{
+  std::shared_ptr<AstNode> astnode = createAstNode(c);
+  astWrite(astnode);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
+}
+
+std::string LibClangParser::getSpelling(const ClangTokenSet& tokens)
+{
+  if (tokens.size() == 0)
+    return std::string();
+
+  std::string result = tokens.at(0).getSpelling();
+
+  CXSourceRange range = tokens.at(0).getExtent();
+  cxx::SourceLocation loc = getLocation(clang_getRangeEnd(range));
+
+  for (size_t i = 1; i < tokens.size(); i++)
+  {
+    range = tokens.at(i).getExtent();
+    cxx::SourceLocation tokloc = getLocation(clang_getRangeStart(range));
+
+    if (tokloc.line() != loc.line() || tokloc.column() != loc.column())
+      result.push_back(' ');
+
+    result += tokens.at(i).getSpelling();
+
+    loc = getLocation(clang_getRangeEnd(range));
+  }
+
   return result;
 }
 
@@ -934,10 +977,11 @@ cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
   CXSourceRange range = c.getExtent();
   ClangTokenSet tokens = m_tu.tokenize(range);
 
-  for (size_t i = 0; i < tokens.size(); i++)
-  {
-    spelling += tokens.at(i).getSpelling();
-  }
+  spelling = getSpelling(tokens);
+
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
 
   return Expression{ std::move(spelling) };
 }

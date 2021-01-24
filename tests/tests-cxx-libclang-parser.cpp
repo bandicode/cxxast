@@ -101,7 +101,7 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
     {
       cxx::Statement if_stmt = statements.front();
 
-      REQUIRE(if_stmt.get<cxx::IfStatement::Condition>().toString() == "n>0");
+      REQUIRE(if_stmt.get<cxx::IfStatement::Condition>().toString() == "n > 0");
       REQUIRE(if_stmt.get<cxx::IfStatement::Body>().is<cxx::CompoundStatement>());
     }
   }

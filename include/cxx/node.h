@@ -200,6 +200,7 @@ public:
   SourceRange sourcerange;
   std::vector<std::shared_ptr<AstNode>> children;
   std::shared_ptr<INode> node_ptr;
+  // @TODO: add 'type' field ? would be usefull for tokens
 
 public:
   
