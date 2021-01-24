@@ -43,6 +43,7 @@ enum class NodeKind
   VariableDeclaration,
   UnexposedStatement,
   /*Ast */
+  AstNode,
   AstDeclaration,
   /* Misc */
   MultilineComment,
@@ -188,6 +189,8 @@ public:
   {
 
   }
+
+  NodeKind node_kind() const override;
 };
 
 } // namespace cxx

@@ -34,4 +34,9 @@ bool Node::isDeclaration() const
   return false;
 }
 
+NodeKind AstNode::node_kind() const
+{
+  return NodeKind::AstNode;
+}
+
 } // namespace cxx

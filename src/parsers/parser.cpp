@@ -190,15 +190,8 @@ cxx::Node& LibClangParser::curNode()
 
 void LibClangParser::astWrite(std::shared_ptr<AstDeclaration> n)
 {
-  if (m_ast_stack.empty())
-  {
-    m_current_file->nodes.push_back(n);
-  }
-  else
-  {
     cxx::AstNode& cur = *m_ast_stack.back();
     cur.children.push_back(n);
-  }
 }
 
 void LibClangParser::write(std::shared_ptr<Entity> e)
@@ -258,8 +251,6 @@ void LibClangParser::visit(const ClangCursor& cursor)
 
 void LibClangParser::visit_tu(const ClangCursor& cursor)
 {
-  assert(m_ast_stack.empty());
-
   // We are working at translation-unit level
 
   auto cursor_file = getCursorFile(cursor);
@@ -280,6 +271,13 @@ void LibClangParser::visit_tu(const ClangCursor& cursor)
 
     m_current_cxfile = cursor_file;
     m_current_file = file;
+
+    if (m_current_file->ast == nullptr)
+      m_current_file->ast = std::make_shared<AstNode>();
+
+    assert(m_ast_stack.size() <= 1);
+    m_ast_stack.clear();
+    m_ast_stack.push_back(m_current_file->ast);
   }
 
   return visit(cursor);
