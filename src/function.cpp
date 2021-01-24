@@ -10,14 +10,14 @@ namespace cxx
 {
 
 FunctionParameter::FunctionParameter(Type t, std::string name, std::shared_ptr<Function> parent)
-  : Entity(std::move(name), parent),
+  : IEntity(std::move(name), parent),
     type(std::move(t))
 {
 
 }
 
 FunctionParameter::FunctionParameter(Type t, std::string name, Expression default_val, std::shared_ptr<Function> parent)
-  : Entity(std::move(name), parent),
+  : IEntity(std::move(name), parent),
     type(std::move(t)),
     default_value(std::move(default_val))
 {
@@ -31,7 +31,7 @@ NodeKind FunctionParameter::node_kind() const
 
 std::shared_ptr<Function> FunctionParameter::parent() const
 {
-  return std::static_pointer_cast<Function>(Entity::parent());
+  return std::static_pointer_cast<Function>(IEntity::parent());
 }
 
 NodeKind Function::node_kind() const
@@ -130,7 +130,7 @@ std::string Function::signature() const
   return result;
 }
 
-FunctionTemplate::FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent)
+FunctionTemplate::FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<IEntity> parent)
   : Function(std::move(name), parent),
     template_parameters(std::move(tparams))
 {

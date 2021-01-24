@@ -29,11 +29,11 @@ public:
   };
 };
 
-class CXXAST_API Variable : public Entity
+class CXXAST_API Variable : public IEntity
 {
 public:
-  Variable(Type type, std::string name, std::shared_ptr<Entity> parent = nullptr);
-  Variable(Type type, std::string name, Expression default_value, std::shared_ptr<Entity> parent = nullptr);
+  Variable(Type type, std::string name, std::shared_ptr<IEntity> parent = nullptr);
+  Variable(Type type, std::string name, Expression default_value, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Variable;
   NodeKind node_kind() const override;
@@ -58,15 +58,15 @@ private:
 namespace cxx
 {
 
-inline Variable::Variable(Type type, std::string name, std::shared_ptr<Entity> parent)
-  : Entity{std::move(name), std::move(parent)},
+inline Variable::Variable(Type type, std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{std::move(name), std::move(parent)},
     m_type{type}
 {
 
 }
 
-inline Variable::Variable(Type type, std::string name, Expression default_value, std::shared_ptr<Entity> parent)
-  : Entity{ std::move(name), std::move(parent) },
+inline Variable::Variable(Type type, std::string name, Expression default_value, std::shared_ptr<IEntity> parent)
+  : IEntity{ std::move(name), std::move(parent) },
     m_type{ type },
     m_default_value{ std::move(default_value) }
 {

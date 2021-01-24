@@ -14,34 +14,34 @@ namespace cxx
 
 class Documentation;
 
-class CXXAST_API Entity : public Node
+class CXXAST_API IEntity : public INode
 {
 public:
   std::string name;
-  std::weak_ptr<Entity> weak_parent;
+  std::weak_ptr<IEntity> weak_parent;
   std::shared_ptr<Documentation> documentation;
 
 public:
-  explicit Entity(std::string name, std::shared_ptr<Entity> parent = nullptr);
+  explicit IEntity(std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
-  std::shared_ptr<Entity> shared_from_this();
-  std::shared_ptr<const Entity> shared_from_this() const;
+  std::shared_ptr<IEntity> shared_from_this();
+  std::shared_ptr<const IEntity> shared_from_this() const;
 
   bool isEntity() const override;
 
-  std::shared_ptr<Entity> parent() const;
+  std::shared_ptr<IEntity> parent() const;
 
   virtual AccessSpecifier getAccessSpecifier() const;
   virtual void setAccessSpecifier(AccessSpecifier aspec);
 
-  struct Name : public priv::Field<Entity, std::string>
+  struct Name : public priv::Field<IEntity, std::string>
   {
-    static std::string& get(Node& n)
+    static std::string& get(INode& n)
     {
       return down_cast(n).name;
     }
 
-    static void set(Node& n, std::string name)
+    static void set(INode& n, std::string name)
     {
       down_cast(n).name = std::move(name);
     }
@@ -53,14 +53,14 @@ public:
 namespace cxx
 {
 
-inline Entity::Entity(std::string n, std::shared_ptr<Entity> parent)
+inline IEntity::IEntity(std::string n, std::shared_ptr<IEntity> parent)
   : name(std::move(n)),
     weak_parent(parent)
 {
 
 }
 
-inline std::shared_ptr<Entity> Entity::parent() const
+inline std::shared_ptr<IEntity> IEntity::parent() const
 {
   return weak_parent.lock();
 }

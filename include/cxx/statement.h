@@ -12,17 +12,17 @@
 namespace cxx
 {
 
-class CXXAST_API Statement : public Node
+class CXXAST_API IStatement : public INode
 {
 public:
-  Statement() = default;
+  IStatement() = default;
 
-  std::shared_ptr<Statement> shared_from_this();
+  std::shared_ptr<IStatement> shared_from_this();
 
   bool isStatement() const override;
 };
 
-typedef std::shared_ptr<Statement> StatementPtr;
+typedef std::shared_ptr<IStatement> StatementPtr;
 
 class CXXAST_API AstStatement : public AstNode
 {
@@ -30,7 +30,7 @@ public:
   AstStatement() = default;
 };
 
-class CXXAST_API UnexposedStatement : public Statement
+class CXXAST_API UnexposedStatement : public IStatement
 {
 public:
   UnexposedStatement();

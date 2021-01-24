@@ -35,7 +35,7 @@ const std::vector<std::shared_ptr<TemplateParameter>>& Class::templateParameters
   return static_instance;
 }
 
-ClassTemplate::ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent)
+ClassTemplate::ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<IEntity> parent)
   : Class(std::move(name), parent),
     template_parameters(std::move(tparams))
 {

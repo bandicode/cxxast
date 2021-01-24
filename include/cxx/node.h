@@ -60,11 +60,11 @@ struct CXXAST_API IField
 
 } // namespace priv
 
-class CXXAST_API Node : public std::enable_shared_from_this<Node>
+class CXXAST_API INode : public std::enable_shared_from_this<INode>
 {
 public:
-  Node() = default;
-  virtual ~Node();
+  INode() = default;
+  virtual ~INode();
 
   virtual NodeKind node_kind() const = 0;
   NodeKind kind() const { return node_kind(); }
@@ -87,14 +87,14 @@ public:
 class CXXAST_API Handle
 {
 public:
-  std::shared_ptr<Node> node_ptr;
+  std::shared_ptr<INode> node_ptr;
 
 public:
   Handle() = default;
   Handle(const Handle&) = default;
   ~Handle() = default;
 
-  explicit Handle(std::shared_ptr<Node> n)
+  explicit Handle(std::shared_ptr<INode> n)
     : node_ptr(std::move(n))
   {
 
@@ -120,19 +120,19 @@ public:
 };
 
 template<typename T>
-bool test_node_kind(const Node& n)
+bool test_node_kind(const INode& n)
 {
   return T::ClassNodeKind == n.kind();
 }
 
 template<>
-inline bool test_node_kind<Class>(const Node& n)
+inline bool test_node_kind<Class>(const INode& n)
 {
   return n.kind() == NodeKind::Class || n.kind() == NodeKind::ClassTemplate;
 }
 
 template<>
-inline bool test_node_kind<Function>(const Node& n)
+inline bool test_node_kind<Function>(const INode& n)
 {
   return n.kind() == NodeKind::Function || n.kind() == NodeKind::FunctionTemplate;
 }
@@ -143,7 +143,7 @@ namespace priv
 template<typename T>
 struct FieldOfClass : public IField
 {
-  static T& down_cast(Node& self)
+  static T& down_cast(INode& self)
   {
     return static_cast<T&>(self);
   }
@@ -160,12 +160,12 @@ struct FieldEx : public Field<C, T>
 {
   typedef T field_type;
 
-  static field_type& get(Node& n)
+  static field_type& get(INode& n)
   {
     return FieldOfClass<C>::down_cast(n).*member;
   }
 
-  static void set(Node& n, field_type val)
+  static void set(INode& n, field_type val)
   {
     FieldOfClass<C>::down_cast(n).*member = std::move(val);
   }
@@ -173,12 +173,12 @@ struct FieldEx : public Field<C, T>
 
 } // namespace priv
 
-class CXXAST_API AstNode : public Node
+class CXXAST_API AstNode : public INode
 {
 public:
   SourceRange sourcerange;
   std::vector<std::shared_ptr<AstNode>> children;
-  std::shared_ptr<Node> node_ptr;
+  std::shared_ptr<INode> node_ptr;
 
 public:
   
@@ -190,7 +190,7 @@ public:
 
   }
 
-  explicit AstNode(const SourceRange& sr, std::shared_ptr<Node> n)
+  explicit AstNode(const SourceRange& sr, std::shared_ptr<INode> n)
     : sourcerange(sr),
       node_ptr(std::move(n))
   {
@@ -206,19 +206,19 @@ namespace cxx
 {
 
 template<typename T>
-inline bool Node::is() const
+inline bool INode::is() const
 {
   return test_node_kind<T>(*this);
 }
 
 template<typename F>
-inline typename F::field_type& Node::get()
+inline typename F::field_type& INode::get()
 {
   return F::get(*this);
 }
 
 template<typename F, typename Arg>
-inline void Node::set(Arg&& arg)
+inline void INode::set(Arg&& arg)
 {
   F::set(*this, std::forward<Arg>(arg));
 }

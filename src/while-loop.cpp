@@ -9,7 +9,7 @@
 namespace cxx
 {
 
-WhileLoop::WhileLoop(const Expression& cond, std::shared_ptr<Statement> b)
+WhileLoop::WhileLoop(const Expression& cond, std::shared_ptr<IStatement> b)
   : condition(cond), body(b)
 {
 

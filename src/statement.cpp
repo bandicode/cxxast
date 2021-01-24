@@ -7,12 +7,12 @@
 namespace cxx
 {
 
-std::shared_ptr<Statement> Statement::shared_from_this()
+std::shared_ptr<IStatement> IStatement::shared_from_this()
 {
-  return std::static_pointer_cast<Statement>(Node::shared_from_this());
+  return std::static_pointer_cast<IStatement>(INode::shared_from_this());
 }
 
-bool Statement::isStatement() const
+bool IStatement::isStatement() const
 {
   return true;
 }

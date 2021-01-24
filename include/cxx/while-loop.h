@@ -13,16 +13,16 @@
 namespace cxx
 {
 
-class CXXAST_API WhileLoop : public Statement
+class CXXAST_API WhileLoop : public IStatement
 {
 public:
   Expression condition;
-  std::shared_ptr<Statement> body;
+  std::shared_ptr<IStatement> body;
   
 public:
   WhileLoop() = default;
 
-  WhileLoop(const Expression& cond, std::shared_ptr<Statement> b);
+  WhileLoop(const Expression& cond, std::shared_ptr<IStatement> b);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::WhileLoop;
   NodeKind node_kind() const override;

@@ -17,7 +17,7 @@ NodeKind Namespace::node_kind() const
 
 std::shared_ptr<Namespace> Namespace::getOrCreateNamespace(const std::string& name)
 {
-  auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<Entity>& e) {
+  auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<IEntity>& e) {
     return e->is<Namespace>() && e->name == name;
     });
 
@@ -38,7 +38,7 @@ std::shared_ptr<Class> Namespace::createClass(std::string name)
 
 std::shared_ptr<Class> Namespace::getOrCreateClass(const std::string& name)
 {
-  auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<Entity>& e) {
+  auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<IEntity>& e) {
     return e->is<Class>() && e->name == name;
     });
 

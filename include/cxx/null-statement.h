@@ -13,7 +13,7 @@
 namespace cxx
 {
 
-class CXXAST_API NullStatement : public Statement
+class CXXAST_API NullStatement : public IStatement
 {  
 public:
   NullStatement() = default;

@@ -37,9 +37,9 @@ namespace parsers
 
 struct StateGuard
 {
-  std::vector<std::shared_ptr<cxx::Node>>& m_stack;
+  std::vector<std::shared_ptr<cxx::INode>>& m_stack;
 
-  StateGuard(std::vector<std::shared_ptr<cxx::Node>>& stack, std::shared_ptr<cxx::Node> node)
+  StateGuard(std::vector<std::shared_ptr<cxx::INode>>& stack, std::shared_ptr<cxx::INode> node)
     : m_stack(stack)
   {
     m_stack.push_back(node);
@@ -88,11 +88,11 @@ struct RAIIGuard
 
 struct StacksGuard
 {
-  RAIIVectorSharedGuard<cxx::Node> prog_;
+  RAIIVectorSharedGuard<cxx::INode> prog_;
   RAIIVectorSharedGuard<cxx::AstNode> ast_;
 
-  StacksGuard(std::vector<std::shared_ptr<cxx::Node>>& p, std::vector<std::shared_ptr<cxx::AstNode>>& a, 
-    std::shared_ptr<cxx::Node> p_elem, std::shared_ptr<cxx::AstNode> a_elem)
+  StacksGuard(std::vector<std::shared_ptr<cxx::INode>>& p, std::vector<std::shared_ptr<cxx::AstNode>>& a, 
+    std::shared_ptr<cxx::INode> p_elem, std::shared_ptr<cxx::AstNode> a_elem)
     : prog_(p, p_elem),
       ast_(a, a_elem)
   {
@@ -183,7 +183,7 @@ std::shared_ptr<File> LibClangParser::getFile(const std::string& path)
   return m_filesystem.get(path);
 }
 
-cxx::Node& LibClangParser::curNode()
+cxx::INode& LibClangParser::curNode()
 {
   return *m_program_stack.back();
 }
@@ -194,7 +194,7 @@ void LibClangParser::astWrite(std::shared_ptr<AstNode> n)
     cur.children.push_back(n);
 }
 
-void LibClangParser::write(std::shared_ptr<Entity> e)
+void LibClangParser::write(std::shared_ptr<IEntity> e)
 {
   switch (curNode().kind())
   {
@@ -212,7 +212,7 @@ void LibClangParser::write(std::shared_ptr<Entity> e)
     throw std::runtime_error{ "LibClangParser::write() failed" };
   }
 
-  e->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+  e->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
 }
 
 std::shared_ptr<AstNode> LibClangParser::createAstNode(const ClangCursor& c)
@@ -222,7 +222,7 @@ std::shared_ptr<AstNode> LibClangParser::createAstNode(const ClangCursor& c)
   return ret;
 }
 
-void LibClangParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<Node>& n)
+void LibClangParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n)
 {
   astnode->node_ptr = n;
   program()->astmap[n.get()] = astnode;
@@ -309,7 +309,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor, const std::share
   astnode->node_ptr = entity;
 
   {
-    RAIIVectorSharedGuard<cxx::Node> guard{ m_program_stack, entity };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
 
     cursor.visitChildren([this](ClangCursor c) {
       this->visit(c);
@@ -361,7 +361,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor, const std::shared_pt
   }();
 
   {
-    RAIIVectorSharedGuard<cxx::Node> guard{ m_program_stack, entity };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
     RAIIGuard<cxx::AccessSpecifier> access_guard{ m_access_specifier };
 
     m_access_specifier = default_access;
@@ -391,7 +391,7 @@ void LibClangParser::visit_enum(const ClangCursor& cursor, const std::shared_ptr
   bind(astnode, entity);
 
   {
-    RAIIVectorSharedGuard<cxx::Node> guard{ m_program_stack, entity };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
 
     cursor.visitChildren([this](ClangCursor c) {
       this->visit(c);
@@ -435,7 +435,7 @@ static bool are_equiv_func(const cxx::Function& a, const cxx::Function& b)
   return true;
 }
 
-static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, const cxx::Function& func)
+static std::shared_ptr<cxx::Function> find_equiv_func(cxx::INode& current_node, const cxx::Function& func)
 {
   if (current_node.is<cxx::Class>())
   {
@@ -506,7 +506,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor, const std::shared
   astnode->node_ptr = entity;
 
   {
-    RAIIVectorSharedGuard<cxx::Node> guard{ m_program_stack, entity };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
     // TODO: parse func body
   }
 
@@ -522,7 +522,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor, const std::shared
     }
   }();
 
-  auto semantic_parent = [&]() -> std::shared_ptr<cxx::Node> {
+  auto semantic_parent = [&]() -> std::shared_ptr<cxx::INode> {
     if (is_member)
     {
       ClangCursor parent = cursor.getSemanticParent();
@@ -549,7 +549,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor, const std::shared
 
   if (!func)
   {
-    entity->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+    entity->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
 
     if (curNode().is<Namespace>())
     {
@@ -669,7 +669,7 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
   std::string name = cursor.getSpelling();
   Type type = parseType(cursor.getType());
 
-  auto parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+  auto parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
   auto var = std::make_shared<Variable>(type, std::move(name), parent);
   // @TODO: map statement to ast statement node
   //var->location = getCursorLocation(cursor);
@@ -682,7 +682,7 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
 
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& cursor)
 {
-  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_program_stack.back()));
+  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::IEntity>(m_program_stack.back()));
 
   CXCursorKind kind = clang_getCursorKind(cursor);
 
@@ -796,7 +796,7 @@ CXChildVisitResult LibClangParser::visitFunctionParamDecl(CXCursor cursor, CXCur
   return CXChildVisit_Continue;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseStatement(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseStatement(const ClangCursor& c)
 {
   CXCursorKind k = c.kind();
 
@@ -820,14 +820,14 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseStatement(const ClangCursor
   }
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<NullStatement>();
   bind(astnode, result);
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<CompoundStatement>();
 
@@ -840,7 +840,7 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseCompoundStatement(const Cla
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<IfStatement>();
 
@@ -882,7 +882,7 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseIf(const ClangCursor& c, co
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<WhileLoop>();
 
@@ -916,7 +916,7 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c,
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<UnexposedStatement>();
   // @TODO: since this statement is unexposed, its astnode should be fully parsed

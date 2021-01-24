@@ -21,12 +21,12 @@ namespace cxx
 {
 
 class AstNode;
-class Declaration;
+class IDeclaration;
 class Enum;
 class Namespace;
 class Type;
 class Variable;
-class Statement;
+class IStatement;
 
 class FileSystem;
 class Program;
@@ -65,13 +65,13 @@ public:
 
 protected:
   std::shared_ptr<File> getFile(const std::string& path);
-  cxx::Node& curNode();
+  cxx::INode& curNode();
 
   void astWrite(std::shared_ptr<AstNode> n);
-  void write(std::shared_ptr<Entity> e);
+  void write(std::shared_ptr<IEntity> e);
 
   std::shared_ptr<AstNode> createAstNode(const ClangCursor& c);
-  void bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<Node>& n);
+  void bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n);
 
   /* Visitor callbacks */
   void visit(const ClangCursor& cursor);
@@ -93,12 +93,12 @@ protected:
   static  CXChildVisitResult param_decl_visitor(CXCursor cursor, CXCursor parent, CXClientData data);
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
 
-  std::shared_ptr<cxx::Statement> parseStatement(const ClangCursor& c);
-  std::shared_ptr<cxx::Statement> parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::Statement> parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::Statement> parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::Statement> parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::Statement> parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  std::shared_ptr<cxx::IStatement> parseStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
 
   cxx::Expression parseExpression(const ClangCursor& c);
 
@@ -121,10 +121,10 @@ private:
 
   std::set<std::shared_ptr<File>> m_parsed_files;
 
-  std::unordered_map<ClangCursor, std::shared_ptr<Entity>> m_cursor_entity_map;
+  std::unordered_map<ClangCursor, std::shared_ptr<IEntity>> m_cursor_entity_map;
 
   cxx::AccessSpecifier m_access_specifier = cxx::AccessSpecifier::PUBLIC;
-  std::vector<std::shared_ptr<cxx::Node>> m_program_stack;
+  std::vector<std::shared_ptr<cxx::INode>> m_program_stack;
   std::vector<std::shared_ptr<cxx::AstNode>> m_ast_stack;
 };
 

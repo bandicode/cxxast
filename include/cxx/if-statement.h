@@ -13,7 +13,7 @@
 namespace cxx
 {
 
-class CXXAST_API IfStatement : public Statement
+class CXXAST_API IfStatement : public IStatement
 {
 public:
   StatementPtr initialization;

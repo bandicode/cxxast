@@ -9,27 +9,27 @@
 namespace cxx
 {
 
-Node::~Node()
+INode::~INode()
 {
 
 }
 
-bool Node::isEntity() const
-{
-  return false;
-}
-
-bool Node::isDocumentation() const
+bool INode::isEntity() const
 {
   return false;
 }
 
-bool Node::isStatement() const
+bool INode::isDocumentation() const
 {
   return false;
 }
 
-bool Node::isDeclaration() const
+bool INode::isStatement() const
+{
+  return false;
+}
+
+bool INode::isDeclaration() const
 {
   return false;
 }

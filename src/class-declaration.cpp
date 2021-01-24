@@ -12,7 +12,7 @@ NodeKind ClassDeclaration::node_kind() const
   return ClassDeclaration::ClassNodeKind;
 }
 
-std::shared_ptr<Entity> ClassDeclaration::entity() const
+std::shared_ptr<IEntity> ClassDeclaration::entity() const
 {
   return this->class_;
 }

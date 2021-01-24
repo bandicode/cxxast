@@ -12,7 +12,7 @@
 namespace cxx
 {
 
-class CXXAST_API CompoundStatement : public Statement
+class CXXAST_API CompoundStatement : public IStatement
 {
 public:
   std::vector<StatementPtr> statements;
@@ -27,12 +27,12 @@ public:
 
   struct Statements : public priv::Field<CompoundStatement, std::vector<StatementPtr>>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).statements;
     }
 
-    static void set(Node& n, field_type val)
+    static void set(INode& n, field_type val)
     {
       down_cast(n).statements = std::move(val);
     }
