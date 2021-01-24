@@ -17,8 +17,7 @@ bool Statement::isStatement() const
   return true;
 }
 
-UnexposedStatement::UnexposedStatement(std::string src) :
-  source(std::move(src))
+UnexposedStatement::UnexposedStatement()
 {
 
 }

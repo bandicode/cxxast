@@ -190,6 +190,13 @@ public:
 
   }
 
+  explicit AstNode(const SourceRange& sr, std::shared_ptr<Node> n)
+    : sourcerange(sr),
+      node_ptr(std::move(n))
+  {
+
+  }
+
   NodeKind node_kind() const override;
 };
 

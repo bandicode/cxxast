@@ -33,10 +33,7 @@ public:
 class CXXAST_API UnexposedStatement : public Statement
 {
 public:
-  std::string source; // @TODO: should we remove this ?
-
-public:
-  explicit UnexposedStatement(std::string src);
+  UnexposedStatement();
 
   static constexpr NodeKind ClassNodeKind = NodeKind::UnexposedStatement;
   NodeKind node_kind() const override;

@@ -20,7 +20,7 @@
 namespace cxx
 {
 
-class AstDeclaration;
+class AstNode;
 class Declaration;
 class Enum;
 class Namespace;
@@ -67,8 +67,10 @@ protected:
   std::shared_ptr<File> getFile(const std::string& path);
   cxx::Node& curNode();
 
-  void astWrite(std::shared_ptr<AstDeclaration> n);
+  void astWrite(std::shared_ptr<AstNode> n);
   void write(std::shared_ptr<Entity> e);
+
+  void bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<Node>& n);
 
   /* Visitor callbacks */
   void visit(const ClangCursor& cursor);

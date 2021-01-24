@@ -188,7 +188,7 @@ cxx::Node& LibClangParser::curNode()
   return *m_program_stack.back();
 }
 
-void LibClangParser::astWrite(std::shared_ptr<AstDeclaration> n)
+void LibClangParser::astWrite(std::shared_ptr<AstNode> n)
 {
     cxx::AstNode& cur = *m_ast_stack.back();
     cur.children.push_back(n);
@@ -213,6 +213,12 @@ void LibClangParser::write(std::shared_ptr<Entity> e)
   }
 
   e->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+}
+
+void LibClangParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<Node>& n)
+{
+  astnode->node_ptr = n;
+  program()->astmap[n.get()] = astnode;
 }
 
 void LibClangParser::visit(const ClangCursor& cursor)
@@ -904,20 +910,10 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c)
 
 std::shared_ptr<cxx::Statement> LibClangParser::parseUnexposedStatement(const ClangCursor& c)
 {
-  auto result = std::make_shared<UnexposedStatement>(std::string());
-
-  CXSourceRange range = c.getExtent();
-  ClangTokenSet tokens = m_tu.tokenize(range);
-
-  std::string spelling;
-
-  for (size_t i = 0; i < tokens.size(); i++)
-  {
-    spelling += tokens.at(i).getSpelling();
-  }
-
-  result->source = spelling;
-
+  auto result = std::make_shared<UnexposedStatement>();
+  auto astnode = std::make_shared<AstNode>(getCursorExtent(c));
+  astWrite(astnode);
+  bind(astnode, result);
   return result;
 }
 
