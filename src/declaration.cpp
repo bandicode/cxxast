@@ -4,7 +4,7 @@
 
 #include "cxx/declaration.h"
 
-#include <stdexcept>
+#include "cxx/entity.h"
 
 namespace cxx
 {
@@ -22,6 +22,11 @@ bool Declaration::isDeclaration() const
 std::shared_ptr<Entity> Declaration::entity() const
 {
   return nullptr;
+}
+
+AstDeclaration::AstDeclaration(const std::shared_ptr<Entity>& ent)
+{
+  node_ptr = ent;
 }
 
 } // namespace cxx

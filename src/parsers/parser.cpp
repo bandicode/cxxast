@@ -188,7 +188,7 @@ cxx::Node& LibClangParser::curNode()
   return *m_program_stack.back();
 }
 
-void LibClangParser::astWrite(std::shared_ptr<Declaration> n)
+void LibClangParser::astWrite(std::shared_ptr<AstDeclaration> n)
 {
   if (m_ast_stack.empty())
   {
@@ -197,18 +197,7 @@ void LibClangParser::astWrite(std::shared_ptr<Declaration> n)
   else
   {
     cxx::AstNode& cur = *m_ast_stack.back();
-
-    switch (cur.kind())
-    {
-    case NodeKind::NamespaceDeclaration:
-      static_cast<cxx::NamespaceDeclaration&>(cur).declarations.push_back(n);
-      break;
-    case NodeKind::ClassDeclaration:
-      static_cast<cxx::ClassDeclaration&>(cur).declarations.push_back(n);
-      break;
-    default:
-      throw std::runtime_error{ "LibClangParser::astWrite() failed" };
-    }
+    cur.children.push_back(n);
   }
 }
 
@@ -300,7 +289,8 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
 {
   std::string name = cursor.getSpelling();
   auto entity = static_cast<Namespace*>(m_program_stack.back().get())->getOrCreateNamespace(name);
-  auto decl = std::make_shared<NamespaceDeclaration>(entity);
+  //auto decl = std::make_shared<NamespaceDeclaration>(entity);
+  auto decl = std::make_shared<AstDeclaration>(entity);
 
   decl->sourcerange = getCursorExtent(cursor);
 
@@ -342,7 +332,8 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
     }
   }();
 
-  auto decl = std::make_shared<ClassDeclaration>(entity);
+  //auto decl = std::make_shared<ClassDeclaration>(entity);
+  auto decl = std::make_shared<AstDeclaration>(entity);
   decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
@@ -389,7 +380,8 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
     return result;
   }();
 
-  auto decl = std::make_shared<EnumDeclaration>(entity);
+  //auto decl = std::make_shared<EnumDeclaration>(entity);
+  auto decl = std::make_shared<AstDeclaration>(entity);
   decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
@@ -510,7 +502,8 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   }
   
 
-  auto decl = std::make_shared<FunctionDeclaration>(entity);
+  //auto decl = std::make_shared<FunctionDeclaration>(entity);
+  auto decl = std::make_shared<AstDeclaration>(entity);
   decl->sourcerange = getCursorExtent(cursor);
 
   astWrite(decl);
@@ -576,7 +569,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   }
   else
   {
-    decl->function = func;
+    decl->node_ptr = func;
     update_func(*func, *entity);
   }
 

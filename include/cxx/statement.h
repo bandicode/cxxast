@@ -12,7 +12,7 @@
 namespace cxx
 {
 
-class CXXAST_API Statement : public AstNode
+class CXXAST_API Statement : public Node
 {
 public:
   Statement() = default;
@@ -24,10 +24,16 @@ public:
 
 typedef std::shared_ptr<Statement> StatementPtr;
 
+class CXXAST_API AstStatement : public AstNode
+{
+public:
+  AstStatement() = default;
+};
+
 class CXXAST_API UnexposedStatement : public Statement
 {
 public:
-  std::string source;
+  std::string source; // @TODO: should we remove this ?
 
 public:
   explicit UnexposedStatement(std::string src);

@@ -15,7 +15,7 @@ class Entity;
 class CXXAST_API Declaration : public Statement
 {
 public:
-  std::vector<std::shared_ptr<Declaration>> declarations;
+  std::vector<std::shared_ptr<Declaration>> declarations; // @TODO: remove this ?
 
 public:
   Declaration() = default;
@@ -25,6 +25,21 @@ public:
   bool isDeclaration() const override;
 
   virtual std::shared_ptr<Entity> entity() const;
+};
+
+class CXXAST_API AstDeclaration : public AstStatement
+{
+public:
+  AstDeclaration() = default;
+  
+  AstDeclaration(const std::shared_ptr<Declaration>& decl)
+  {
+    node_ptr = decl;
+  }
+
+  AstDeclaration(const std::shared_ptr<Entity>& ent);
+
+  NodeKind node_kind() const override { return NodeKind::AstDeclaration; }
 };
 
 } // namespace cxx

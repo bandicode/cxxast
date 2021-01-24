@@ -11,6 +11,7 @@
 namespace cxx
 {
 
+// for enum decl inside a function
 class CXXAST_API EnumDeclaration : public Declaration
 {
 public:

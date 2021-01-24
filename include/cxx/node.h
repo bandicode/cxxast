@@ -38,10 +38,12 @@ enum class NodeKind
   WhileLoop,
   ClassDeclaration,
   EnumDeclaration,
-  FunctionDeclaration,
-  NamespaceDeclaration,
+  //FunctionDeclaration,
+  //NamespaceDeclaration,
   VariableDeclaration,
   UnexposedStatement,
+  /*Ast */
+  AstDeclaration,
   /* Misc */
   MultilineComment,
   Documentation,
@@ -175,6 +177,7 @@ class CXXAST_API AstNode : public Node
 public:
   SourceRange sourcerange;
   std::vector<std::shared_ptr<AstNode>> children;
+  std::shared_ptr<Node> node_ptr;
 
 public:
   

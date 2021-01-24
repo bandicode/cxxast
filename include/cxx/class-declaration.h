@@ -11,6 +11,7 @@
 namespace cxx
 {
 
+// for class decl inside a function
 class CXXAST_API ClassDeclaration : public Declaration
 {
 public:
