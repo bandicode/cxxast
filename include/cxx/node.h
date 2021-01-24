@@ -86,45 +86,59 @@ public:
   void set(Arg&& arg);
 };
 
-class CXXAST_API Handle
+template<typename T>
+class Handle
 {
-public:
-  std::shared_ptr<INode> node_ptr;
+protected:
+  std::shared_ptr<T> d;
 
 public:
   Handle() = default;
   Handle(const Handle&) = default;
   ~Handle() = default;
 
-  explicit Handle(std::shared_ptr<INode> n)
-    : node_ptr(std::move(n))
+  Handle(std::shared_ptr<T> impl)
+    : d(std::move(impl))
   {
 
   }
 
-  NodeKind kind() const { return node_ptr->node_kind(); }
+  // @TODO: not sure about this one
+  NodeKind kind() const { return d->node_kind(); }
 
-  bool isEntity() const { return node_ptr->isEntity(); }
-  bool isDocumentation() const { return node_ptr->isDocumentation(); }
-  bool isStatement() const { return node_ptr->isStatement(); }
-  bool isDeclaration() const { return node_ptr->isDeclaration(); }
+  bool isNull() const { return d == nullptr; }
+
+  template<typename T>
+  bool is() const { return d->is<T>(); }
+
+  template<typename F>
+  typename F::field_type& get() const { return d->get<F>(); }
+
+  template<typename F, typename Arg>
+  void set(Arg&& value) { return d->set<F>(std::forward<Arg>(value)); }
+
+  const std::shared_ptr<T>& impl() const { return d; }
+
+  Handle<T>& operator=(const Handle<T>&) = default;
+
+  bool operator==(const Handle<T>& other) const { return impl() == other.impl(); }
+  bool operator!=(const Handle<T>& other) const { return impl() != other.impl(); }
+};
+
+
+class CXXAST_API Node : public Handle<INode>
+{
+public:
+  using Handle<INode>::Handle;
+
+  bool isEntity() const { return d->isEntity(); }
+  bool isDocumentation() const { return d->isDocumentation(); }
+  bool isStatement() const { return d->isStatement(); }
+  bool isDeclaration() const { return d->isDeclaration(); }
 
   Entity toEntity() const;
   Statement toStatement() const;
-
-  template<typename T>
-  bool is() const { return node_ptr->is<T>(); }
-
-  template<typename F>
-  typename F::field_type& get() const { return node_ptr->get<F>(); }
-
-  template<typename F, typename Arg>
-  void set(Arg&& value) { return node_ptr->set<F>(std::forward<Arg>(value)); }
-
-  Handle& operator=(const Handle&) = default;
 };
-
-typedef Handle Node;
 
 template<typename T>
 bool test_node_kind(const INode& n)

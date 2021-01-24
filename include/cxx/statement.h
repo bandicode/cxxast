@@ -24,51 +24,19 @@ public:
 
 typedef std::shared_ptr<IStatement> IStatementPtr;
 
-class CXXAST_API Statement
+class CXXAST_API Statement : public Handle<IStatement>
 {
 protected:
   std::shared_ptr<IStatement> d;
 
 public:
-  Statement() = default;
-  Statement(const Statement&) = default;
-  ~Statement() = default;
-
-  Statement(std::shared_ptr<IStatement> impl)
-    : d(std::move(impl))
-  {
-
-  }
-
-  bool isNull() const { return d == nullptr; }
+  
+  using Handle<IStatement>::Handle;
 
   NodeKind kind() const { return d->node_kind(); }
 
   bool isDeclaration() const { return d->isDeclaration(); }
-
-  template<typename T>
-  bool is() const { return d->is<T>(); }
-
-  template<typename F>
-  typename F::field_type& get() const { return d->get<F>(); }
-
-  template<typename F, typename Arg>
-  void set(Arg&& value) { return d->set<F>(std::forward<Arg>(value)); }
-
-  const std::shared_ptr<IStatement>& impl() const { return d; }
-
-  Statement& operator=(const Statement&) = default;
 };
-
-inline bool operator==(const Statement& lhs, const Statement& rhs)
-{
-  return lhs.impl() == rhs.impl();
-}
-
-inline bool operator!=(const Statement& lhs, const Statement& rhs)
-{
-  return lhs.impl() != rhs.impl();
-}
 
 class CXXAST_API AstStatement : public AstNode
 {

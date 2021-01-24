@@ -37,14 +37,14 @@ bool INode::isDeclaration() const
   return false;
 }
 
-Entity Handle::toEntity() const
+Entity Node::toEntity() const
 {
-  return isEntity() ? Entity{ std::static_pointer_cast<IEntity>(node_ptr) } : Entity{};
+  return isEntity() ? Entity{ std::static_pointer_cast<IEntity>(d) } : Entity{};
 }
 
-Statement Handle::toStatement() const
+Statement Node::toStatement() const
 {
-  return isStatement() ? Statement{ std::static_pointer_cast<IStatement>(node_ptr) } : Statement{};
+  return isStatement() ? Statement{ std::static_pointer_cast<IStatement>(d) } : Statement{};
 }
 
 NodeKind AstNode::node_kind() const
