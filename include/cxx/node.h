@@ -220,6 +220,8 @@ public:
   }
 
   NodeKind node_kind() const override;
+
+  void updateSourceRange();
 };
 
 } // namespace cxx

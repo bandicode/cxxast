@@ -160,6 +160,9 @@ bool LibClangParser::parse(const std::string& file)
     visit_tu(c);
     });
 
+
+  commitCurrentFile();
+
   return true;
 }
 
@@ -181,6 +184,16 @@ cxx::AccessSpecifier LibClangParser::getAccessSpecifier(CX_CXXAccessSpecifier as
 std::shared_ptr<File> LibClangParser::getFile(const std::string& path)
 {
   return m_filesystem.get(path);
+}
+
+void LibClangParser::commitCurrentFile()
+{
+  if (m_current_file)
+  {
+    m_parsed_files.insert(m_current_file);
+    m_current_file->ast->updateSourceRange();
+    m_current_file = nullptr;
+  }
 }
 
 cxx::INode& LibClangParser::curNode()
@@ -275,10 +288,7 @@ void LibClangParser::visit_tu(const ClangCursor& cursor)
 
   if (!clang_File_isEqual(m_current_cxfile, cursor_file))
   {
-    // We have reached another file
-
-    m_parsed_files.insert(m_current_file);
-
+    // We have reached another file, let's see if it has already been parsed
     auto file = getFile(getCursorFilePath(cursor));
 
     if (m_parsed_files.find(file) != m_parsed_files.end())
@@ -286,6 +296,8 @@ void LibClangParser::visit_tu(const ClangCursor& cursor)
       // The file has already been parsed, we skip until we reach a non-parsed file
       return;
     }
+
+    commitCurrentFile();
 
     m_current_cxfile = cursor_file;
     m_current_file = file;
@@ -737,6 +749,9 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& 
   // - parameters (CXCursor_ParmDecl)
   // - body (CXCursor_CompoundStmt)
 
+  // @TODO: use the following visitChildren to parse the parameters,
+  // for the return type it is more complicated as it does not always appear
+  // in the children...
   cursor.visitChildren([&](const ClangCursor& c) {
 
     if (c.kind() == CXCursor_CompoundStmt)

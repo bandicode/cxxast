@@ -65,6 +65,7 @@ public:
 
 protected:
   std::shared_ptr<File> getFile(const std::string& path);
+  void commitCurrentFile();
   cxx::INode& curNode();
 
   void astWrite(std::shared_ptr<AstNode> n);

@@ -52,4 +52,13 @@ NodeKind AstNode::node_kind() const
   return NodeKind::AstNode;
 }
 
+void AstNode::updateSourceRange()
+{
+  if (children.empty())
+    return;
+
+  sourcerange = children.front()->sourcerange;
+  sourcerange.end = children.back()->sourcerange.end;
+}
+
 } // namespace cxx
