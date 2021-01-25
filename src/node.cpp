@@ -52,6 +52,17 @@ NodeKind AstNode::node_kind() const
   return NodeKind::AstNode;
 }
 
+std::shared_ptr<AstNode> AstNode::parent() const
+{
+  return weak_parent.lock();
+}
+
+void AstNode::append(std::shared_ptr<AstNode> n)
+{
+  children.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
 void AstNode::updateSourceRange()
 {
   if (children.empty())

@@ -204,7 +204,7 @@ cxx::INode& LibClangParser::curNode()
 void LibClangParser::astWrite(std::shared_ptr<AstNode> n)
 {
     cxx::AstNode& cur = *m_ast_stack.back();
-    cur.children.push_back(n);
+    cur.append(n);
 }
 
 void LibClangParser::write(std::shared_ptr<IEntity> e)
