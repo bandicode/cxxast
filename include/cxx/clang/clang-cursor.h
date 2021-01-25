@@ -82,7 +82,7 @@ public:
     return result;
   }
 
-  std::string getCursorKingSpelling() const
+  std::string getCursorKindSpelling() const
   {
     CXString str = libclang->clang_getCursorKindSpelling(kind());
     std::string result = libclang->clang_getCString(str);
