@@ -464,7 +464,7 @@ static AstNodeKind convert_astnodekind(CXCursorKind k)
   //case CXCursor_FirstExtraDecl: return AstNodeKind::FirstExtraDecl;
   //case CXCursor_LastExtraDecl: return AstNodeKind::LastExtraDecl;
   case CXCursor_OverloadCandidate: return AstNodeKind::OverloadCandidate;
-  default: AstNodeKind::Root;
+  default: return AstNodeKind::Root;
   }
 }
 
