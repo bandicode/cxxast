@@ -193,6 +193,7 @@ void LibClangParser::commitCurrentFile()
     m_parsed_files.insert(m_current_file);
     m_current_file->ast->updateSourceRange();
     m_current_file = nullptr;
+    m_unlocated_nodes.clear();
   }
 }
 
@@ -473,6 +474,13 @@ std::shared_ptr<AstNode> LibClangParser::createAstNode(const ClangCursor& c)
   auto ret = std::make_shared<AstNode>();
   ret->sourcerange = getCursorExtent(c);
   ret->kind = convert_astnodekind(c.kind());
+
+  // It seems that for some headers in MSVC implementation of the standard library, 
+  // some CXCursor_UnexposedExpr do not have any children nor a valid location.
+  // We store these node in a vector so that it will be possible to later fix them.
+  if (ret->sourcerange.begin.line == -1)
+    m_unlocated_nodes.push_back(ret);
+
   return ret;
 }
 
@@ -1315,6 +1323,9 @@ cxx::SourceLocation LibClangParser::getLocation(const CXSourceLocation& location
 cxx::SourceRange LibClangParser::getCursorExtent(CXCursor cursor)
 {
   CXSourceRange range = clang_getCursorExtent(cursor);
+
+  if (clang_Range_isNull(range)) 
+    return {};
 
   cxx::SourceLocation start = getLocation(clang_getRangeStart(range));
   cxx::SourceLocation end = getLocation(clang_getRangeEnd(range));

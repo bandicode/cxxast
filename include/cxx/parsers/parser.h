@@ -123,6 +123,7 @@ private:
   CXFile m_current_cxfile = nullptr;
   std::shared_ptr<File> m_current_file = nullptr;
 
+  std::vector<std::shared_ptr<AstNode>> m_unlocated_nodes;
   std::set<std::shared_ptr<File>> m_parsed_files;
 
   std::unordered_map<ClangCursor, std::shared_ptr<IEntity>> m_cursor_entity_map;
