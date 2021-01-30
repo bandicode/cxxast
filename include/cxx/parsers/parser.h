@@ -61,6 +61,11 @@ public:
 
   bool parse(const std::string& file);
 
+  // @TODO: implement a reparse() function
+  // This function reparse a file to fill the body of each function, without
+  // clearing the existing ast (which might be referenced elsewhere in the application)
+  // bool reparse(std::shared_ptr<cxx::File> file, std::shared_ptr<cxx::AstRootNode>); 
+
   static cxx::AccessSpecifier getAccessSpecifier(CX_CXXAccessSpecifier as);
 
 protected:

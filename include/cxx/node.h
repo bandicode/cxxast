@@ -434,6 +434,57 @@ enum class AstNodeKind
 
 CXXAST_API std::string to_string(AstNodeKind k);
 
+// @TODO: validate the ast design
+/*
+ * Some thoughts on the ast design:
+ * 
+ * For large project, having both the ast and the semantic tree might consume too 
+ * much memory and be cache unfriendly (lots of small allocations).
+ * 
+ * Add a virtual file() to AstNode. This function returns the file() of the parent,
+ * except in the case of AstRootNode which returns the actual file.
+ * That way in an AstNode we can store just the a pair of (line,col) for the start and 
+ * the end of the source range.
+ * 
+ * Instead of having both a generic AstNode and semantic node for each statement 
+ * (e.g. AstNode and WhileLoop), a WhileLoop could be derived from AstNode (source 
+ * location is optional).
+ * 
+ * AstNode would have a parent() and astParent(). astParent() is parent() except 
+ * for the FunctionBodyCompoundStatement where the parent() is the Function and
+ * the astParent() is the AstFunctionDecl.
+ * 
+ * An AstNode would no longer have a std::vector<std::shared_ptr<AstNode>> but would 
+ * provide a virtual children() method that would return a AstNodeChildren.
+ * The AstNodeChildren has size() and at() methods and consists of a shared_ptr to
+ * a AstNodeChildrenImpl.
+ * There could be several implementation:
+ * - a default shared implementation when there is no children
+ * - an implementation that takes a ref to a std::vector<std::shared_ptr<AstNode>>
+ * - an implementation that takes a pointer to the parent and invoke some __size__()
+ *   and __at__() function
+ * - a generic impl, created with a createAstNodeChildrenImpl(...) that takes as input 
+ *   AstNode, Expression, Statements, Types, etc... check whether they are not null 
+ *   and part of the ast and fills a std::array<sizeof...(Args)> that is used as storage.
+ *   The size must be stored explicitely as the std::array may not be fully filled.
+ * 
+ * This design would allow both a fast, typed traversal of the ast and a generic, slightly 
+ * slower traversal.
+ * The AstNodeKind would only be used for non exposed node. 
+ * Exposed node have their own C++ class and so their own cxx::NodeKind.
+ * 
+ * Should keywords be part of the ast ?
+ * If they are, there is less special case to handle. 
+ * But storing keywords may be overkill as they are easily retrievable from the source code
+ * and provide very little added meaning.
+ * Besides, this would prevent the sharing of very common nodes like the "int" type.
+ * Likewise, the "while" keyword is always at the beginning of a WhileLoop so storing them 
+ * in the ast is useless.
+ * I suggest not storing them.
+ * That's why the createAstNodeChildrenImpl() described earlier must check whether the node 
+ * is part of an ast, for example the "int" type would be shared by all ast and therefore 
+ * would have an invalid location.
+ */
 class CXXAST_API AstNode : public INode
 {
 public:
