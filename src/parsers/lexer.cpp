@@ -15,6 +15,35 @@ namespace cxx
 namespace parsers
 {
 
+class LexerGuard
+{
+private:
+  Lexer& m_lex;
+  size_t m_pos;
+  int m_line;
+  int m_col;
+
+public:
+  LexerGuard(Lexer* lex)
+    : m_lex(*lex),
+      m_pos(lex->pos()),
+      m_line(lex->line()),
+      m_col(lex->col())
+  {
+
+  }
+
+  ~LexerGuard()
+  {
+    if (std::uncaught_exception())
+    {
+      m_lex.m_pos = m_pos;
+      m_lex.m_line = m_line;
+      m_lex.m_col = m_col;
+    }
+  }
+};
+
 Lexer::Lexer(const std::string* src)
   : m_source(src),
     m_chars(src->data())
@@ -36,6 +65,8 @@ Token Lexer::read()
 {
   if (this->atEnd())
     throw std::runtime_error{ "Lexer::read() : reached end of input" };
+
+  LexerGuard guard{ this };
 
   size_t p = pos();
 
@@ -112,9 +143,37 @@ size_t Lexer::pos() const
   return m_pos;
 }
 
+int Lexer::line() const
+{
+  return m_line;
+}
+
+int Lexer::col() const
+{
+  return m_col;
+}
+
 void Lexer::seek(size_t pos)
 {
-  m_pos = pos;
+  if (pos > m_source->length())
+  {
+    seek(m_source->length());
+  }
+  else if (pos < m_pos)
+  {
+    // @TODO: there is a more efficient way to do that!
+    m_pos = 0;
+    m_line = 0;
+    m_col = 0;
+    seek(pos);
+  }
+  else if (pos > m_pos)
+  {
+    while (m_pos < pos)
+      discardChar();
+
+    consumeDiscardable();
+  }
 }
 
 void Lexer::reset(const std::string* src)
@@ -122,6 +181,8 @@ void Lexer::reset(const std::string* src)
   m_source = src;
   m_chars = src->data();
   m_pos = 0;
+  m_line = 0;
+  m_col = 0;
   consumeDiscardable();
 }
 
@@ -130,7 +191,23 @@ char Lexer::readChar()
   if (atEnd())
     throw std::runtime_error{ "Lexer::readChar() : end of input" };
 
+  ++m_col;
   return *(m_chars + m_pos++);
+}
+
+void Lexer::discardChar() noexcept
+{
+  char c = *(m_chars + m_pos++);
+
+  if (c == '\n')
+  {
+    ++m_line;
+    m_col = 0;
+  }
+  else
+  {
+    ++m_col;
+  }
 }
 
 char Lexer::charAt(size_t pos)
@@ -145,18 +222,18 @@ char Lexer::currentChar() const
 
 void Lexer::consumeDiscardable()
 {
-  while (!atEnd() && isDiscardable(peekChar())) 
-    readChar();
+  while (!atEnd() && isDiscardable(peekChar()))
+    discardChar();
 }
 
 Token Lexer::create(size_t pos, size_t length, TokenType type)
 {
-  return Token{ type, StringView(m_chars + pos, length) };
+  return Token{ type, StringView(m_chars + pos, length), m_line, static_cast<int>(m_col - length) };
 }
 
 Token Lexer::create(size_t pos, TokenType type)
 {
-  return Token{ type, StringView(m_chars + pos, this->pos() - pos) };
+  return Token{ type, StringView(m_chars + pos, this->pos() - pos), m_line, static_cast<int>(m_col - (this->pos() - pos)) };
 }
 
 Lexer::CharacterType Lexer::ctype(char c)
