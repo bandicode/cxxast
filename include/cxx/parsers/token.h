@@ -281,7 +281,7 @@ public:
 
   bool isOperator() const { return type_.value() & TokenCategory::OperatorToken; }
   bool isIdentifier() const { return type_.value() & TokenCategory::Identifier; }
-  bool isKeyword() const { return type_.value() & TokenCategory::Keyword; }
+  bool isKeyword() const { return (type_.value() & TokenCategory::Keyword) == TokenCategory::Keyword; }
   bool isLiteral() const { return type_.value() & TokenCategory::Literal; }
 
   bool operator==(const Token& other) const { return type_ == other.type_ && other.str_ == str_; }
