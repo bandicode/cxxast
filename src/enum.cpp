@@ -10,13 +10,13 @@ namespace cxx
 {
 
 EnumValue::EnumValue(std::string name, std::shared_ptr<Enum> parent)
-  : Entity(std::move(name), parent)
+  : IEntity(std::move(name), parent)
 {
 
 }
 
 EnumValue::EnumValue(std::string name, std::string value, std::shared_ptr<Enum> parent)
-  : Entity(std::move(name), parent),
+  : IEntity(std::move(name), parent),
     m_value(std::move(value))
 {
 
@@ -29,7 +29,7 @@ NodeKind EnumValue::node_kind() const
 
 std::shared_ptr<Enum> EnumValue::parent() const
 {
-  return std::static_pointer_cast<Enum>(Entity::parent());
+  return std::static_pointer_cast<Enum>(IEntity::parent());
 }
 
 std::string& EnumValue::value()

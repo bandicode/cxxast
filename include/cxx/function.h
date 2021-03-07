@@ -8,6 +8,7 @@
 #include "cxx/entity.h"
 
 #include "cxx/expression.h"
+#include "cxx/statement.h"
 #include "cxx/type.h"
 #include "cxx/template.h"
 
@@ -53,7 +54,7 @@ public:
 
 class Function;
 
-class CXXAST_API FunctionParameter : public Entity
+class CXXAST_API FunctionParameter : public IEntity
 {
 public:
   Type type;
@@ -69,7 +70,7 @@ public:
   std::shared_ptr<Function> parent() const;
 };
 
-class CXXAST_API Function : public Entity
+class CXXAST_API Function : public IEntity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
@@ -77,12 +78,12 @@ public:
   std::vector<std::shared_ptr<FunctionParameter>> parameters;
   int specifiers = FunctionSpecifier::None;
   FunctionKind::Value kind = FunctionKind::None;
-  std::shared_ptr<Node> body;
+  Statement body;
 
 public:
   ~Function() = default;
 
-  explicit Function(std::string name, std::shared_ptr<Entity> parent = nullptr);
+  explicit Function(std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Function;
   NodeKind node_kind() const override;
@@ -113,12 +114,12 @@ public:
 
   struct ReturnType : public priv::Field<Function, Type>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).return_type;
     }
 
-    static void set(Node& n, field_type val)
+    static void set(INode& n, field_type val)
     {
       down_cast(n).return_type = std::move(val);
     }
@@ -126,16 +127,18 @@ public:
 
   struct Parameters : public priv::Field<Function, std::vector<std::shared_ptr<FunctionParameter>>>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).parameters;
     }
 
-    static void set(Node& n, field_type val)
+    static void set(INode& n, field_type val)
     {
       down_cast(n).parameters = std::move(val);
     }
   };
+
+  struct Body : priv::FieldEx<Function, Statement, &Function::body> { };
 };
 
 class CXXAST_API FunctionTemplate : public Function
@@ -144,7 +147,7 @@ public:
   std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
 
 public:
-  FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent = nullptr);
+  FunctionTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::FunctionTemplate;
   NodeKind node_kind() const override;
@@ -158,8 +161,8 @@ public:
 namespace cxx
 {
 
-inline Function::Function(std::string name, std::shared_ptr<Entity> parent)
-  : Entity{std::move(name), std::move(parent)}
+inline Function::Function(std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{std::move(name), std::move(parent)}
 {
 
 }

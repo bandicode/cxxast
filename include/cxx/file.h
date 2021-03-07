@@ -14,7 +14,7 @@
 namespace cxx
 {
 
-class Node;
+class AstNode;
 
 class File
 {
@@ -22,7 +22,7 @@ private:
   std::string m_path;
 
 public:
-  std::vector<std::shared_ptr<Node>> nodes;
+  std::shared_ptr<AstNode> ast;
 
 public:
   explicit File(std::string path);

@@ -10,35 +10,37 @@
 namespace cxx
 {
 
-class Entity;
+class IEntity;
 
-class CXXAST_API Declaration : public Statement
+class CXXAST_API IDeclaration : public IStatement
 {
 public:
-  std::vector<std::shared_ptr<Declaration>> declarations;
+  std::vector<std::shared_ptr<IDeclaration>> declarations; // @TODO: remove this ?
 
 public:
-  Declaration() = default;
+  IDeclaration() = default;
 
-  explicit Declaration(SourceLocation loc);
-
-  std::shared_ptr<Declaration> shared_from_this();
+  std::shared_ptr<IDeclaration> shared_from_this();
 
   bool isDeclaration() const override;
 
-  virtual std::shared_ptr<Entity> entity() const;
+  virtual std::shared_ptr<IEntity> entity() const;
 };
 
-} // namespace cxx
-
-namespace cxx
+class CXXAST_API AstDeclaration : public AstStatement
 {
+public:
+  AstDeclaration() = default;
+  
+  AstDeclaration(const std::shared_ptr<IDeclaration>& decl)
+  {
+    node_ptr = decl;
+  }
 
-inline Declaration::Declaration(SourceLocation loc)
-  : Statement(loc)
-{
+  AstDeclaration(const std::shared_ptr<IEntity>& ent);
 
-}
+  NodeKind node_kind() const override { return NodeKind::AstDeclaration; }
+};
 
 } // namespace cxx
 

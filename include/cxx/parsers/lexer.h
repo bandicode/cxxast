@@ -28,6 +28,8 @@ public:
   bool atEnd() const;
 
   size_t pos() const;
+  int line() const;
+  int col() const;
 
   void seek(size_t pos);
   void reset(const std::string* src);
@@ -70,6 +72,7 @@ public:
 
 protected:
   char readChar();
+  void discardChar() noexcept;
   char charAt(size_t pos);
   char currentChar() const;
   inline char peekChar() const { return currentChar(); }
@@ -93,13 +96,15 @@ protected:
   Token readMultiLineComment(size_t pos);
   bool tryReadLiteralSuffix();
 
-protected:
-
+private:
+  friend class LexerGuard;
 
 private:
   const std::string* m_source = nullptr;
   const char* m_chars = nullptr;
   size_t m_pos = 0;
+  int m_line = 0;
+  int m_col = 0;
 };
 
 } // namespace parsers

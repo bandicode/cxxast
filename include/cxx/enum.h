@@ -14,7 +14,7 @@ namespace cxx
 
 class Enum;
 
-class CXXAST_API EnumValue : public Entity
+class CXXAST_API EnumValue : public IEntity
 {
 public:
   explicit EnumValue(std::string name, std::shared_ptr<Enum> parent = nullptr);
@@ -33,7 +33,7 @@ private:
 };
 
 
-class CXXAST_API Enum : public Entity
+class CXXAST_API Enum : public IEntity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
@@ -43,7 +43,7 @@ public:
 public:
   ~Enum() = default;
 
-  explicit Enum(std::string name, std::shared_ptr<Entity> parent = nullptr);
+  explicit Enum(std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Enum;
   NodeKind node_kind() const override;
@@ -53,12 +53,12 @@ public:
 
   struct Values : public priv::Field<Enum, std::vector<std::shared_ptr<EnumValue>>>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).values;
     }
 
-    static void set(Node& n, field_type values)
+    static void set(INode& n, field_type values)
     {
       down_cast(n).values = std::move(values);
     }
@@ -70,8 +70,8 @@ public:
 namespace cxx
 {
 
-inline Enum::Enum(std::string name, std::shared_ptr<Entity> parent)
-  : Entity{std::move(name), std::move(parent)}
+inline Enum::Enum(std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{std::move(name), std::move(parent)}
 {
 
 }

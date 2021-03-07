@@ -11,7 +11,8 @@
 namespace cxx
 {
 
-class CXXAST_API ClassDeclaration : public Declaration
+// for class decl inside a function
+class CXXAST_API ClassDeclaration : public IDeclaration
 {
 public:
   std::shared_ptr<Class> class_;
@@ -24,9 +25,9 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::ClassDeclaration;
   NodeKind node_kind() const override;
 
-  std::shared_ptr<Entity> entity() const override;
+  std::shared_ptr<IEntity> entity() const override;
 
-  bool isForwardDeclaration() const;
+  // bool isForwardDeclaration() const;
 };
 
 } // namespace cxx

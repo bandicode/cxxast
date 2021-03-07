@@ -261,6 +261,9 @@ class Token
 private:
   TokenType type_;
   StringView str_;
+  // @TODO: try to merge 'col_' and 'type_' to save space
+  int line_ = -1;
+  int col_ = -1;
 
 public:
   Token();
@@ -273,15 +276,23 @@ public:
 
   }
 
+  Token(TokenType t, StringView str, int l, int c)
+    : type_(t), str_(str), line_(l), col_(c)
+  {
+
+  }
+
   bool isValid() const { return type_.value() != TokenType::Invalid; }
 
   TokenType type() const { return type_; }
   StringView text() const { return str_; }
   std::string to_string() const { return str_.to_string(); }
+  int line() const { return line_; }
+  int col() const { return col_; }
 
   bool isOperator() const { return type_.value() & TokenCategory::OperatorToken; }
   bool isIdentifier() const { return type_.value() & TokenCategory::Identifier; }
-  bool isKeyword() const { return type_.value() & TokenCategory::Keyword; }
+  bool isKeyword() const { return (type_.value() & TokenCategory::Keyword) == TokenCategory::Keyword; }
   bool isLiteral() const { return type_.value() & TokenCategory::Literal; }
 
   bool operator==(const Token& other) const { return type_ == other.type_ && other.str_ == str_; }

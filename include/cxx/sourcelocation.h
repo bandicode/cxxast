@@ -15,7 +15,7 @@ namespace cxx
 class SourceLocation
 {
 private:
-  std::shared_ptr<File> m_file;
+  std::weak_ptr<File> m_file;
   int m_line = -1;
   int m_column = -1;
 
@@ -25,7 +25,7 @@ public:
 
   SourceLocation(std::shared_ptr<File> file, int line, int col);
 
-  const std::shared_ptr<File>& file() const;
+  std::shared_ptr<File> file() const;
   int line() const;
   int column() const;
 };
@@ -53,9 +53,9 @@ inline SourceLocation::SourceLocation(std::shared_ptr<File> file, int line, int 
 
 }
 
-inline const std::shared_ptr<File>& SourceLocation::file() const
+inline std::shared_ptr<File> SourceLocation::file() const
 {
-  return m_file;
+  return m_file.lock();
 }
 
 inline int SourceLocation::line() const

@@ -20,7 +20,7 @@ void visit(ClangCursor c)
 {
   std::cout << std::string(static_cast<size_t>(depth), ' ');
 
-  std::cout << c.getCursorKingSpelling() << ": ";
+  std::cout << c.getCursorKindSpelling() << ": ";
 
   std::string spelling = c.getSpelling();
 

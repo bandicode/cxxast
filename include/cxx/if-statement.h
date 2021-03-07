@@ -13,26 +13,26 @@
 namespace cxx
 {
 
-class CXXAST_API IfStatement : public Statement
+class CXXAST_API IfStatement : public IStatement
 {
 public:
-  StatementPtr initialization;
+  Statement initialization;
   Expression condition;
-  StatementPtr body;
-  StatementPtr else_clause;
+  Statement body;
+  Statement else_clause;
   
 public:
   IfStatement() = default;
 
-  IfStatement(const Expression& expr, StatementPtr b);
+  IfStatement(const Expression& expr, Statement b);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::IfStatement;
   NodeKind node_kind() const override;
 
-  struct Init : priv::FieldEx<IfStatement, StatementPtr, &IfStatement::initialization> { };
+  struct Init : priv::FieldEx<IfStatement, Statement, &IfStatement::initialization> { };
   struct Condition : priv::FieldEx<IfStatement, Expression, &IfStatement::condition> { };
-  struct Body : priv::FieldEx<IfStatement, StatementPtr, &IfStatement::body> { };
-  struct ElseClause : priv::FieldEx<IfStatement, StatementPtr, &IfStatement::else_clause> { };
+  struct Body : priv::FieldEx<IfStatement, Statement, &IfStatement::body> { };
+  struct ElseClause : priv::FieldEx<IfStatement, Statement, &IfStatement::else_clause> { };
 };
 
 } // namespace cxx

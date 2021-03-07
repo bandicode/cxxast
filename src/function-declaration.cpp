@@ -7,19 +7,14 @@
 namespace cxx
 {
 
-NodeKind FunctionDeclaration::node_kind() const
-{
-  return FunctionDeclaration::ClassNodeKind;
-}
-
-std::shared_ptr<Entity> FunctionDeclaration::entity() const
-{
-  return this->function;
-}
-
-bool FunctionDeclaration::isForwardDeclaration() const
-{
-  return this->function->location != this->location;
-}
+//NodeKind FunctionDeclaration::node_kind() const
+//{
+//  return FunctionDeclaration::ClassNodeKind;
+//}
+//
+//bool FunctionDeclaration::isForwardDeclaration() const
+//{
+//  return this->function->location != this->location;
+//}
 
 } // namespace cxx

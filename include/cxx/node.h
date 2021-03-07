@@ -5,7 +5,7 @@
 #ifndef CXXAST_NODE_H
 #define CXXAST_NODE_H
 
-#include "cxx/sourcelocation.h"
+#include "cxx/sourcerange.h"
 
 #include <memory>
 #include <string>
@@ -14,6 +14,8 @@ namespace cxx
 {
 
 class Class;
+class Entity;
+class Statement;
 class Function;
 
 enum class NodeKind
@@ -38,10 +40,13 @@ enum class NodeKind
   WhileLoop,
   ClassDeclaration,
   EnumDeclaration,
-  FunctionDeclaration,
-  NamespaceDeclaration,
+  //FunctionDeclaration,
+  //NamespaceDeclaration,
   VariableDeclaration,
   UnexposedStatement,
+  /*Ast */
+  AstNode,
+  AstDeclaration,
   /* Misc */
   MultilineComment,
   Documentation,
@@ -57,14 +62,11 @@ struct CXXAST_API IField
 
 } // namespace priv
 
-class CXXAST_API Node : public std::enable_shared_from_this<Node>
+class CXXAST_API INode : public std::enable_shared_from_this<INode>
 {
 public:
-  SourceLocation location;
-
-public:
-  Node() = default;
-  virtual ~Node();
+  INode() = default;
+  virtual ~INode();
 
   virtual NodeKind node_kind() const = 0;
   NodeKind kind() const { return node_kind(); }
@@ -84,55 +86,74 @@ public:
   void set(Arg&& arg);
 };
 
-class CXXAST_API Handle
+template<typename T>
+class Handle
 {
-public:
-  std::shared_ptr<Node> node_ptr;
+protected:
+  std::shared_ptr<T> d;
 
 public:
   Handle() = default;
   Handle(const Handle&) = default;
   ~Handle() = default;
 
-  explicit Handle(std::shared_ptr<Node> n)
-    : node_ptr(std::move(n))
+  Handle(std::shared_ptr<T> impl)
+    : d(std::move(impl))
   {
 
   }
 
-  NodeKind kind() const { return node_ptr->node_kind(); }
+  // @TODO: not sure about this one
+  NodeKind kind() const { return d->node_kind(); }
 
-  bool isEntity() const { return node_ptr->isEntity(); }
-  bool isDocumentation() const { return node_ptr->isDocumentation(); }
-  bool isStatement() const { return node_ptr->isStatement(); }
-  bool isDeclaration() const { return node_ptr->isDeclaration(); }
+  bool isNull() const { return d == nullptr; }
 
   template<typename T>
-  bool is() const { return node_ptr->is<T>(); }
+  bool is() const { return d->is<T>(); }
 
   template<typename F>
-  typename F::field_type& get() const { return node_ptr->get<F>(); }
+  typename F::field_type& get() const { return d->get<F>(); }
 
   template<typename F, typename Arg>
-  void set(Arg&& value) { return node_ptr->set<F>(std::forward<Arg>(value)); }
+  void set(Arg&& value) { return d->set<F>(std::forward<Arg>(value)); }
 
-  Handle& operator=(const Handle&) = default;
+  const std::shared_ptr<T>& impl() const { return d; }
+
+  Handle<T>& operator=(const Handle<T>&) = default;
+
+  bool operator==(const Handle<T>& other) const { return impl() == other.impl(); }
+  bool operator!=(const Handle<T>& other) const { return impl() != other.impl(); }
+};
+
+
+class CXXAST_API Node : public Handle<INode>
+{
+public:
+  using Handle<INode>::Handle;
+
+  bool isEntity() const { return d->isEntity(); }
+  bool isDocumentation() const { return d->isDocumentation(); }
+  bool isStatement() const { return d->isStatement(); }
+  bool isDeclaration() const { return d->isDeclaration(); }
+
+  Entity toEntity() const;
+  Statement toStatement() const;
 };
 
 template<typename T>
-bool test_node_kind(const Node& n)
+bool test_node_kind(const INode& n)
 {
   return T::ClassNodeKind == n.kind();
 }
 
 template<>
-inline bool test_node_kind<Class>(const Node& n)
+inline bool test_node_kind<Class>(const INode& n)
 {
   return n.kind() == NodeKind::Class || n.kind() == NodeKind::ClassTemplate;
 }
 
 template<>
-inline bool test_node_kind<Function>(const Node& n)
+inline bool test_node_kind<Function>(const INode& n)
 {
   return n.kind() == NodeKind::Function || n.kind() == NodeKind::FunctionTemplate;
 }
@@ -143,7 +164,7 @@ namespace priv
 template<typename T>
 struct FieldOfClass : public IField
 {
-  static T& down_cast(Node& self)
+  static T& down_cast(INode& self)
   {
     return static_cast<T&>(self);
   }
@@ -160,12 +181,12 @@ struct FieldEx : public Field<C, T>
 {
   typedef T field_type;
 
-  static field_type& get(Node& n)
+  static field_type& get(INode& n)
   {
     return FieldOfClass<C>::down_cast(n).*member;
   }
 
-  static void set(Node& n, field_type val)
+  static void set(INode& n, field_type val)
   {
     FieldOfClass<C>::down_cast(n).*member = std::move(val);
   }
@@ -173,9 +194,329 @@ struct FieldEx : public Field<C, T>
 
 } // namespace priv
 
-class CXXAST_API AstNode : public Node
+enum class AstNodeKind
 {
-  using Node::Node;
+  Root = 0,
+  /* for now basic copy of CXCursorKind */
+  UnexposedDecl,
+  StructDecl,
+  UnionDecl,
+  ClassDecl,
+  EnumDecl,
+  FieldDecl,
+  EnumConstantDecl,
+  FunctionDecl,
+  VarDecl,
+  ParmDecl,
+  ObjCInterfaceDecl,
+  ObjCCategoryDecl,
+  ObjCProtocolDecl,
+  ObjCPropertyDecl,
+  ObjCIvarDecl,
+  ObjCInstanceMethodDecl,
+  ObjCClassMethodDecl,
+  ObjCImplementationDecl,
+  ObjCCategoryImplDecl,
+  TypedefDecl,
+  CXXMethod,
+  Namespace,
+  LinkageSpec,
+  Constructor,
+  Destructor,
+  ConversionFunction,
+  TemplateTypeParameter,
+  NonTypeTemplateParameter,
+  TemplateTemplateParameter,
+  FunctionTemplate,
+  ClassTemplate,
+  ClassTemplatePartialSpecialization,
+  NamespaceAlias,
+  UsingDirective,
+  UsingDeclaration,
+  TypeAliasDecl,
+  ObjCSynthesizeDecl,
+  ObjCDynamicDecl,
+  CXXAccessSpecifier,
+  //FirstDecl,
+  //LastDecl,
+  //FirstRef,
+  ObjCSuperClassRef,
+  ObjCProtocolRef,
+  ObjCClassRef,
+  TypeRef,
+  CXXBaseSpecifier,
+  TemplateRef,
+  NamespaceRef,
+  MemberRef,
+  LabelRef,
+  OverloadedDeclRef,
+  VariableRef,
+  LastRef,
+  //FirstInvalid,
+  InvalidFile,
+  NoDeclFound,
+  NotImplemented,
+  InvalidCode,
+  //LastInvalid,
+  //FirstExpr,
+  UnexposedExpr,
+  DeclRefExpr,
+  MemberRefExpr,
+  CallExpr,
+  ObjCMessageExpr,
+  BlockExpr,
+  IntegerLiteral,
+  FloatingLiteral,
+  ImaginaryLiteral,
+  StringLiteral,
+  CharacterLiteral,
+  ParenExpr,
+  UnaryOperator,
+  ArraySubscriptExpr,
+  BinaryOperator,
+  CompoundAssignOperator,
+  ConditionalOperator,
+  CStyleCastExpr,
+  CompoundLiteralExpr,
+  InitListExpr,
+  AddrLabelExpr,
+  StmtExpr,
+  GenericSelectionExpr,
+  GNUNullExpr,
+  CXXStaticCastExpr,
+  CXXDynamicCastExpr,
+  CXXReinterpretCastExpr,
+  CXXConstCastExpr,
+  CXXFunctionalCastExpr,
+  CXXTypeidExpr,
+  CXXBoolLiteralExpr,
+  CXXNullPtrLiteralExpr,
+  CXXThisExpr,
+  CXXThrowExpr,
+  CXXNewExpr,
+  CXXDeleteExpr,
+  UnaryExpr,
+  ObjCStringLiteral,
+  ObjCEncodeExpr,
+  ObjCSelectorExpr,
+  ObjCProtocolExpr,
+  ObjCBridgedCastExpr,
+  PackExpansionExpr,
+  SizeOfPackExpr,
+  LambdaExpr,
+  ObjCBoolLiteralExpr,
+  ObjCSelfExpr,
+  OMPArraySectionExpr,
+  ObjCAvailabilityCheckExpr,
+  FixedPointLiteral,
+  //LastExpr,
+  //FirstStmt,
+  UnexposedStmt,
+  LabelStmt,
+  CompoundStmt,
+  CaseStmt,
+  DefaultStmt,
+  IfStmt,
+  SwitchStmt,
+  WhileStmt,
+  DoStmt,
+  ForStmt,
+  GotoStmt,
+  IndirectGotoStmt,
+  ContinueStmt,
+  BreakStmt,
+  ReturnStmt,
+  GCCAsmStmt,
+  //AsmStmt,
+  ObjCAtTryStmt,
+  ObjCAtCatchStmt,
+  ObjCAtFinallyStmt,
+  ObjCAtThrowStmt,
+  ObjCAtSynchronizedStmt,
+  ObjCAutoreleasePoolStmt,
+  ObjCForCollectionStmt,
+  CXXCatchStmt,
+  CXXTryStmt,
+  CXXForRangeStmt,
+  SEHTryStmt,
+  SEHExceptStmt,
+  SEHFinallyStmt,
+  MSAsmStmt,
+  NullStmt,
+  DeclStmt,
+  OMPParallelDirective,
+  OMPSimdDirective,
+  OMPForDirective,
+  OMPSectionsDirective,
+  OMPSectionDirective,
+  OMPSingleDirective,
+  OMPParallelForDirective,
+  OMPParallelSectionsDirective,
+  OMPTaskDirective,
+  OMPMasterDirective,
+  OMPCriticalDirective,
+  OMPTaskyieldDirective,
+  OMPBarrierDirective,
+  OMPTaskwaitDirective,
+  OMPFlushDirective,
+  SEHLeaveStmt,
+  OMPOrderedDirective,
+  OMPAtomicDirective,
+  OMPForSimdDirective,
+  OMPParallelForSimdDirective,
+  OMPTargetDirective,
+  OMPTeamsDirective,
+  OMPTaskgroupDirective,
+  OMPCancellationPointDirective,
+  OMPCancelDirective,
+  OMPTargetDataDirective,
+  OMPTaskLoopDirective,
+  OMPTaskLoopSimdDirective,
+  OMPDistributeDirective,
+  OMPTargetEnterDataDirective,
+  OMPTargetExitDataDirective,
+  OMPTargetParallelDirective,
+  OMPTargetParallelForDirective,
+  OMPTargetUpdateDirective,
+  OMPDistributeParallelForDirective,
+  OMPDistributeParallelForSimdDirective,
+  OMPDistributeSimdDirective,
+  OMPTargetParallelForSimdDirective,
+  OMPTargetSimdDirective,
+  OMPTeamsDistributeDirective,
+  OMPTeamsDistributeSimdDirective,
+  OMPTeamsDistributeParallelForSimdDirective,
+  OMPTeamsDistributeParallelForDirective,
+  OMPTargetTeamsDirective,
+  OMPTargetTeamsDistributeDirective,
+  OMPTargetTeamsDistributeParallelForDirective,
+  OMPTargetTeamsDistributeParallelForSimdDirective,
+  OMPTargetTeamsDistributeSimdDirective,
+  //LastStmt,
+  TranslationUnit,
+  //FirstAttr,
+  UnexposedAttr,
+  IBActionAttr,
+  IBOutletAttr,
+  IBOutletCollectionAttr,
+  CXXFinalAttr,
+  CXXOverrideAttr,
+  AnnotateAttr,
+  AsmLabelAttr,
+  PackedAttr,
+  PureAttr,
+  ConstAttr,
+  NoDuplicateAttr,
+  CUDAConstantAttr,
+  CUDADeviceAttr,
+  CUDAGlobalAttr,
+  CUDAHostAttr,
+  CUDASharedAttr,
+  VisibilityAttr,
+  DLLExport,
+  DLLImport,
+  //LastAttr,
+  PreprocessingDirective,
+  MacroDefinition,
+  MacroExpansion,
+  //MacroInstantiation,
+  InclusionDirective,
+  //FirstPreprocessing,
+  //LastPreprocessing,
+  ModuleImportDecl,
+  TypeAliasTemplateDecl,
+  StaticAssert,
+  FriendDecl,
+  //FirstExtraDecl,
+  //LastExtraDecl,
+  OverloadCandidate,
+};
+
+CXXAST_API std::string to_string(AstNodeKind k);
+
+// @TODO: validate the ast design
+/*
+ * Some thoughts on the ast design:
+ * 
+ * For large project, having both the ast and the semantic tree might consume too 
+ * much memory and be cache unfriendly (lots of small allocations).
+ * 
+ * Add a virtual file() to AstNode. This function returns the file() of the parent,
+ * except in the case of AstRootNode which returns the actual file.
+ * That way in an AstNode we can store just the a pair of (line,col) for the start and 
+ * the end of the source range.
+ * 
+ * Instead of having both a generic AstNode and semantic node for each statement 
+ * (e.g. AstNode and WhileLoop), a WhileLoop could be derived from AstNode (source 
+ * location is optional).
+ * 
+ * AstNode would have a parent() and astParent(). astParent() is parent() except 
+ * for the FunctionBodyCompoundStatement where the parent() is the Function and
+ * the astParent() is the AstFunctionDecl.
+ * 
+ * An AstNode would no longer have a std::vector<std::shared_ptr<AstNode>> but would 
+ * provide a virtual children() method that would return a AstNodeChildren.
+ * The AstNodeChildren has size() and at() methods and consists of a shared_ptr to
+ * a AstNodeChildrenImpl.
+ * There could be several implementation:
+ * - a default shared implementation when there is no children
+ * - an implementation that takes a ref to a std::vector<std::shared_ptr<AstNode>>
+ * - an implementation that takes a pointer to the parent and invoke some __size__()
+ *   and __at__() function
+ * - a generic impl, created with a createAstNodeChildrenImpl(...) that takes as input 
+ *   AstNode, Expression, Statements, Types, etc... check whether they are not null 
+ *   and part of the ast and fills a std::array<sizeof...(Args)> that is used as storage.
+ *   The size must be stored explicitely as the std::array may not be fully filled.
+ * 
+ * This design would allow both a fast, typed traversal of the ast and a generic, slightly 
+ * slower traversal.
+ * The AstNodeKind would only be used for non exposed node. 
+ * Exposed node have their own C++ class and so their own cxx::NodeKind.
+ * 
+ * Should keywords be part of the ast ?
+ * If they are, there is less special case to handle. 
+ * But storing keywords may be overkill as they are easily retrievable from the source code
+ * and provide very little added meaning.
+ * Besides, this would prevent the sharing of very common nodes like the "int" type.
+ * Likewise, the "while" keyword is always at the beginning of a WhileLoop so storing them 
+ * in the ast is useless.
+ * I suggest not storing them.
+ * That's why the createAstNodeChildrenImpl() described earlier must check whether the node 
+ * is part of an ast, for example the "int" type would be shared by all ast and therefore 
+ * would have an invalid location.
+ */
+class CXXAST_API AstNode : public INode
+{
+public:
+  SourceRange sourcerange;
+  std::vector<std::shared_ptr<AstNode>> children;
+  std::weak_ptr<AstNode> weak_parent;
+  std::shared_ptr<INode> node_ptr;
+  AstNodeKind kind = AstNodeKind::Root;
+
+public:
+  
+  AstNode() = default;
+  
+  explicit AstNode(const SourceRange& sr)
+    : sourcerange(sr)
+  {
+
+  }
+
+  explicit AstNode(const SourceRange& sr, std::shared_ptr<INode> n)
+    : sourcerange(sr),
+      node_ptr(std::move(n))
+  {
+
+  }
+
+  NodeKind node_kind() const override;
+
+  std::shared_ptr<AstNode> parent() const;
+  void append(std::shared_ptr<AstNode> n);
+
+  void updateSourceRange();
 };
 
 } // namespace cxx
@@ -184,19 +525,19 @@ namespace cxx
 {
 
 template<typename T>
-inline bool Node::is() const
+inline bool INode::is() const
 {
   return test_node_kind<T>(*this);
 }
 
 template<typename F>
-inline typename F::field_type& Node::get()
+inline typename F::field_type& INode::get()
 {
   return F::get(*this);
 }
 
 template<typename F, typename Arg>
-inline void Node::set(Arg&& arg)
+inline void INode::set(Arg&& arg)
 {
   F::set(*this, std::forward<Arg>(arg));
 }

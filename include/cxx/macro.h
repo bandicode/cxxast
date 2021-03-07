@@ -12,13 +12,13 @@
 namespace cxx
 {
 
-class CXXAST_API Macro : public Entity
+class CXXAST_API Macro : public IEntity
 {
 public:
   std::vector<std::string> parameters;
 
 public:
-  Macro(std::string name, std::vector<std::string> params, std::shared_ptr<Entity> parent = nullptr);
+  Macro(std::string name, std::vector<std::string> params, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Macro;
   NodeKind node_kind() const override;
@@ -29,8 +29,8 @@ public:
 namespace cxx
 {
 
-inline Macro::Macro(std::string name, std::vector<std::string> params, std::shared_ptr<Entity> parent)
-  : Entity{ std::move(name), std::move(parent) },
+inline Macro::Macro(std::string name, std::vector<std::string> params, std::shared_ptr<IEntity> parent)
+  : IEntity{ std::move(name), std::move(parent) },
     parameters(std::move(params))
 {
 

@@ -37,9 +37,9 @@ namespace parsers
 
 struct StateGuard
 {
-  std::vector<std::shared_ptr<cxx::Node>>& m_stack;
+  std::vector<std::shared_ptr<cxx::INode>>& m_stack;
 
-  StateGuard(std::vector<std::shared_ptr<cxx::Node>>& stack, std::shared_ptr<cxx::Node> node)
+  StateGuard(std::vector<std::shared_ptr<cxx::INode>>& stack, std::shared_ptr<cxx::INode> node)
     : m_stack(stack)
   {
     m_stack.push_back(node);
@@ -88,11 +88,11 @@ struct RAIIGuard
 
 struct StacksGuard
 {
-  RAIIVectorSharedGuard<cxx::Node> prog_;
+  RAIIVectorSharedGuard<cxx::INode> prog_;
   RAIIVectorSharedGuard<cxx::AstNode> ast_;
 
-  StacksGuard(std::vector<std::shared_ptr<cxx::Node>>& p, std::vector<std::shared_ptr<cxx::AstNode>>& a, 
-    std::shared_ptr<cxx::Node> p_elem, std::shared_ptr<cxx::AstNode> a_elem)
+  StacksGuard(std::vector<std::shared_ptr<cxx::INode>>& p, std::vector<std::shared_ptr<cxx::AstNode>>& a, 
+    std::shared_ptr<cxx::INode> p_elem, std::shared_ptr<cxx::AstNode> a_elem)
     : prog_(p, p_elem),
       ast_(a, a_elem)
   {
@@ -160,6 +160,9 @@ bool LibClangParser::parse(const std::string& file)
     visit_tu(c);
     });
 
+
+  commitCurrentFile();
+
   return true;
 }
 
@@ -183,36 +186,29 @@ std::shared_ptr<File> LibClangParser::getFile(const std::string& path)
   return m_filesystem.get(path);
 }
 
-cxx::Node& LibClangParser::curNode()
+void LibClangParser::commitCurrentFile()
+{
+  if (m_current_file)
+  {
+    m_parsed_files.insert(m_current_file);
+    m_current_file->ast->updateSourceRange();
+    m_current_file = nullptr;
+    m_unlocated_nodes.clear();
+  }
+}
+
+cxx::INode& LibClangParser::curNode()
 {
   return *m_program_stack.back();
 }
 
-void LibClangParser::astWrite(std::shared_ptr<Declaration> n)
+void LibClangParser::astWrite(std::shared_ptr<AstNode> n)
 {
-  if (m_ast_stack.empty())
-  {
-    m_current_file->nodes.push_back(n);
-  }
-  else
-  {
     cxx::AstNode& cur = *m_ast_stack.back();
-
-    switch (cur.kind())
-    {
-    case NodeKind::NamespaceDeclaration:
-      static_cast<cxx::NamespaceDeclaration&>(cur).declarations.push_back(n);
-      break;
-    case NodeKind::ClassDeclaration:
-      static_cast<cxx::ClassDeclaration&>(cur).declarations.push_back(n);
-      break;
-    default:
-      throw std::runtime_error{ "LibClangParser::astWrite() failed" };
-    }
-  }
+    cur.append(n);
 }
 
-void LibClangParser::write(std::shared_ptr<Entity> e)
+void LibClangParser::write(std::shared_ptr<IEntity> e)
 {
   switch (curNode().kind())
   {
@@ -230,38 +226,304 @@ void LibClangParser::write(std::shared_ptr<Entity> e)
     throw std::runtime_error{ "LibClangParser::write() failed" };
   }
 
-  e->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+  e->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
+}
+
+static AstNodeKind convert_astnodekind(CXCursorKind k)
+{
+  switch (k)
+  {
+  case CXCursor_UnexposedDecl: return AstNodeKind::UnexposedDecl;
+  case CXCursor_StructDecl: return AstNodeKind::StructDecl;
+  case CXCursor_UnionDecl: return AstNodeKind::UnionDecl;
+  case CXCursor_ClassDecl: return AstNodeKind::ClassDecl;
+  case CXCursor_EnumDecl: return AstNodeKind::EnumDecl;
+  case CXCursor_FieldDecl: return AstNodeKind::FieldDecl;
+  case CXCursor_EnumConstantDecl: return AstNodeKind::EnumConstantDecl;
+  case CXCursor_FunctionDecl: return AstNodeKind::FunctionDecl;
+  case CXCursor_VarDecl: return AstNodeKind::VarDecl;
+  case CXCursor_ParmDecl: return AstNodeKind::ParmDecl;
+  case CXCursor_ObjCInterfaceDecl: return AstNodeKind::ObjCInterfaceDecl;
+  case CXCursor_ObjCCategoryDecl: return AstNodeKind::ObjCCategoryDecl;
+  case CXCursor_ObjCProtocolDecl: return AstNodeKind::ObjCProtocolDecl;
+  case CXCursor_ObjCPropertyDecl: return AstNodeKind::ObjCPropertyDecl;
+  case CXCursor_ObjCIvarDecl: return AstNodeKind::ObjCIvarDecl;
+  case CXCursor_ObjCInstanceMethodDecl: return AstNodeKind::ObjCInstanceMethodDecl;
+  case CXCursor_ObjCClassMethodDecl: return AstNodeKind::ObjCClassMethodDecl;
+  case CXCursor_ObjCImplementationDecl: return AstNodeKind::ObjCImplementationDecl;
+  case CXCursor_ObjCCategoryImplDecl: return AstNodeKind::ObjCCategoryImplDecl;
+  case CXCursor_TypedefDecl: return AstNodeKind::TypedefDecl;
+  case CXCursor_CXXMethod: return AstNodeKind::CXXMethod;
+  case CXCursor_Namespace: return AstNodeKind::Namespace;
+  case CXCursor_LinkageSpec: return AstNodeKind::LinkageSpec;
+  case CXCursor_Constructor: return AstNodeKind::Constructor;
+  case CXCursor_Destructor: return AstNodeKind::Destructor;
+  case CXCursor_ConversionFunction: return AstNodeKind::ConversionFunction;
+  case CXCursor_TemplateTypeParameter: return AstNodeKind::TemplateTypeParameter;
+  case CXCursor_NonTypeTemplateParameter: return AstNodeKind::NonTypeTemplateParameter;
+  case CXCursor_TemplateTemplateParameter: return AstNodeKind::TemplateTemplateParameter;
+  case CXCursor_FunctionTemplate: return AstNodeKind::FunctionTemplate;
+  case CXCursor_ClassTemplate: return AstNodeKind::ClassTemplate;
+  case CXCursor_ClassTemplatePartialSpecialization: return AstNodeKind::ClassTemplatePartialSpecialization;
+  case CXCursor_NamespaceAlias: return AstNodeKind::NamespaceAlias;
+  case CXCursor_UsingDirective: return AstNodeKind::UsingDirective;
+  case CXCursor_UsingDeclaration: return AstNodeKind::UsingDeclaration;
+  case CXCursor_TypeAliasDecl: return AstNodeKind::TypeAliasDecl;
+  case CXCursor_ObjCSynthesizeDecl: return AstNodeKind::ObjCSynthesizeDecl;
+  case CXCursor_ObjCDynamicDecl: return AstNodeKind::ObjCDynamicDecl;
+  case CXCursor_CXXAccessSpecifier: return AstNodeKind::CXXAccessSpecifier;
+  //case CXCursor_FirstDecl: return AstNodeKind::FirstDecl;
+  //case CXCursor_LastDecl: return AstNodeKind::LastDecl;
+  //case CXCursor_FirstRef: return AstNodeKind::FirstRef;
+  case CXCursor_ObjCSuperClassRef: return AstNodeKind::ObjCSuperClassRef;
+  case CXCursor_ObjCProtocolRef: return AstNodeKind::ObjCProtocolRef;
+  case CXCursor_ObjCClassRef: return AstNodeKind::ObjCClassRef;
+  case CXCursor_TypeRef: return AstNodeKind::TypeRef;
+  case CXCursor_CXXBaseSpecifier: return AstNodeKind::CXXBaseSpecifier;
+  case CXCursor_TemplateRef: return AstNodeKind::TemplateRef;
+  case CXCursor_NamespaceRef: return AstNodeKind::NamespaceRef;
+  case CXCursor_MemberRef: return AstNodeKind::MemberRef;
+  case CXCursor_LabelRef: return AstNodeKind::LabelRef;
+  case CXCursor_OverloadedDeclRef: return AstNodeKind::OverloadedDeclRef;
+  case CXCursor_VariableRef: return AstNodeKind::VariableRef;
+  //case CXCursor_LastRef: return AstNodeKind::LastRef;
+  //case CXCursor_FirstInvalid: return AstNodeKind::FirstInvalid;
+  case CXCursor_InvalidFile: return AstNodeKind::InvalidFile;
+  case CXCursor_NoDeclFound: return AstNodeKind::NoDeclFound;
+  case CXCursor_NotImplemented: return AstNodeKind::NotImplemented;
+  case CXCursor_InvalidCode: return AstNodeKind::InvalidCode;
+  //case CXCursor_LastInvalid: return AstNodeKind::LastInvalid;
+  //case CXCursor_FirstExpr: return AstNodeKind::FirstExpr;
+  case CXCursor_UnexposedExpr: return AstNodeKind::UnexposedExpr;
+  case CXCursor_DeclRefExpr: return AstNodeKind::DeclRefExpr;
+  case CXCursor_MemberRefExpr: return AstNodeKind::MemberRefExpr;
+  case CXCursor_CallExpr: return AstNodeKind::CallExpr;
+  case CXCursor_ObjCMessageExpr: return AstNodeKind::ObjCMessageExpr;
+  case CXCursor_BlockExpr: return AstNodeKind::BlockExpr;
+  case CXCursor_IntegerLiteral: return AstNodeKind::IntegerLiteral;
+  case CXCursor_FloatingLiteral: return AstNodeKind::FloatingLiteral;
+  case CXCursor_ImaginaryLiteral: return AstNodeKind::ImaginaryLiteral;
+  case CXCursor_StringLiteral: return AstNodeKind::StringLiteral;
+  case CXCursor_CharacterLiteral: return AstNodeKind::CharacterLiteral;
+  case CXCursor_ParenExpr: return AstNodeKind::ParenExpr;
+  case CXCursor_UnaryOperator: return AstNodeKind::UnaryOperator;
+  case CXCursor_ArraySubscriptExpr: return AstNodeKind::ArraySubscriptExpr;
+  case CXCursor_BinaryOperator: return AstNodeKind::BinaryOperator;
+  case CXCursor_CompoundAssignOperator: return AstNodeKind::CompoundAssignOperator;
+  case CXCursor_ConditionalOperator: return AstNodeKind::ConditionalOperator;
+  case CXCursor_CStyleCastExpr: return AstNodeKind::CStyleCastExpr;
+  case CXCursor_CompoundLiteralExpr: return AstNodeKind::CompoundLiteralExpr;
+  case CXCursor_InitListExpr: return AstNodeKind::InitListExpr;
+  case CXCursor_AddrLabelExpr: return AstNodeKind::AddrLabelExpr;
+  case CXCursor_StmtExpr: return AstNodeKind::StmtExpr;
+  case CXCursor_GenericSelectionExpr: return AstNodeKind::GenericSelectionExpr;
+  case CXCursor_GNUNullExpr: return AstNodeKind::GNUNullExpr;
+  case CXCursor_CXXStaticCastExpr: return AstNodeKind::CXXStaticCastExpr;
+  case CXCursor_CXXDynamicCastExpr: return AstNodeKind::CXXDynamicCastExpr;
+  case CXCursor_CXXReinterpretCastExpr: return AstNodeKind::CXXReinterpretCastExpr;
+  case CXCursor_CXXConstCastExpr: return AstNodeKind::CXXConstCastExpr;
+  case CXCursor_CXXFunctionalCastExpr: return AstNodeKind::CXXFunctionalCastExpr;
+  case CXCursor_CXXTypeidExpr: return AstNodeKind::CXXTypeidExpr;
+  case CXCursor_CXXBoolLiteralExpr: return AstNodeKind::CXXBoolLiteralExpr;
+  case CXCursor_CXXNullPtrLiteralExpr: return AstNodeKind::CXXNullPtrLiteralExpr;
+  case CXCursor_CXXThisExpr: return AstNodeKind::CXXThisExpr;
+  case CXCursor_CXXThrowExpr: return AstNodeKind::CXXThrowExpr;
+  case CXCursor_CXXNewExpr: return AstNodeKind::CXXNewExpr;
+  case CXCursor_CXXDeleteExpr: return AstNodeKind::CXXDeleteExpr;
+  case CXCursor_UnaryExpr: return AstNodeKind::UnaryExpr;
+  case CXCursor_ObjCStringLiteral: return AstNodeKind::ObjCStringLiteral;
+  case CXCursor_ObjCEncodeExpr: return AstNodeKind::ObjCEncodeExpr;
+  case CXCursor_ObjCSelectorExpr: return AstNodeKind::ObjCSelectorExpr;
+  case CXCursor_ObjCProtocolExpr: return AstNodeKind::ObjCProtocolExpr;
+  case CXCursor_ObjCBridgedCastExpr: return AstNodeKind::ObjCBridgedCastExpr;
+  case CXCursor_PackExpansionExpr: return AstNodeKind::PackExpansionExpr;
+  case CXCursor_SizeOfPackExpr: return AstNodeKind::SizeOfPackExpr;
+  case CXCursor_LambdaExpr: return AstNodeKind::LambdaExpr;
+  case CXCursor_ObjCBoolLiteralExpr: return AstNodeKind::ObjCBoolLiteralExpr;
+  case CXCursor_ObjCSelfExpr: return AstNodeKind::ObjCSelfExpr;
+  case CXCursor_OMPArraySectionExpr: return AstNodeKind::OMPArraySectionExpr;
+  case CXCursor_ObjCAvailabilityCheckExpr: return AstNodeKind::ObjCAvailabilityCheckExpr;
+  case CXCursor_FixedPointLiteral: return AstNodeKind::FixedPointLiteral;
+  //case CXCursor_LastExpr: return AstNodeKind::LastExpr;
+  //case CXCursor_FirstStmt: return AstNodeKind::FirstStmt;
+  case CXCursor_UnexposedStmt: return AstNodeKind::UnexposedStmt;
+  case CXCursor_LabelStmt: return AstNodeKind::LabelStmt;
+  case CXCursor_CompoundStmt: return AstNodeKind::CompoundStmt;
+  case CXCursor_CaseStmt: return AstNodeKind::CaseStmt;
+  case CXCursor_DefaultStmt: return AstNodeKind::DefaultStmt;
+  case CXCursor_IfStmt: return AstNodeKind::IfStmt;
+  case CXCursor_SwitchStmt: return AstNodeKind::SwitchStmt;
+  case CXCursor_WhileStmt: return AstNodeKind::WhileStmt;
+  case CXCursor_DoStmt: return AstNodeKind::DoStmt;
+  case CXCursor_ForStmt: return AstNodeKind::ForStmt;
+  case CXCursor_GotoStmt: return AstNodeKind::GotoStmt;
+  case CXCursor_IndirectGotoStmt: return AstNodeKind::IndirectGotoStmt;
+  case CXCursor_ContinueStmt: return AstNodeKind::ContinueStmt;
+  case CXCursor_BreakStmt: return AstNodeKind::BreakStmt;
+  case CXCursor_ReturnStmt: return AstNodeKind::ReturnStmt;
+  case CXCursor_GCCAsmStmt: return AstNodeKind::GCCAsmStmt;
+  //case CXCursor_AsmStmt: return AstNodeKind::AsmStmt;
+  case CXCursor_ObjCAtTryStmt: return AstNodeKind::ObjCAtTryStmt;
+  case CXCursor_ObjCAtCatchStmt: return AstNodeKind::ObjCAtCatchStmt;
+  case CXCursor_ObjCAtFinallyStmt: return AstNodeKind::ObjCAtFinallyStmt;
+  case CXCursor_ObjCAtThrowStmt: return AstNodeKind::ObjCAtThrowStmt;
+  case CXCursor_ObjCAtSynchronizedStmt: return AstNodeKind::ObjCAtSynchronizedStmt;
+  case CXCursor_ObjCAutoreleasePoolStmt: return AstNodeKind::ObjCAutoreleasePoolStmt;
+  case CXCursor_ObjCForCollectionStmt: return AstNodeKind::ObjCForCollectionStmt;
+  case CXCursor_CXXCatchStmt: return AstNodeKind::CXXCatchStmt;
+  case CXCursor_CXXTryStmt: return AstNodeKind::CXXTryStmt;
+  case CXCursor_CXXForRangeStmt: return AstNodeKind::CXXForRangeStmt;
+  case CXCursor_SEHTryStmt: return AstNodeKind::SEHTryStmt;
+  case CXCursor_SEHExceptStmt: return AstNodeKind::SEHExceptStmt;
+  case CXCursor_SEHFinallyStmt: return AstNodeKind::SEHFinallyStmt;
+  case CXCursor_MSAsmStmt: return AstNodeKind::MSAsmStmt;
+  case CXCursor_NullStmt: return AstNodeKind::NullStmt;
+  case CXCursor_DeclStmt: return AstNodeKind::DeclStmt;
+  case CXCursor_OMPParallelDirective: return AstNodeKind::OMPParallelDirective;
+  case CXCursor_OMPSimdDirective: return AstNodeKind::OMPSimdDirective;
+  case CXCursor_OMPForDirective: return AstNodeKind::OMPForDirective;
+  case CXCursor_OMPSectionsDirective: return AstNodeKind::OMPSectionsDirective;
+  case CXCursor_OMPSectionDirective: return AstNodeKind::OMPSectionDirective;
+  case CXCursor_OMPSingleDirective: return AstNodeKind::OMPSingleDirective;
+  case CXCursor_OMPParallelForDirective: return AstNodeKind::OMPParallelForDirective;
+  case CXCursor_OMPParallelSectionsDirective: return AstNodeKind::OMPParallelSectionsDirective;
+  case CXCursor_OMPTaskDirective: return AstNodeKind::OMPTaskDirective;
+  case CXCursor_OMPMasterDirective: return AstNodeKind::OMPMasterDirective;
+  case CXCursor_OMPCriticalDirective: return AstNodeKind::OMPCriticalDirective;
+  case CXCursor_OMPTaskyieldDirective: return AstNodeKind::OMPTaskyieldDirective;
+  case CXCursor_OMPBarrierDirective: return AstNodeKind::OMPBarrierDirective;
+  case CXCursor_OMPTaskwaitDirective: return AstNodeKind::OMPTaskwaitDirective;
+  case CXCursor_OMPFlushDirective: return AstNodeKind::OMPFlushDirective;
+  case CXCursor_SEHLeaveStmt: return AstNodeKind::SEHLeaveStmt;
+  case CXCursor_OMPOrderedDirective: return AstNodeKind::OMPOrderedDirective;
+  case CXCursor_OMPAtomicDirective: return AstNodeKind::OMPAtomicDirective;
+  case CXCursor_OMPForSimdDirective: return AstNodeKind::OMPForSimdDirective;
+  case CXCursor_OMPParallelForSimdDirective: return AstNodeKind::OMPParallelForSimdDirective;
+  case CXCursor_OMPTargetDirective: return AstNodeKind::OMPTargetDirective;
+  case CXCursor_OMPTeamsDirective: return AstNodeKind::OMPTeamsDirective;
+  case CXCursor_OMPTaskgroupDirective: return AstNodeKind::OMPTaskgroupDirective;
+  case CXCursor_OMPCancellationPointDirective: return AstNodeKind::OMPCancellationPointDirective;
+  case CXCursor_OMPCancelDirective: return AstNodeKind::OMPCancelDirective;
+  case CXCursor_OMPTargetDataDirective: return AstNodeKind::OMPTargetDataDirective;
+  case CXCursor_OMPTaskLoopDirective: return AstNodeKind::OMPTaskLoopDirective;
+  case CXCursor_OMPTaskLoopSimdDirective: return AstNodeKind::OMPTaskLoopSimdDirective;
+  case CXCursor_OMPDistributeDirective: return AstNodeKind::OMPDistributeDirective;
+  case CXCursor_OMPTargetEnterDataDirective: return AstNodeKind::OMPTargetEnterDataDirective;
+  case CXCursor_OMPTargetExitDataDirective: return AstNodeKind::OMPTargetExitDataDirective;
+  case CXCursor_OMPTargetParallelDirective: return AstNodeKind::OMPTargetParallelDirective;
+  case CXCursor_OMPTargetParallelForDirective: return AstNodeKind::OMPTargetParallelForDirective;
+  case CXCursor_OMPTargetUpdateDirective: return AstNodeKind::OMPTargetUpdateDirective;
+  case CXCursor_OMPDistributeParallelForDirective: return AstNodeKind::OMPDistributeParallelForDirective;
+  case CXCursor_OMPDistributeParallelForSimdDirective: return AstNodeKind::OMPDistributeParallelForSimdDirective;
+  case CXCursor_OMPDistributeSimdDirective: return AstNodeKind::OMPDistributeSimdDirective;
+  case CXCursor_OMPTargetParallelForSimdDirective: return AstNodeKind::OMPTargetParallelForSimdDirective;
+  case CXCursor_OMPTargetSimdDirective: return AstNodeKind::OMPTargetSimdDirective;
+  case CXCursor_OMPTeamsDistributeDirective: return AstNodeKind::OMPTeamsDistributeDirective;
+  case CXCursor_OMPTeamsDistributeSimdDirective: return AstNodeKind::OMPTeamsDistributeSimdDirective;
+  case CXCursor_OMPTeamsDistributeParallelForSimdDirective: return AstNodeKind::OMPTeamsDistributeParallelForSimdDirective;
+  case CXCursor_OMPTeamsDistributeParallelForDirective: return AstNodeKind::OMPTeamsDistributeParallelForDirective;
+  case CXCursor_OMPTargetTeamsDirective: return AstNodeKind::OMPTargetTeamsDirective;
+  case CXCursor_OMPTargetTeamsDistributeDirective: return AstNodeKind::OMPTargetTeamsDistributeDirective;
+  case CXCursor_OMPTargetTeamsDistributeParallelForDirective: return AstNodeKind::OMPTargetTeamsDistributeParallelForDirective;
+  case CXCursor_OMPTargetTeamsDistributeParallelForSimdDirective: return AstNodeKind::OMPTargetTeamsDistributeParallelForSimdDirective;
+  case CXCursor_OMPTargetTeamsDistributeSimdDirective: return AstNodeKind::OMPTargetTeamsDistributeSimdDirective;
+  //case CXCursor_LastStmt: return AstNodeKind::LastStmt;
+  case CXCursor_TranslationUnit: return AstNodeKind::TranslationUnit;
+  //case CXCursor_FirstAttr: return AstNodeKind::FirstAttr;
+  case CXCursor_UnexposedAttr: return AstNodeKind::UnexposedAttr;
+  case CXCursor_IBActionAttr: return AstNodeKind::IBActionAttr;
+  case CXCursor_IBOutletAttr: return AstNodeKind::IBOutletAttr;
+  case CXCursor_IBOutletCollectionAttr: return AstNodeKind::IBOutletCollectionAttr;
+  case CXCursor_CXXFinalAttr: return AstNodeKind::CXXFinalAttr;
+  case CXCursor_CXXOverrideAttr: return AstNodeKind::CXXOverrideAttr;
+  case CXCursor_AnnotateAttr: return AstNodeKind::AnnotateAttr;
+  case CXCursor_AsmLabelAttr: return AstNodeKind::AsmLabelAttr;
+  case CXCursor_PackedAttr: return AstNodeKind::PackedAttr;
+  case CXCursor_PureAttr: return AstNodeKind::PureAttr;
+  case CXCursor_ConstAttr: return AstNodeKind::ConstAttr;
+  case CXCursor_NoDuplicateAttr: return AstNodeKind::NoDuplicateAttr;
+  case CXCursor_CUDAConstantAttr: return AstNodeKind::CUDAConstantAttr;
+  case CXCursor_CUDADeviceAttr: return AstNodeKind::CUDADeviceAttr;
+  case CXCursor_CUDAGlobalAttr: return AstNodeKind::CUDAGlobalAttr;
+  case CXCursor_CUDAHostAttr: return AstNodeKind::CUDAHostAttr;
+  case CXCursor_CUDASharedAttr: return AstNodeKind::CUDASharedAttr;
+  case CXCursor_VisibilityAttr: return AstNodeKind::VisibilityAttr;
+  case CXCursor_DLLExport: return AstNodeKind::DLLExport;
+  case CXCursor_DLLImport: return AstNodeKind::DLLImport;
+  //case CXCursor_LastAttr: return AstNodeKind::LastAttr;
+  case CXCursor_PreprocessingDirective: return AstNodeKind::PreprocessingDirective;
+  case CXCursor_MacroDefinition: return AstNodeKind::MacroDefinition;
+  case CXCursor_MacroExpansion: return AstNodeKind::MacroExpansion;
+  //case CXCursor_MacroInstantiation: return AstNodeKind::MacroInstantiation;
+  case CXCursor_InclusionDirective: return AstNodeKind::InclusionDirective;
+  //case CXCursor_FirstPreprocessing: return AstNodeKind::FirstPreprocessing;
+  //case CXCursor_LastPreprocessing: return AstNodeKind::LastPreprocessing;
+  case CXCursor_ModuleImportDecl: return AstNodeKind::ModuleImportDecl;
+  case CXCursor_TypeAliasTemplateDecl: return AstNodeKind::TypeAliasTemplateDecl;
+  case CXCursor_StaticAssert: return AstNodeKind::StaticAssert;
+  case CXCursor_FriendDecl: return AstNodeKind::FriendDecl;
+  //case CXCursor_FirstExtraDecl: return AstNodeKind::FirstExtraDecl;
+  //case CXCursor_LastExtraDecl: return AstNodeKind::LastExtraDecl;
+  case CXCursor_OverloadCandidate: return AstNodeKind::OverloadCandidate;
+  default: return AstNodeKind::Root;
+  }
+}
+
+std::shared_ptr<AstNode> LibClangParser::createAstNode(const ClangCursor& c)
+{
+  auto ret = std::make_shared<AstNode>();
+  ret->sourcerange = getCursorExtent(c);
+  ret->kind = convert_astnodekind(c.kind());
+
+  // It seems that for some headers in MSVC implementation of the standard library, 
+  // some CXCursor_UnexposedExpr do not have any children nor a valid location.
+  // We store these node in a vector so that it will be possible to later fix them.
+  if (ret->sourcerange.begin.line == -1)
+    m_unlocated_nodes.push_back(ret);
+
+  return ret;
+}
+
+void LibClangParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n)
+{
+  astnode->node_ptr = n;
+  program()->astmap[n.get()] = astnode;
 }
 
 void LibClangParser::visit(const ClangCursor& cursor)
 {
   CXCursorKind kind = cursor.kind();
 
+  std::shared_ptr<AstNode> astnode = createAstNode(cursor);
+  astWrite(astnode);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+
   switch (kind)
   {
   case CXCursor_Namespace:
-    return visit_namespace(cursor);
+    return visit_namespace(cursor, astnode);
   case CXCursor_ClassDecl:
   case CXCursor_StructDecl:
   case CXCursor_ClassTemplate:
-    return visit_class(cursor);
+    return visit_class(cursor, astnode);
   case CXCursor_EnumDecl:
-    return visit_enum(cursor);
+    return visit_enum(cursor, astnode);
   case CXCursor_CXXMethod:
   case CXCursor_FunctionDecl:
   case CXCursor_Constructor:
   case CXCursor_Destructor:
-    return visit_function(cursor);
+    return visit_function(cursor, astnode);
   case CXCursor_EnumConstantDecl:
-    return visit_enumconstant(cursor);
+    return visit_enumconstant(cursor, astnode);
   case CXCursor_VarDecl:
-    return visit_vardecl(cursor);
+    return visit_vardecl(cursor, astnode);
   case CXCursor_FieldDecl:
-    return visit_fielddecl(cursor);
+    return visit_fielddecl(cursor, astnode);
   case CXCursor_CXXAccessSpecifier:
-    return visit_accessspecifier(cursor);
+    return visit_accessspecifier(cursor, astnode);
   case CXCursor_TemplateTypeParameter:
-    return visit_template_type_parameter(cursor);
+    return visit_template_type_parameter(cursor, astnode);
   default:
     return;
   }
@@ -269,18 +531,13 @@ void LibClangParser::visit(const ClangCursor& cursor)
 
 void LibClangParser::visit_tu(const ClangCursor& cursor)
 {
-  assert(m_ast_stack.empty());
-
   // We are working at translation-unit level
 
   auto cursor_file = getCursorFile(cursor);
 
   if (!clang_File_isEqual(m_current_cxfile, cursor_file))
   {
-    // We have reached another file
-
-    m_parsed_files.insert(m_current_file);
-
+    // We have reached another file, let's see if it has already been parsed
     auto file = getFile(getCursorFilePath(cursor));
 
     if (m_parsed_files.find(file) != m_parsed_files.end())
@@ -289,25 +546,31 @@ void LibClangParser::visit_tu(const ClangCursor& cursor)
       return;
     }
 
+    commitCurrentFile();
+
     m_current_cxfile = cursor_file;
     m_current_file = file;
+
+    if (m_current_file->ast == nullptr)
+      m_current_file->ast = std::make_shared<AstNode>();
+
+    assert(m_ast_stack.size() <= 1);
+    m_ast_stack.clear();
+    m_ast_stack.push_back(m_current_file->ast);
   }
 
   return visit(cursor);
 }
 
-void LibClangParser::visit_namespace(const ClangCursor& cursor)
+void LibClangParser::visit_namespace(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   std::string name = cursor.getSpelling();
   auto entity = static_cast<Namespace*>(m_program_stack.back().get())->getOrCreateNamespace(name);
-  auto decl = std::make_shared<NamespaceDeclaration>(entity);
-
-  decl->location = getCursorLocation(cursor);
-
-  astWrite(decl);
+  
+  astnode->node_ptr = entity;
 
   {
-    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
 
     cursor.visitChildren([this](ClangCursor c) {
       this->visit(c);
@@ -315,7 +578,7 @@ void LibClangParser::visit_namespace(const ClangCursor& cursor)
   }
 }
 
-void LibClangParser::visit_class(const ClangCursor& cursor)
+void LibClangParser::visit_class(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   std::string name = cursor.getSpelling();
 
@@ -342,15 +605,13 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
     }
   }();
 
-  auto decl = std::make_shared<ClassDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
-
-  astWrite(decl);
+  astnode->node_ptr = entity;
 
   if (isForwardDeclaration(cursor))
     return;
 
-  entity->location = getCursorLocation(cursor);
+  bind(astnode, entity);
+
   m_cursor_entity_map[cursor] = entity;
 
   cxx::AccessSpecifier default_access = [&]() {
@@ -361,7 +622,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   }();
 
   {
-    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
     RAIIGuard<cxx::AccessSpecifier> access_guard{ m_access_specifier };
 
     m_access_specifier = default_access;
@@ -372,7 +633,7 @@ void LibClangParser::visit_class(const ClangCursor& cursor)
   }
 }
 
-void LibClangParser::visit_enum(const ClangCursor& cursor)
+void LibClangParser::visit_enum(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   std::string name = getCursorSpelling(cursor);
 
@@ -388,15 +649,10 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
     return result;
   }();
 
-  auto decl = std::make_shared<EnumDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
-
-  astWrite(decl);
-
-  entity->location = getCursorLocation(cursor);
+  bind(astnode, entity);
 
   {
-    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
 
     cursor.visitChildren([this](ClangCursor c) {
       this->visit(c);
@@ -404,14 +660,15 @@ void LibClangParser::visit_enum(const ClangCursor& cursor)
   }
 }
 
-void LibClangParser::visit_enumconstant(const ClangCursor& cursor)
+void LibClangParser::visit_enumconstant(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   std::string n = cursor.getSpelling();
 
   auto& en = static_cast<Enum&>(curNode());
   auto val = std::make_shared<EnumValue>(std::move(n), std::static_pointer_cast<cxx::Enum>(en.shared_from_this()));
-  val->location = getCursorLocation(cursor);
   en.values.push_back(val);
+
+  bind(astnode, val);
 }
 
 static bool are_equiv_param(const cxx::FunctionParameter& a, const cxx::FunctionParameter& b)
@@ -439,7 +696,7 @@ static bool are_equiv_func(const cxx::Function& a, const cxx::Function& b)
   return true;
 }
 
-static std::shared_ptr<cxx::Function> find_equiv_func(cxx::Node& current_node, const cxx::Function& func)
+static std::shared_ptr<cxx::Function> find_equiv_func(cxx::INode& current_node, const cxx::Function& func)
 {
   if (current_node.is<cxx::Class>())
   {
@@ -478,13 +735,13 @@ static void update_func(cxx::Function& func, const cxx::Function& new_one)
     }
   }
 
-  if (func.body == nullptr && new_one.body != nullptr)
+  if (func.body.isNull() && !new_one.body.isNull())
   {
     func.body = new_one.body;
   }
 }
 
-void LibClangParser::visit_function(const ClangCursor& cursor)
+void LibClangParser::visit_function(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   // Tricky:
   // We may be dealing with a forward declaration, and the body may not be available.
@@ -507,14 +764,10 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     return;
   }
   
-
-  auto decl = std::make_shared<FunctionDeclaration>(entity);
-  decl->location = getCursorLocation(cursor);
-
-  astWrite(decl);
+  astnode->node_ptr = entity;
 
   {
-    StacksGuard guard{ m_program_stack, m_ast_stack, entity, decl };
+    RAIIVectorSharedGuard<cxx::INode> guard{ m_program_stack, entity };
     // TODO: parse func body
   }
 
@@ -530,7 +783,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     }
   }();
 
-  auto semantic_parent = [&]() -> std::shared_ptr<cxx::Node> {
+  auto semantic_parent = [&]() -> std::shared_ptr<cxx::INode> {
     if (is_member)
     {
       ClangCursor parent = cursor.getSemanticParent();
@@ -557,7 +810,7 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
 
   if (!func)
   {
-    entity->weak_parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+    entity->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
 
     if (curNode().is<Namespace>())
     {
@@ -574,15 +827,19 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
   }
   else
   {
-    decl->function = func;
+    astnode->node_ptr = func;
     update_func(*func, *entity);
   }
 
+  // @TODO: map statement to ast statement node
+  //if (!isForwardDeclaration(cursor))
+    // entity->location = decl->location;
+  // proposal hereafter:
   if (!isForwardDeclaration(cursor))
-    entity->location = decl->location;
+    bind(astnode, entity);
 }
 
-void LibClangParser::visit_vardecl(const ClangCursor& cursor)
+void LibClangParser::visit_vardecl(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   std::shared_ptr<Variable> var;
 
@@ -619,9 +876,11 @@ void LibClangParser::visit_vardecl(const ClangCursor& cursor)
   {
     // @TODO ?
   }
+
+  bind(astnode, var);
 }
 
-void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
+void LibClangParser::visit_fielddecl(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   assert(curNode().is<cxx::Class>());
 
@@ -629,6 +888,7 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
   {
     auto var = parseVariable(cursor);
     write(var);
+    bind(astnode, var);
   }
   catch (std::runtime_error & err)
   {
@@ -642,7 +902,7 @@ void LibClangParser::visit_fielddecl(const ClangCursor& cursor)
   }
 }
 
-void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
+void LibClangParser::visit_accessspecifier(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   ClangTokenSet tokens = m_tu.tokenize(cursor.getExtent());
 
@@ -651,7 +911,7 @@ void LibClangParser::visit_accessspecifier(const ClangCursor& cursor)
   m_access_specifier = getAccessSpecifier(aspec);
 }
 
-void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor)
+void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode)
 {
   if (!curNode().is<ClassTemplate>())
     throw std::runtime_error{ "Not implemented" };
@@ -661,6 +921,8 @@ void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor)
   auto ttparam = std::make_shared<TemplateParameter>(cursor.getSpelling());
   ttparam->weak_parent = ct.shared_from_this();
   ct.template_parameters.push_back(ttparam);
+
+  bind(astnode, ttparam);
 }
 
 std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)
@@ -668,9 +930,10 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
   std::string name = cursor.getSpelling();
   Type type = parseType(cursor.getType());
 
-  auto parent = std::static_pointer_cast<cxx::Entity>(curNode().shared_from_this());
+  auto parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
   auto var = std::make_shared<Variable>(type, std::move(name), parent);
-  var->location = getCursorLocation(cursor);
+  // @TODO: map statement to ast statement node
+  //var->location = getCursorLocation(cursor);
 
   if (cursor.childCount() == 1)
     var->defaultValue() = parseExpression(cursor.childAt(0));
@@ -680,7 +943,7 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
 
 std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& cursor)
 {
-  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::Entity>(m_program_stack.back()));
+  auto func = std::make_shared<cxx::Function>(getCursorSpelling(cursor), std::dynamic_pointer_cast<cxx::IEntity>(m_program_stack.back()));
 
   CXCursorKind kind = clang_getCursorKind(cursor);
 
@@ -735,6 +998,9 @@ std::shared_ptr<cxx::Function> LibClangParser::parseFunction(const ClangCursor& 
   // - parameters (CXCursor_ParmDecl)
   // - body (CXCursor_CompoundStmt)
 
+  // @TODO: use the following visitChildren to parse the parameters,
+  // for the return type it is more complicated as it does not always appear
+  // in the children...
   cursor.visitChildren([&](const ClangCursor& c) {
 
     if (c.kind() == CXCursor_CompoundStmt)
@@ -794,33 +1060,38 @@ CXChildVisitResult LibClangParser::visitFunctionParamDecl(CXCursor cursor, CXCur
   return CXChildVisit_Continue;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseStatement(const ClangCursor& c)
+Statement LibClangParser::parseStatement(const ClangCursor& c)
 {
   CXCursorKind k = c.kind();
+
+  std::shared_ptr<AstNode> astnode = createAstNode(c);
+  astWrite(astnode);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
 
   switch (k)
   {
   case CXCursor_NullStmt:
-    return parseNullStatement(c);
+    return parseNullStatement(c, astnode);
   case CXCursor_CompoundStmt:
-    return parseCompoundStatement(c);
+    return parseCompoundStatement(c, astnode);
   case CXCursor_IfStmt:
-    return parseIf(c);
+    return parseIf(c, astnode);
   case CXCursor_WhileStmt:
-    return parseWhile(c);
+    return parseWhile(c, astnode);
   default:
-    return parseUnexposedStatement(c);
+    return parseUnexposedStatement(c, astnode);
   }
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseNullStatement(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<NullStatement>();
-  result->location = getCursorLocation(c);
+  bind(astnode, result);
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseCompoundStatement(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<CompoundStatement>();
 
@@ -828,12 +1099,16 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseCompoundStatement(const Cla
     result->statements.push_back(parseStatement(child));
     });
 
+  bind(astnode, result);
+
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseIf(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<IfStatement>();
+
+  bind(astnode, result);
 
   // The children if a CXCursor_IfStmt seems to appear in the following order:
   // - condition
@@ -871,9 +1146,11 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseIf(const ClangCursor& c)
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
   auto result = std::make_shared<WhileLoop>();
+
+  bind(astnode, result);
 
   // The children if a CXCursor_WhileStmt seems to appear in the following order:
   // - condition
@@ -903,21 +1180,53 @@ std::shared_ptr<cxx::Statement> LibClangParser::parseWhile(const ClangCursor& c)
   return result;
 }
 
-std::shared_ptr<cxx::Statement> LibClangParser::parseUnexposedStatement(const ClangCursor& c)
+std::shared_ptr<cxx::IStatement> LibClangParser::parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode)
 {
-  auto result = std::make_shared<UnexposedStatement>(std::string());
+  auto result = std::make_shared<UnexposedStatement>();
+ 
+  bind(astnode, result);
 
-  CXSourceRange range = c.getExtent();
-  ClangTokenSet tokens = m_tu.tokenize(range);
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
 
-  std::string spelling;
+  return result;
+}
 
-  for (size_t i = 0; i < tokens.size(); i++)
+void LibClangParser::recursiveUnexposedParse(const ClangCursor& c)
+{
+  std::shared_ptr<AstNode> astnode = createAstNode(c);
+  astWrite(astnode);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
+}
+
+std::string LibClangParser::getSpelling(const ClangTokenSet& tokens)
+{
+  if (tokens.size() == 0)
+    return std::string();
+
+  std::string result = tokens.at(0).getSpelling();
+
+  CXSourceRange range = tokens.at(0).getExtent();
+  cxx::SourceLocation loc = getLocation(clang_getRangeEnd(range));
+
+  for (size_t i = 1; i < tokens.size(); i++)
   {
-    spelling += tokens.at(i).getSpelling();
-  }
+    range = tokens.at(i).getExtent();
+    cxx::SourceLocation tokloc = getLocation(clang_getRangeStart(range));
 
-  result->source = spelling;
+    if (tokloc.line() != loc.line() || tokloc.column() != loc.column())
+      result.push_back(' ');
+
+    result += tokens.at(i).getSpelling();
+
+    loc = getLocation(clang_getRangeEnd(range));
+  }
 
   return result;
 }
@@ -932,10 +1241,11 @@ cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
   CXSourceRange range = c.getExtent();
   ClangTokenSet tokens = m_tu.tokenize(range);
 
-  for (size_t i = 0; i < tokens.size(); i++)
-  {
-    spelling += tokens.at(i).getSpelling();
-  }
+  spelling = getSpelling(tokens);
+
+  c.visitChildren([&](const ClangCursor& child) {
+    recursiveUnexposedParse(child);
+    });
 
   return Expression{ std::move(spelling) };
 }
@@ -987,7 +1297,11 @@ cxx::Type LibClangParser::parseType(CXType t)
 cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
 {
   CXSourceLocation location = clang_getCursorLocation(cursor);
+  return getLocation(location);
+}
 
+cxx::SourceLocation LibClangParser::getLocation(const CXSourceLocation& location)
+{
   CXFile file;
   unsigned int line, col, offset;
   clang_getSpellingLocation(location, &file, &line, &col, &offset);
@@ -1004,6 +1318,19 @@ cxx::SourceLocation LibClangParser::getCursorLocation(CXCursor cursor)
 
     return cxx::SourceLocation(result_file, line, col);
   }
+}
+
+cxx::SourceRange LibClangParser::getCursorExtent(CXCursor cursor)
+{
+  CXSourceRange range = clang_getCursorExtent(cursor);
+
+  if (clang_Range_isNull(range)) 
+    return {};
+
+  cxx::SourceLocation start = getLocation(clang_getRangeStart(range));
+  cxx::SourceLocation end = getLocation(clang_getRangeEnd(range));
+
+  return cxx::SourceRange(start, end);
 }
 
 } // namespace parsers

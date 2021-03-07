@@ -12,42 +12,46 @@
 namespace cxx
 {
 
-class CXXAST_API Statement : public AstNode
+class CXXAST_API IStatement : public INode
 {
 public:
-  Statement() = default;
+  IStatement() = default;
 
-  explicit Statement(SourceLocation loc);
-
-  std::shared_ptr<Statement> shared_from_this();
+  std::shared_ptr<IStatement> shared_from_this();
 
   bool isStatement() const override;
 };
 
-typedef std::shared_ptr<Statement> StatementPtr;
+typedef std::shared_ptr<IStatement> IStatementPtr;
 
-class CXXAST_API UnexposedStatement : public Statement
+class CXXAST_API Statement : public Handle<IStatement>
+{
+protected:
+  std::shared_ptr<IStatement> d;
+
+public:
+  
+  using Handle<IStatement>::Handle;
+
+  NodeKind kind() const { return d->node_kind(); }
+
+  bool isDeclaration() const { return d->isDeclaration(); }
+};
+
+class CXXAST_API AstStatement : public AstNode
 {
 public:
-  std::string source;
+  AstStatement() = default;
+};
 
+class CXXAST_API UnexposedStatement : public IStatement
+{
 public:
-  explicit UnexposedStatement(std::string src);
-  UnexposedStatement(std::string src, SourceLocation loc);
+  UnexposedStatement();
 
   static constexpr NodeKind ClassNodeKind = NodeKind::UnexposedStatement;
   NodeKind node_kind() const override;
 };
-
-} // namespace cxx
-
-namespace cxx
-{
-
-inline Statement::Statement(SourceLocation loc)
-{
-  location = loc;
-}
 
 } // namespace cxx
 

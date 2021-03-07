@@ -12,14 +12,14 @@
 namespace cxx
 {
 
-class CXXAST_API Typedef : public Entity
+class CXXAST_API Typedef : public IEntity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
   Type type;
 
 public:
-  Typedef(Type t, std::string name, std::shared_ptr<Entity> parent = nullptr);
+  Typedef(Type t, std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Typedef;
   NodeKind node_kind() const override;
@@ -33,8 +33,8 @@ public:
 namespace cxx
 {
 
-inline Typedef::Typedef(Type t, std::string name, std::shared_ptr<Entity> parent)
-  : Entity{std::move(name), std::move(parent)},
+inline Typedef::Typedef(Type t, std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{std::move(name), std::move(parent)},
     type(t)
 {
 

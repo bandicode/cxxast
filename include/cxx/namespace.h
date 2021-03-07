@@ -19,10 +19,10 @@ class Class;
 class Enum;
 class Function;
 
-class CXXAST_API Namespace : public Entity
+class CXXAST_API Namespace : public IEntity
 {
 public:
-  std::vector<std::shared_ptr<Entity>> entities;
+  std::vector<std::shared_ptr<IEntity>> entities;
 
 public:
   ~Namespace() = default;
@@ -30,7 +30,7 @@ public:
   static constexpr NodeKind ClassNodeKind = NodeKind::Namespace;
   NodeKind node_kind() const override;
 
-  explicit Namespace(std::string name, std::shared_ptr<Entity> parent = nullptr);
+  explicit Namespace(std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   std::shared_ptr<Namespace> getOrCreateNamespace(const std::string& name);
   std::shared_ptr<Class> createClass(std::string name);
@@ -41,7 +41,7 @@ public:
   template<typename T, typename...Args>
   std::shared_ptr<T> getOrCreate(const std::string& name, Args&&... args)
   {
-    auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<Entity>& e) {
+    auto it = std::find_if(entities.begin(), entities.end(), [&name](const std::shared_ptr<IEntity>& e) {
       return e->is<T>() && e->name == name;
       });
 
@@ -53,14 +53,14 @@ public:
     return result;
   }
 
-  struct Entities : public priv::Field<Namespace, std::vector<std::shared_ptr<Entity>>>
+  struct Entities : public priv::Field<Namespace, std::vector<std::shared_ptr<IEntity>>>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).entities;
     }
 
-    static void set(Node& n, field_type entities)
+    static void set(INode& n, field_type entities)
     {
       down_cast(n).entities = std::move(entities);
     }
@@ -72,8 +72,8 @@ public:
 namespace cxx
 {
 
-inline Namespace::Namespace(std::string name, std::shared_ptr<Entity> parent)
-  : Entity{ std::move(name), std::move(parent) }
+inline Namespace::Namespace(std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{ std::move(name), std::move(parent) }
 {
 
 }

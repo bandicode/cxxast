@@ -11,7 +11,7 @@
 namespace cxx
 {
 
-class CXXAST_API VariableDeclaration : public Declaration
+class CXXAST_API VariableDeclaration : public IDeclaration
 {
 public:
   std::shared_ptr<Variable> variable;

@@ -7,25 +7,17 @@
 namespace cxx
 {
 
-std::shared_ptr<Statement> Statement::shared_from_this()
+std::shared_ptr<IStatement> IStatement::shared_from_this()
 {
-  return std::static_pointer_cast<Statement>(Node::shared_from_this());
+  return std::static_pointer_cast<IStatement>(INode::shared_from_this());
 }
 
-bool Statement::isStatement() const
+bool IStatement::isStatement() const
 {
   return true;
 }
 
-UnexposedStatement::UnexposedStatement(std::string src) :
-  source(std::move(src))
-{
-
-}
-
-UnexposedStatement::UnexposedStatement(std::string src, SourceLocation loc)
-  : Statement(loc),
-    source(std::move(src))
+UnexposedStatement::UnexposedStatement()
 {
 
 }

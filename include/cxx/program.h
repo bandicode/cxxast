@@ -16,17 +16,20 @@
 namespace cxx
 {
 
-class Entity;
+class AstNode;
+class IEntity;
 class File;
 class Macro;
 class Name;
 class Namespace;
+class INode;
 class Type;
 
 class CXXAST_API Program
 {
 public:
   std::vector<std::shared_ptr<Macro>> macros;
+  std::map<INode*, std::shared_ptr<AstNode>> astmap;
 
 public:
   Program();
@@ -36,8 +39,8 @@ public:
 
   const std::shared_ptr<Namespace>& globalNamespace() const;
 
-  std::shared_ptr<Entity> resolve(const Name& n);
-  std::shared_ptr<Entity> resolve(const Name& n, const std::shared_ptr<Entity>& context);
+  std::shared_ptr<IEntity> resolve(const Name& n);
+  std::shared_ptr<IEntity> resolve(const Name& n, const std::shared_ptr<IEntity>& context);
 
 private:
   std::vector<std::shared_ptr<File>> m_files;

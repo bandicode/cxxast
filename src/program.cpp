@@ -22,7 +22,7 @@ Program::~Program()
 
 }
 
-static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::shared_ptr<Entity>& context)
+static std::shared_ptr<IEntity> resolve_impl(const std::string& name, const std::shared_ptr<IEntity>& context)
 {
   if (!context)
     return nullptr;
@@ -55,12 +55,12 @@ static std::shared_ptr<Entity> resolve_impl(const std::string& name, const std::
   return nullptr;
 }
 
-std::shared_ptr<Entity> Program::resolve(const Name& n)
+std::shared_ptr<IEntity> Program::resolve(const Name& n)
 {
   return resolve(n, globalNamespace());
 }
 
-std::shared_ptr<Entity> Program::resolve(const Name& n, const std::shared_ptr<Entity>& context)
+std::shared_ptr<IEntity> Program::resolve(const Name& n, const std::shared_ptr<IEntity>& context)
 {
   if (!context)
     return nullptr;

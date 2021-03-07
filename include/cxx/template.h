@@ -29,7 +29,7 @@ struct TemplateTypeParameter
   typedef Type default_value_t;
 };
 
-class CXXAST_API TemplateParameter : public Entity
+class CXXAST_API TemplateParameter : public IEntity
 {
 private:
   bool m_is_type_parameter;

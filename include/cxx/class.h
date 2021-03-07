@@ -37,19 +37,19 @@ struct BaseClass
   }
 };
 
-class CXXAST_API Class : public Entity
+class CXXAST_API Class : public IEntity
 {
 public:
   AccessSpecifier access_specifier = AccessSpecifier::PUBLIC;
   std::vector<BaseClass> bases;
-  std::vector<std::shared_ptr<Entity>> members;
+  std::vector<std::shared_ptr<IEntity>> members;
   bool is_struct = false;
   bool is_final = false;
 
 public:
   ~Class() = default;
 
-  explicit Class(std::string name, std::shared_ptr<Entity> parent = nullptr);
+  explicit Class(std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::Class;
   NodeKind node_kind() const override;
@@ -60,14 +60,14 @@ public:
   virtual bool isTemplate() const;
   virtual const std::vector<std::shared_ptr<TemplateParameter>>& templateParameters() const;
 
-  struct Members : public priv::Field<Class, std::vector<std::shared_ptr<Entity>>>
+  struct Members : public priv::Field<Class, std::vector<std::shared_ptr<IEntity>>>
   {
-    static field_type& get(Node& n)
+    static field_type& get(INode& n)
     {
       return down_cast(n).members;
     }
 
-    static void set(Node& n, field_type members)
+    static void set(INode& n, field_type members)
     {
       down_cast(n).members = std::move(members);
     }
@@ -80,7 +80,7 @@ public:
   std::vector<std::shared_ptr<TemplateParameter>> template_parameters;
 
 public:
-  ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<Entity> parent = nullptr);
+  ClassTemplate(std::vector<std::shared_ptr<TemplateParameter>> tparams, std::string name, std::shared_ptr<IEntity> parent = nullptr);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::ClassTemplate;
   NodeKind node_kind() const override;
@@ -94,8 +94,8 @@ public:
 namespace cxx
 {
 
-inline Class::Class(std::string name, std::shared_ptr<Entity> parent)
-  : Entity{std::move(name), std::move(parent)}
+inline Class::Class(std::string name, std::shared_ptr<IEntity> parent)
+  : IEntity{std::move(name), std::move(parent)}
 {
 
 }
