@@ -108,14 +108,14 @@ public:
 
   bool isNull() const { return d == nullptr; }
 
-  template<typename T>
-  bool is() const { return d->is<T>(); }
+  template<typename U>
+  bool is() const { return d->template is<U>(); }
 
   template<typename F>
-  typename F::field_type& get() const { return d->get<F>(); }
+  typename F::field_type& get() const { return d->template get<F>(); }
 
   template<typename F, typename Arg>
-  void set(Arg&& value) { return d->set<F>(std::forward<Arg>(value)); }
+  void set(Arg&& value) { return d->template set<F>(std::forward<Arg>(value)); }
 
   const std::shared_ptr<T>& impl() const { return d; }
 

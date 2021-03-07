@@ -11,7 +11,7 @@ TEST_CASE("The Handle class can hold a WhileLoop", "[api]")
   auto w = std::make_shared<cxx::WhileLoop>();
   w->condition = cxx::Expression("true");
 
-  cxx::Handle handle{ w };
+  cxx::Handle<cxx::INode> handle{ w };
 
   REQUIRE(handle.kind() == cxx::NodeKind::WhileLoop);
   REQUIRE(handle.is<cxx::WhileLoop>());
