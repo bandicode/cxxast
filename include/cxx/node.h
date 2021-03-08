@@ -517,6 +517,8 @@ public:
   void append(std::shared_ptr<AstNode> n);
 
   void updateSourceRange();
+
+  virtual std::shared_ptr<File> file() const;
 };
 
 } // namespace cxx

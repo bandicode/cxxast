@@ -313,4 +313,9 @@ void AstNode::updateSourceRange()
   sourcerange.end = children.back()->sourcerange.end;
 }
 
+std::shared_ptr<File> AstNode::file() const
+{
+  return sourcerange.file.lock();
+}
+
 } // namespace cxx
