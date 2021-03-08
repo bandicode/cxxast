@@ -293,7 +293,12 @@ NodeKind AstNode::node_kind() const
   return NodeKind::AstNode;
 }
 
-std::shared_ptr<AstNode> AstNode::parent() const
+std::shared_ptr<INode> AstNode::parent() const
+{
+  return astParent();
+}
+
+std::shared_ptr<AstNode> AstNode::astParent() const
 {
   return weak_parent.lock();
 }

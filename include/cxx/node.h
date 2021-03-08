@@ -513,7 +513,8 @@ public:
 
   NodeKind node_kind() const override;
 
-  std::shared_ptr<AstNode> parent() const;
+  virtual std::shared_ptr<INode> parent() const;
+  std::shared_ptr<AstNode> astParent() const;
   void append(std::shared_ptr<AstNode> n);
 
   void updateSourceRange();
