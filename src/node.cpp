@@ -1,9 +1,10 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
 #include "cxx/node.h"
 
+#include "cxx/astnodelist_p.h"
 #include "cxx/entity.h"
 #include "cxx/statement.h"
 
@@ -305,22 +306,144 @@ std::shared_ptr<AstNode> AstNode::astParent() const
 
 void AstNode::append(std::shared_ptr<AstNode> n)
 {
-  children.push_back(n);
+  children_vec.push_back(n);
   n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList AstNode::children() const
+{
+  return AstNodeList();
 }
 
 void AstNode::updateSourceRange()
 {
-  if (children.empty())
+  if (children_vec.empty())
     return;
 
-  sourcerange = children.front()->sourcerange;
-  sourcerange.end = children.back()->sourcerange.end;
+  sourcerange = children_vec.front()->sourcerange;
+  sourcerange.end = children_vec.back()->sourcerange.end;
 }
 
 std::shared_ptr<File> AstNode::file() const
 {
   return sourcerange.file.lock();
+}
+
+
+AstNodeList::AstNodeList()
+  : d(std::make_shared<AstEmptyNodeList>())
+{
+
+}
+
+AstNodeList::~AstNodeList()
+{
+
+}
+
+AstNodeList::AstNodeList(std::shared_ptr<AstNodeListInterface> impl)
+  : d(impl)
+{
+
+}
+
+bool AstNodeList::empty() const
+{
+  return size() == 0;
+}
+
+size_t AstNodeList::size() const
+{
+  return d->size();
+}
+
+std::shared_ptr<AstNode> AstNodeList::at(size_t index) const
+{
+  return d->at(index);
+}
+
+std::shared_ptr<AstNode> AstNodeList::front() const
+{
+  return at(0);
+}
+
+std::shared_ptr<AstNode> AstNodeList::back() const
+{
+  return at(size() - 1);
+}
+
+AstNodeListIterator AstNodeList::begin() const
+{
+  return AstNodeListIterator(*this);
+}
+
+AstNodeListIterator AstNodeList::end() const
+{
+  return AstNodeListIterator(*this, size());
+}
+
+bool AstNodeList::operator==(const AstNodeList& other) const
+{
+  return d == other.d;
+}
+
+bool AstNodeList::operator!=(const AstNodeList& other) const
+{
+  return d != other.d;
+}
+
+
+AstNodeListIterator::AstNodeListIterator(const AstNodeList& list, size_t i)
+  : m_list(&list),
+    m_index(i)
+{
+
+}
+
+std::shared_ptr<AstNode> AstNodeListIterator::operator*() const
+{
+  return m_list->at(m_index);
+}
+
+AstNodeListIterator& AstNodeListIterator::operator++()
+{
+  ++m_index;
+  return *this;
+}
+
+AstNodeListIterator AstNodeListIterator::operator++(int)
+{
+  AstNodeListIterator it{ *this };
+  ++m_index;
+  return it;
+}
+
+bool AstNodeListIterator::operator==(const AstNodeListIterator& other) const
+{
+  return m_list == other.m_list && m_index == other.m_index;
+}
+
+bool AstNodeListIterator::operator!=(const AstNodeListIterator& other) const
+{
+  return !(*this == other);
+}
+
+
+UnexposedAstNode::UnexposedAstNode(AstNodeKind k)
+  : kind(k)
+{
+
+}
+
+void UnexposedAstNode::append(std::shared_ptr<AstNode> n)
+{
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList UnexposedAstNode::children() const
+{
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
 }
 
 } // namespace cxx

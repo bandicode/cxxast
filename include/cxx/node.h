@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
@@ -485,11 +485,13 @@ CXXAST_API std::string to_string(AstNodeKind k);
  * is part of an ast, for example the "int" type would be shared by all ast and therefore 
  * would have an invalid location.
  */
+class AstNodeList;
+
 class CXXAST_API AstNode : public INode
 {
 public:
   SourceRange sourcerange;
-  std::vector<std::shared_ptr<AstNode>> children;
+  std::vector<std::shared_ptr<AstNode>> children_vec;
   std::weak_ptr<AstNode> weak_parent;
   std::shared_ptr<INode> node_ptr;
   AstNodeKind kind = AstNodeKind::Root;
@@ -515,11 +517,90 @@ public:
 
   virtual std::shared_ptr<INode> parent() const;
   std::shared_ptr<AstNode> astParent() const;
-  void append(std::shared_ptr<AstNode> n);
+  virtual void append(std::shared_ptr<AstNode> n);
+  virtual AstNodeList children() const;
+
 
   void updateSourceRange();
 
   virtual std::shared_ptr<File> file() const;
+};
+
+class CXXAST_API AstNodeListInterface
+{
+public:
+  AstNodeListInterface() = default;
+  ~AstNodeListInterface() = default;
+
+  virtual size_t size() const = 0;
+  virtual std::shared_ptr<AstNode> at(size_t index) const = 0;
+
+  AstNodeListInterface& operator=(const AstNodeListInterface&) = delete;
+};
+
+class AstNodeListIterator;
+
+class CXXAST_API AstNodeList
+{
+public:
+  AstNodeList();
+  AstNodeList(const AstNodeList&) = default;
+  ~AstNodeList();
+
+  explicit AstNodeList(std::shared_ptr<AstNodeListInterface> impl);
+
+  bool empty() const;
+  size_t size() const;
+  std::shared_ptr<AstNode> at(size_t index) const;
+  std::shared_ptr<AstNode> front() const;
+  std::shared_ptr<AstNode> back() const;
+
+  AstNodeListIterator begin() const;
+  AstNodeListIterator end() const;
+
+  AstNodeList& operator=(const AstNodeList&) = default;
+
+  bool operator==(const AstNodeList& other) const;
+  bool operator!=(const AstNodeList& other) const;
+
+private:
+  std::shared_ptr<AstNodeListInterface> d;
+};
+
+class CXXAST_API AstNodeListIterator
+{
+public:
+  explicit AstNodeListIterator(const AstNodeList& list, size_t i = 0);
+
+  AstNodeListIterator(const AstNodeListIterator&) = default;
+  ~AstNodeListIterator() = default;
+
+  std::shared_ptr<AstNode> operator*() const;
+
+  AstNodeListIterator& operator++();
+  AstNodeListIterator operator++(int);
+
+  AstNodeListIterator& operator=(const AstNodeListIterator&) = default;
+
+  bool operator==(const AstNodeListIterator& other) const;
+  bool operator!=(const AstNodeListIterator& other) const;
+
+private:
+  const AstNodeList* m_list;
+  size_t m_index = 0;
+};
+
+class CXXAST_API UnexposedAstNode : public AstNode
+{
+public:
+  std::vector<std::shared_ptr<AstNode>> childvec;
+  AstNodeKind kind = AstNodeKind::Root;
+
+public:
+  explicit UnexposedAstNode(AstNodeKind k);
+
+  void append(std::shared_ptr<AstNode> n) override;
+  AstNodeList children() const override;
 };
 
 } // namespace cxx

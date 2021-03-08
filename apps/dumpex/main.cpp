@@ -30,7 +30,7 @@ void visit(const std::shared_ptr<cxx::AstNode>& node)
   {
     ++depth;
 
-    for (auto n : node->children)
+    for (auto n : node->children_vec)
       visit(n);
 
     --depth;
