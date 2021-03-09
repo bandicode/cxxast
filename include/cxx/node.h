@@ -491,7 +491,6 @@ class CXXAST_API AstNode : public INode
 {
 public:
   SourceRange sourcerange;
-  std::vector<std::shared_ptr<AstNode>> children_vec;
   std::weak_ptr<AstNode> weak_parent;
   std::shared_ptr<INode> node_ptr;
   AstNodeKind kind = AstNodeKind::Root;

@@ -306,8 +306,7 @@ std::shared_ptr<AstNode> AstNode::astParent() const
 
 void AstNode::append(std::shared_ptr<AstNode> n)
 {
-  children_vec.push_back(n);
-  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+  throw std::runtime_error{ "not supported" };
 }
 
 AstNodeList AstNode::children() const
@@ -317,11 +316,11 @@ AstNodeList AstNode::children() const
 
 void AstNode::updateSourceRange()
 {
-  if (children_vec.empty())
+  if (children().empty())
     return;
 
-  sourcerange = children_vec.front()->sourcerange;
-  sourcerange.end = children_vec.back()->sourcerange.end;
+  sourcerange = children().front()->sourcerange;
+  sourcerange.end = children().back()->sourcerange.end;
 }
 
 std::shared_ptr<File> AstNode::file() const
