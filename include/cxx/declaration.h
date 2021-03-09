@@ -15,9 +15,6 @@ class IEntity;
 class CXXAST_API IDeclaration : public IStatement
 {
 public:
-  std::vector<std::shared_ptr<IDeclaration>> declarations; // @TODO: remove this ?
-
-public:
   IDeclaration() = default;
 
   std::shared_ptr<IDeclaration> shared_from_this();
