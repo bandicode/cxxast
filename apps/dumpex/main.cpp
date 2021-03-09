@@ -23,7 +23,8 @@ void visit(const std::shared_ptr<cxx::AstNode>& node)
   if (node->node_ptr && node->node_ptr->isEntity())
     std::cout << " " << static_cast<cxx::IEntity*>(node->node_ptr.get())->name;
 
-  std::cout << " [" << cxx::to_string(node->kind) << "]";
+  if(dynamic_cast<cxx::UnexposedAstNode*>(node.get()))
+    std::cout << " [" << cxx::to_string(static_cast<cxx::UnexposedAstNode&>(*node).kind) << "]";
 
   std::cout << std::endl;
 

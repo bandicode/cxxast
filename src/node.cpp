@@ -428,6 +428,23 @@ bool AstNodeListIterator::operator!=(const AstNodeListIterator& other) const
 }
 
 
+AstRootNode::AstRootNode()
+{
+
+}
+
+void AstRootNode::append(std::shared_ptr<AstNode> n)
+{
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList AstRootNode::children() const
+{
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
+}
+
+
 UnexposedAstNode::UnexposedAstNode(AstNodeKind k)
   : kind(k)
 {

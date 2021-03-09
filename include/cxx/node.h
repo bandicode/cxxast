@@ -493,7 +493,6 @@ public:
   SourceRange sourcerange;
   std::weak_ptr<AstNode> weak_parent;
   std::shared_ptr<INode> node_ptr;
-  AstNodeKind kind = AstNodeKind::Root;
 
 public:
   
@@ -587,6 +586,18 @@ public:
 private:
   const AstNodeList* m_list;
   size_t m_index = 0;
+};
+
+class CXXAST_API AstRootNode : public AstNode
+{
+public:
+  std::vector<std::shared_ptr<AstNode>> childvec;
+
+public:
+  explicit AstRootNode();
+
+  void append(std::shared_ptr<AstNode> n) override;
+  AstNodeList children() const override;
 };
 
 class CXXAST_API UnexposedAstNode : public AstNode

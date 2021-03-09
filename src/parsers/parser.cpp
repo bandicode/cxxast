@@ -471,9 +471,8 @@ static AstNodeKind convert_astnodekind(CXCursorKind k)
 
 std::shared_ptr<AstNode> LibClangParser::createAstNode(const ClangCursor& c)
 {
-  auto ret = std::make_shared<AstNode>();
+  auto ret = std::make_shared<UnexposedAstNode>(convert_astnodekind(c.kind()));
   ret->sourcerange = getCursorExtent(c);
-  ret->kind = convert_astnodekind(c.kind());
 
   // It seems that for some headers in MSVC implementation of the standard library, 
   // some CXCursor_UnexposedExpr do not have any children nor a valid location.
@@ -552,7 +551,7 @@ void LibClangParser::visit_tu(const ClangCursor& cursor)
     m_current_file = file;
 
     if (m_current_file->ast == nullptr)
-      m_current_file->ast = std::make_shared<AstNode>();
+      m_current_file->ast = std::make_shared<AstRootNode>();
 
     assert(m_ast_stack.size() <= 1);
     m_ast_stack.clear();
