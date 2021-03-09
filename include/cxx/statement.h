@@ -12,14 +12,20 @@
 namespace cxx
 {
 
-class CXXAST_API IStatement : public INode
+class CXXAST_API IStatement : public AstNode
 {
+public:
+  std::vector<std::shared_ptr<AstNode>> childvec;
+
 public:
   IStatement() = default;
 
   std::shared_ptr<IStatement> shared_from_this();
 
   bool isStatement() const override;
+
+  void append(std::shared_ptr<AstNode> n) override;
+  AstNodeList children() const override;
 };
 
 typedef std::shared_ptr<IStatement> IStatementPtr;
@@ -36,12 +42,6 @@ public:
   NodeKind kind() const { return d->node_kind(); }
 
   bool isDeclaration() const { return d->isDeclaration(); }
-};
-
-class CXXAST_API AstStatement : public AstNode
-{
-public:
-  AstStatement() = default;
 };
 
 class CXXAST_API UnexposedStatement : public IStatement

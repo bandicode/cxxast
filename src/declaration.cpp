@@ -9,6 +9,12 @@
 namespace cxx
 {
 
+IDeclaration::IDeclaration(std::shared_ptr<IEntity> e)
+  : entity_ptr(e)
+{
+
+}
+
 std::shared_ptr<IDeclaration> IDeclaration::shared_from_this()
 {
   return std::static_pointer_cast<IDeclaration>(INode::shared_from_this());
@@ -17,16 +23,6 @@ std::shared_ptr<IDeclaration> IDeclaration::shared_from_this()
 bool IDeclaration::isDeclaration() const
 {
   return true;
-}
-
-std::shared_ptr<IEntity> IDeclaration::entity() const
-{
-  return nullptr;
-}
-
-AstDeclaration::AstDeclaration(const std::shared_ptr<IEntity>& ent)
-{
-  node_ptr = ent;
 }
 
 } // namespace cxx

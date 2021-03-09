@@ -4,6 +4,8 @@
 
 #include "cxx/statement.h"
 
+#include "cxx/astnodelist_p.h"
+
 namespace cxx
 {
 
@@ -15,6 +17,17 @@ std::shared_ptr<IStatement> IStatement::shared_from_this()
 bool IStatement::isStatement() const
 {
   return true;
+}
+
+void IStatement::append(std::shared_ptr<AstNode> n)
+{
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList IStatement::children() const
+{
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
 }
 
 UnexposedStatement::UnexposedStatement()

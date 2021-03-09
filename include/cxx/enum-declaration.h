@@ -15,17 +15,12 @@ namespace cxx
 class CXXAST_API EnumDeclaration : public IDeclaration
 {
 public:
-  std::shared_ptr<Enum> enum_;
-
-public:
   EnumDeclaration() = default;
 
   explicit EnumDeclaration(std::shared_ptr<Enum> e);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::EnumDeclaration;
   NodeKind node_kind() const override;
-
-  std::shared_ptr<IEntity> entity() const override;
 };
 
 } // namespace cxx
@@ -34,7 +29,7 @@ namespace cxx
 {
 
 inline EnumDeclaration::EnumDeclaration(std::shared_ptr<Enum> e)
-  : enum_(e)
+  : IDeclaration(e)
 {
 
 }

@@ -45,7 +45,6 @@ enum class NodeKind
   VariableDeclaration,
   UnexposedStatement,
   /*Ast */
-  AstDeclaration,
   AstRootNode,
   AstUnexposedNode,
   /* Misc */
