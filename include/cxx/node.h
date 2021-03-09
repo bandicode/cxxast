@@ -45,8 +45,9 @@ enum class NodeKind
   VariableDeclaration,
   UnexposedStatement,
   /*Ast */
-  AstNode,
   AstDeclaration,
+  AstRootNode,
+  AstUnexposedNode,
   /* Misc */
   MultilineComment,
   Documentation,
@@ -72,6 +73,7 @@ public:
   NodeKind kind() const { return node_kind(); }
 
   virtual bool isEntity() const;
+  virtual bool isAstNode() const;
   virtual bool isDocumentation() const;
   virtual bool isStatement() const;
   virtual bool isDeclaration() const;
@@ -156,6 +158,12 @@ template<>
 inline bool test_node_kind<Function>(const INode& n)
 {
   return n.kind() == NodeKind::Function || n.kind() == NodeKind::FunctionTemplate;
+}
+
+template<>
+inline bool test_node_kind<AstNode>(const INode& n)
+{
+  return n.isAstNode();
 }
 
 namespace priv
@@ -511,7 +519,7 @@ public:
 
   }
 
-  NodeKind node_kind() const override;
+  bool isAstNode() const override;
 
   virtual std::shared_ptr<INode> parent() const;
   std::shared_ptr<AstNode> astParent() const;
@@ -596,6 +604,8 @@ public:
 public:
   explicit AstRootNode();
 
+  NodeKind node_kind() const override;
+
   void append(std::shared_ptr<AstNode> n) override;
   AstNodeList children() const override;
 };
@@ -608,6 +618,8 @@ public:
 
 public:
   explicit UnexposedAstNode(AstNodeKind k);
+
+  NodeKind node_kind() const override;
 
   void append(std::shared_ptr<AstNode> n) override;
   AstNodeList children() const override;

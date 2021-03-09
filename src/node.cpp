@@ -23,6 +23,11 @@ bool INode::isEntity() const
   return false;
 }
 
+bool INode::isAstNode() const
+{
+  return false;
+}
+
 bool INode::isDocumentation() const
 {
   return false;
@@ -289,9 +294,9 @@ std::string to_string(AstNodeKind k)
   }
 }
 
-NodeKind AstNode::node_kind() const
+bool AstNode::isAstNode() const
 {
-  return NodeKind::AstNode;
+  return true;
 }
 
 std::shared_ptr<INode> AstNode::parent() const
@@ -433,6 +438,11 @@ AstRootNode::AstRootNode()
 
 }
 
+NodeKind AstRootNode::node_kind() const
+{
+  return NodeKind::AstRootNode;
+}
+
 void AstRootNode::append(std::shared_ptr<AstNode> n)
 {
   childvec.push_back(n);
@@ -449,6 +459,11 @@ UnexposedAstNode::UnexposedAstNode(AstNodeKind k)
   : kind(k)
 {
 
+}
+
+NodeKind UnexposedAstNode::node_kind() const
+{
+  return NodeKind::AstUnexposedNode;
 }
 
 void UnexposedAstNode::append(std::shared_ptr<AstNode> n)
