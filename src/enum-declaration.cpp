@@ -12,4 +12,9 @@ NodeKind EnumDeclaration::node_kind() const
   return EnumDeclaration::ClassNodeKind;
 }
 
+NodeKind EnumeratorDeclaration::node_kind() const
+{
+  return ClassNodeKind;
+}
+
 } // namespace cxx

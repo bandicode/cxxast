@@ -16,6 +16,7 @@ class CXXAST_API IDeclaration : public IStatement
 {
 public:
   std::shared_ptr<IEntity> entity_ptr;
+  std::vector<std::shared_ptr<AstNode>> childvec;
 
 public:
   IDeclaration() = default;
@@ -24,6 +25,9 @@ public:
   std::shared_ptr<IDeclaration> shared_from_this();
 
   bool isDeclaration() const override;
+
+  void append(std::shared_ptr<AstNode> n) override;
+  AstNodeList children() const override;
 };
 
 } // namespace cxx

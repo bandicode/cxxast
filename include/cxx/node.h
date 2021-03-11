@@ -40,8 +40,9 @@ enum class NodeKind
   WhileLoop,
   ClassDeclaration,
   EnumDeclaration,
-  //FunctionDeclaration,
-  //NamespaceDeclaration,
+  EnumeratorDeclaration,
+  FunctionDeclaration,
+  NamespaceDeclaration,
   VariableDeclaration,
   UnexposedStatement,
   /*Ast */

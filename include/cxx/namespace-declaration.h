@@ -7,36 +7,37 @@
 
 #include "cxx/declaration.h"
 #include "cxx/namespace.h"
-//
-//namespace cxx
-//{
-//
-//class CXXAST_API NamespaceDeclaration : public AstDeclaration
-//{
-//public:
-//  std::shared_ptr<Namespace> namespace_;
-//
-//public:
-//  NamespaceDeclaration() = default;
-//
-//  explicit NamespaceDeclaration(std::shared_ptr<Namespace> ns);
-//
-//  static constexpr NodeKind ClassNodeKind = NodeKind::NamespaceDeclaration;
-//  NodeKind node_kind() const override;
-//
-//};
-//
-//} // namespace cxx
-//
-//namespace cxx
-//{
-//
-//inline NamespaceDeclaration::NamespaceDeclaration(std::shared_ptr<Namespace> ns)
-//  : namespace_(ns)
-//{
-//  node_ptr = ns;
-//}
-//
-//} // namespace cxx
+
+namespace cxx
+{
+
+class CXXAST_API NamespaceDeclaration : public IDeclaration
+{
+public:
+  std::shared_ptr<Namespace> namespace_;
+
+public:
+  NamespaceDeclaration() = default;
+
+  explicit NamespaceDeclaration(std::shared_ptr<Namespace> ns);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::NamespaceDeclaration;
+  NodeKind node_kind() const override;
+
+};
+
+} // namespace cxx
+
+namespace cxx
+{
+
+inline NamespaceDeclaration::NamespaceDeclaration(std::shared_ptr<Namespace> ns)
+  : IDeclaration(ns),
+    namespace_(ns)
+{
+  node_ptr = ns;
+}
+
+} // namespace cxx
 
 #endif // CXXAST_NAMESPACE_DECLARATION_H

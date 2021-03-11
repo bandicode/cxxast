@@ -23,12 +23,29 @@ public:
   NodeKind node_kind() const override;
 };
 
+class CXXAST_API EnumeratorDeclaration : public IDeclaration
+{
+public:
+  EnumeratorDeclaration() = default;
+
+  explicit EnumeratorDeclaration(std::shared_ptr<EnumValue> e);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::EnumeratorDeclaration;
+  NodeKind node_kind() const override;
+};
+
 } // namespace cxx
 
 namespace cxx
 {
 
 inline EnumDeclaration::EnumDeclaration(std::shared_ptr<Enum> e)
+  : IDeclaration(e)
+{
+
+}
+
+inline EnumeratorDeclaration::EnumeratorDeclaration(std::shared_ptr<EnumValue> e)
   : IDeclaration(e)
 {
 

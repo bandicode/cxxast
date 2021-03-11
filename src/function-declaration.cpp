@@ -7,11 +7,11 @@
 namespace cxx
 {
 
-//NodeKind FunctionDeclaration::node_kind() const
-//{
-//  return FunctionDeclaration::ClassNodeKind;
-//}
-//
+NodeKind FunctionDeclaration::node_kind() const
+{
+  return FunctionDeclaration::ClassNodeKind;
+}
+
 //bool FunctionDeclaration::isForwardDeclaration() const
 //{
 //  return this->function->location != this->location;

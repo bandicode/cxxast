@@ -2,14 +2,16 @@
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-#include "cxx/namespace-declaration.h"
+#include "cxx/function-body.h"
+
+#include <stdexcept>
 
 namespace cxx
 {
 
-NodeKind NamespaceDeclaration::node_kind() const
+std::shared_ptr<INode> FunctionBody::parent() const
 {
-  return NamespaceDeclaration::ClassNodeKind;
+  return function_ptr.lock();
 }
 
 } // namespace cxx
