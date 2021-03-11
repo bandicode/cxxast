@@ -856,10 +856,6 @@ void LibClangParser::visit_function(const ClangCursor& cursor)
     update_func(*func, *entity);
   }
 
-  // @TODO: map statement to ast statement node
-  //if (!isForwardDeclaration(cursor))
-    // entity->location = decl->location;
-  // proposal hereafter:
   if (!isForwardDeclaration(cursor))
     bind(decl, func);
 }
@@ -982,9 +978,10 @@ void LibClangParser::visit_unexposed(const ClangCursor& cursor)
 
   RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
 
-  cursor.visitChildren([this](const ClangCursor& cc) {
-    this->visit_unexposed(cc);
-    });
+  // The following code is commented-out to keep the behaviour as close as before.
+  //cursor.visitChildren([this](const ClangCursor& cc) {
+  //  this->visit_unexposed(cc);
+  //  });
 }
 
 std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& cursor)
@@ -994,8 +991,6 @@ std::shared_ptr<cxx::Variable> LibClangParser::parseVariable(const ClangCursor& 
 
   auto parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
   auto var = std::make_shared<Variable>(type, std::move(name), parent);
-  // @TODO: map statement to ast statement node
-  //var->location = getCursorLocation(cursor);
 
   if (cursor.childCount() == 1)
     var->defaultValue() = parseExpression(cursor.childAt(0));
