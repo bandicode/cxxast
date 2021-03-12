@@ -36,7 +36,7 @@ inline FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Function> f)
   : IDeclaration(f),
     function(f)
 {
-  node_ptr = f;
+
 }
 
 } // namespace cxx

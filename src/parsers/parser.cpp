@@ -22,6 +22,7 @@
 #include "cxx/enum-declaration.h"
 #include "cxx/function-declaration.h"
 #include "cxx/namespace-declaration.h"
+#include "cxx/template-declaration.h"
 #include "cxx/variable-declaration.h"
 
 #include "cxx/filesystem.h"
@@ -499,7 +500,6 @@ void LibClangParser::localizeParentize(const std::shared_ptr<AstNode>& node, con
 
 void LibClangParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n)
 {
-  astnode->node_ptr = n;
   program()->astmap[n.get()] = astnode;
 }
 
@@ -956,11 +956,11 @@ void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor)
   if (!curNode().is<ClassTemplate>())
     throw std::runtime_error{ "Not implemented" };
 
-  auto astnode = createAstNode(cursor);
-  localizeParentize(astnode, cursor);
-  astWrite(astnode);
+  auto decl = std::make_shared<TemplateParameterDeclaration>();
+  localizeParentize(decl, cursor);
+  astWrite(decl);
 
-  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, decl };
 
   ClassTemplate& ct = static_cast<ClassTemplate&>(curNode());
 
@@ -968,7 +968,9 @@ void LibClangParser::visit_template_type_parameter(const ClangCursor& cursor)
   ttparam->weak_parent = ct.shared_from_this();
   ct.template_parameters.push_back(ttparam);
 
-  bind(astnode, ttparam);
+  decl->entity_ptr = ttparam;
+
+  bind(decl, ttparam);
 }
 
 void LibClangParser::visit_unexposed(const ClangCursor& cursor)
@@ -1256,7 +1258,7 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseWhile(const ClangCursor& c
 
 std::shared_ptr<cxx::IStatement> LibClangParser::parseUnexposedStatement(const ClangCursor& c)
 {
-  auto result = std::make_shared<UnexposedStatement>();
+  auto result = std::make_shared<UnexposedStatement>(convert_astnodekind(c.kind()));
  
   localizeParentize(result, c);
 

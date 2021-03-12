@@ -44,6 +44,7 @@ enum class NodeKind
   FunctionDeclaration,
   NamespaceDeclaration,
   VariableDeclaration,
+  TemplateParameterDeclaration,
   UnexposedStatement,
   /*Ast */
   AstRootNode,
@@ -500,7 +501,6 @@ class CXXAST_API AstNode : public INode
 public:
   SourceRange sourcerange;
   std::weak_ptr<AstNode> weak_parent;
-  std::shared_ptr<INode> node_ptr;
 
 public:
   
@@ -508,13 +508,6 @@ public:
   
   explicit AstNode(const SourceRange& sr)
     : sourcerange(sr)
-  {
-
-  }
-
-  explicit AstNode(const SourceRange& sr, std::shared_ptr<INode> n)
-    : sourcerange(sr),
-      node_ptr(std::move(n))
   {
 
   }

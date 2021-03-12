@@ -35,7 +35,7 @@ inline NamespaceDeclaration::NamespaceDeclaration(std::shared_ptr<Namespace> ns)
   : IDeclaration(ns),
     namespace_(ns)
 {
-  node_ptr = ns;
+
 }
 
 } // namespace cxx

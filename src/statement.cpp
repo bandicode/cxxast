@@ -24,6 +24,12 @@ UnexposedStatement::UnexposedStatement()
 
 }
 
+UnexposedStatement::UnexposedStatement(AstNodeKind k)
+  : kind(k)
+{
+
+}
+
 NodeKind UnexposedStatement::node_kind() const
 {
   return UnexposedStatement::ClassNodeKind;

@@ -1,8 +1,9 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
 #include "cxx/parsers/parser.h"
+#include "cxx/declaration.h"
 #include "cxx/filesystem.h"
 
 #include <iostream>
@@ -20,11 +21,19 @@ void visit(const std::shared_ptr<cxx::AstNode>& node)
   std::cout << " --> ";
   std::cout << node->sourcerange.end.line << ":" << node->sourcerange.end.column;
 
-  if (node->node_ptr && node->node_ptr->isEntity())
-    std::cout << " " << static_cast<cxx::IEntity*>(node->node_ptr.get())->name;
+  if (node->isDeclaration())
+  {
+    auto decl = std::static_pointer_cast<cxx::IDeclaration>(node);
+
+    if (decl->entity_ptr)
+      std::cout << " " << decl->entity_ptr->name;
+
+  }
 
   if(dynamic_cast<cxx::UnexposedAstNode*>(node.get()))
     std::cout << " [" << cxx::to_string(static_cast<cxx::UnexposedAstNode&>(*node).kind) << "]";
+  else if (dynamic_cast<cxx::UnexposedStatement*>(node.get()))
+    std::cout << " [" << cxx::to_string(static_cast<cxx::UnexposedStatement&>(*node).kind) << "]";
 
   std::cout << std::endl;
 

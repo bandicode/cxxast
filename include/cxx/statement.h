@@ -42,9 +42,11 @@ class CXXAST_API UnexposedStatement : public IStatement
 {
 public:
   std::vector<std::shared_ptr<AstNode>> childvec;
+  AstNodeKind kind = AstNodeKind::Root;
 
 public:
   UnexposedStatement();
+  explicit UnexposedStatement(AstNodeKind k);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::UnexposedStatement;
   NodeKind node_kind() const override;
