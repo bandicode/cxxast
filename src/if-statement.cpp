@@ -4,6 +4,8 @@
 
 #include "cxx/if-statement.h"
 
+#include "cxx/astnodelist_p.h"
+
 #include <stdexcept>
 
 namespace cxx
@@ -18,6 +20,12 @@ IfStatement::IfStatement(const Expression& expr, Statement b)
 NodeKind IfStatement::node_kind() const
 {
   return IfStatement::ClassNodeKind;
+}
+
+AstNodeList IfStatement::children() const
+{
+  // @TODO: add 'condition'
+  return make_node_list(initialization, body, else_clause);
 }
 
 } // namespace cxx

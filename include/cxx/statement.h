@@ -55,6 +55,16 @@ public:
   AstNodeList children() const override;
 };
 
+inline bool is_null(const Statement& stmt)
+{
+  return stmt.isNull();
+}
+
+inline std::shared_ptr<AstNode> to_ast_node(const Statement& stmt)
+{
+  return stmt.impl();
+}
+
 } // namespace cxx
 
 #endif // CXXAST_STATEMENT_H

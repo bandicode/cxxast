@@ -33,6 +33,8 @@ public:
   struct Condition : priv::FieldEx<IfStatement, Expression, &IfStatement::condition> { };
   struct Body : priv::FieldEx<IfStatement, Statement, &IfStatement::body> { };
   struct ElseClause : priv::FieldEx<IfStatement, Statement, &IfStatement::else_clause> { };
+
+  AstNodeList children() const override;
 };
 
 } // namespace cxx
