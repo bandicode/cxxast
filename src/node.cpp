@@ -31,12 +31,15 @@ std::string to_string(NodeKind k)
   case NodeKind::Variable: return "Variable";
   case NodeKind::NullStatement: return "NullStatement";
   case NodeKind::BreakStatement: return "BreakStatement";
+  case NodeKind::CaseStatement: return "CaseStatement";
   case NodeKind::ContinueStatement: return "ContinueStatement";
   case NodeKind::CompoundStatement: return "CompoundStatement";
+  case NodeKind::DefaultStatement: return "DefaultStatement";
   case NodeKind::ForLoop: return "ForLoop";
   case NodeKind::ForRange: return "ForRange";
   case NodeKind::IfStatement: return "IfStatement";
   case NodeKind::ReturnStatement: return "ReturnStatement";
+  case NodeKind::SwitchStatement: return "SwitchStatement";
   case NodeKind::WhileLoop: return "WhileLoop";
   case NodeKind::ClassDeclaration: return "ClassDeclaration";
   case NodeKind::EnumDeclaration: return "EnumDeclaration";

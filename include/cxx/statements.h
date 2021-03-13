@@ -9,4 +9,5 @@
 #include "cxx/if-statement.h"
 #include "cxx/null-statement.h"
 #include "cxx/return-statement.h"
+#include "cxx/switch-statement.h"
 #include "cxx/while-loop.h"

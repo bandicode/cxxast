@@ -1131,20 +1131,26 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseNullStatement(c);
   case CXCursor_BreakStmt:
     return parseBreakStatement(c);
+  case CXCursor_CaseStmt:
+    return parseCaseStatement(c);
   case CXCursor_ContinueStmt:
     return parseContinueStatement(c);
   case CXCursor_CompoundStmt:
     return parseCompoundStatement(c);
+  case CXCursor_DefaultStmt:
+    return parseDefaultStatement(c);
   case CXCursor_ForStmt:
     return parseForLoop(c);
   case CXCursor_CXXForRangeStmt:
     return parseForRange(c);
   case CXCursor_IfStmt:
     return parseIf(c);
-  case CXCursor_WhileStmt:
-    return parseWhile(c);
   case CXCursor_ReturnStmt:
     return parseReturnStatement(c);
+  case CXCursor_SwitchStmt:
+    return parseSwitchStatement(c);
+  case CXCursor_WhileStmt:
+    return parseWhile(c);
   default:
     return parseUnexposedStatement(c);
   }
@@ -1179,6 +1185,26 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseBreakStatement(const Clang
   return result;
 }
 
+std::shared_ptr<cxx::IStatement> LibClangParser::parseCaseStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<CaseStatement>();
+
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (result->value.isNull())
+      result->value = parseExpression(child);
+    else
+      result->stmt = parseStatement(child);
+
+    });
+
+  return result;
+}
+
 std::shared_ptr<cxx::IStatement> LibClangParser::parseContinueStatement(const ClangCursor& c)
 {
   auto result = std::make_shared<ContinueStatement>();
@@ -1195,6 +1221,22 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseCompoundStatement(const Cl
 
   c.visitChildren([&](const ClangCursor& child) {
     result->statements.push_back(parseStatement(child));
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseDefaultStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<DefaultStatement>();
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    result->stmt = parseStatement(child);
+
     });
 
   return result;
@@ -1334,6 +1376,39 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseReturnStatement(const Clan
 
   c.visitChildren([&](const ClangCursor& child) {
     result->expr = parseExpression(child);
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseSwitchStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<SwitchStatement>();
+
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  enum SwitchParsingState
+  {
+    SwitchParsing_Value,
+    SwitchParsing_Body,
+  };
+
+  SwitchParsingState state = SwitchParsing_Value;
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (state == SwitchParsing_Value)
+    {
+      result->value = parseExpression(child);
+      state = SwitchParsing_Body;
+    }
+    else if (state == SwitchParsing_Body)
+    {
+      result->body = parseStatement(child);
+    }
+
     });
 
   return result;
