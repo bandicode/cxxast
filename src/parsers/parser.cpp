@@ -1260,6 +1260,7 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseWhile(const ClangCursor& c
     if (state == WhileParsing_Cond)
     {
       result->condition = parseExpression(child);
+      state = WhileParsing_Body;
     }
     else if (state == WhileParsing_Body)
     {
