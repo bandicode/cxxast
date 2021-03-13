@@ -107,6 +107,7 @@ protected:
   std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseReturnStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c);
 

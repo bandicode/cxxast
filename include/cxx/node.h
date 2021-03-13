@@ -38,6 +38,7 @@ enum class NodeKind
   NullStatement,
   CompoundStatement,
   IfStatement,
+  ReturnStatement,
   WhileLoop,
   ClassDeclaration,
   EnumDeclaration,

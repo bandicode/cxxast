@@ -32,6 +32,7 @@ std::string to_string(NodeKind k)
   case NodeKind::NullStatement: return "NullStatement";
   case NodeKind::CompoundStatement: return "CompoundStatement";
   case NodeKind::IfStatement: return "IfStatement";
+  case NodeKind::ReturnStatement: return "ReturnStatement";
   case NodeKind::WhileLoop: return "WhileLoop";
   case NodeKind::ClassDeclaration: return "ClassDeclaration";
   case NodeKind::EnumDeclaration: return "EnumDeclaration";

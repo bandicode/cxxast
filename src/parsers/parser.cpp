@@ -1135,6 +1135,8 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseIf(c);
   case CXCursor_WhileStmt:
     return parseWhile(c);
+  case CXCursor_ReturnStmt:
+    return parseReturnStatement(c);
   default:
     return parseUnexposedStatement(c);
   }
@@ -1215,6 +1217,19 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseIf(const ClangCursor& c)
       result->else_clause = parseStatement(child);
     }
 
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseReturnStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<ReturnStatement>();
+
+  localizeParentize(result, c);
+
+  c.visitChildren([&](const ClangCursor& child) {
+    result->expr = parseExpression(child);
     });
 
   return result;
