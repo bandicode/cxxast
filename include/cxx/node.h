@@ -39,6 +39,8 @@ enum class NodeKind
   BreakStatement, 
   ContinueStatement,
   CompoundStatement,
+  ForLoop,
+  ForRange,
   IfStatement,
   ReturnStatement,
   WhileLoop,

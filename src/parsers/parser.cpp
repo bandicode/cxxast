@@ -1135,6 +1135,10 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseContinueStatement(c);
   case CXCursor_CompoundStmt:
     return parseCompoundStatement(c);
+  case CXCursor_ForStmt:
+    return parseForLoop(c);
+  case CXCursor_CXXForRangeStmt:
+    return parseForRange(c);
   case CXCursor_IfStmt:
     return parseIf(c);
   case CXCursor_WhileStmt:
@@ -1233,6 +1237,88 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseIf(const ClangCursor& c)
     else if (state == IfParsing_Else)
     {
       result->else_clause = parseStatement(child);
+    }
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseForLoop(const ClangCursor& c)
+{
+  auto result = std::make_shared<ForLoop>();
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  enum ForLoopParsingState
+  {
+    ForLoopParsing_Init,
+    ForLoopParsing_Cond,
+    ForLoopParsing_Iter,
+    ForLoopParsing_Body
+  };
+
+  ForLoopParsingState state = ForLoopParsing_Init;
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (state == ForLoopParsing_Init)
+    {
+      result->init = parseStatement(child);
+      state = ForLoopParsing_Cond;
+    }
+    else if (state == ForLoopParsing_Cond)
+    {
+      result->condition = parseExpression(child);
+      state = ForLoopParsing_Iter;
+    }
+    else if (state == ForLoopParsing_Iter)
+    {
+      result->iter = parseExpression(child);
+      state = ForLoopParsing_Body;
+    }
+    else if (state == ForLoopParsing_Body)
+    {
+      result->body = parseStatement(child);
+    }
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseForRange(const ClangCursor& c)
+{
+  auto result = std::make_shared<ForRange>();
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  enum ForRangeParsingState
+  {
+    ForRangeParsing_Var,
+    ForRangeParsing_Container,
+    ForRangeParsing_Body
+  };
+
+  ForRangeParsingState state = ForRangeParsing_Var;
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (state == ForRangeParsing_Var)
+    {
+      result->variable = parseStatement(child);
+      state = ForRangeParsing_Container;
+    }
+    else if (state == ForRangeParsing_Container)
+    {
+      result->container = parseExpression(child);
+      state = ForRangeParsing_Body;
+    }
+    else if (state == ForRangeParsing_Body)
+    {
+      result->body = parseStatement(child);
     }
 
     });

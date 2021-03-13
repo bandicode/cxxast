@@ -108,6 +108,8 @@ protected:
   std::shared_ptr<cxx::IStatement> parseBreakStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseContinueStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseForLoop(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseForRange(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseReturnStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c);

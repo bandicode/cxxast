@@ -145,7 +145,7 @@ TEST_CASE("The parser is able to parse a break & continue statements", "[libclan
     return;
 
   write_file("test.cpp",
-    "void foo() { while(true) break; while(false) continue; }");
+    "void foo() { while(true) break; for(int n = 0; n < 5; ++n) continue; }");
 
   cxx::parsers::LibClangParser parser;
 
@@ -170,8 +170,10 @@ TEST_CASE("The parser is able to parse a break & continue statements", "[libclan
 
   {
     cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(1);
-    REQUIRE(stmt.is<cxx::WhileLoop>());
-    REQUIRE(stmt.get<cxx::WhileLoop::Body>().is<cxx::ContinueStatement>());
+    REQUIRE(stmt.is<cxx::ForLoop>());
+    REQUIRE(stmt.get<cxx::ForLoop::Condition>().toString() == "n < 5");
+    REQUIRE(stmt.get<cxx::ForLoop::Iter>().toString() == "++n");
+    REQUIRE(stmt.get<cxx::ForLoop::Body>().is<cxx::ContinueStatement>());
   }
 }
 
