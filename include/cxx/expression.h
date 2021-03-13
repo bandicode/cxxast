@@ -44,6 +44,16 @@ public:
 CXXAST_API bool operator==(const Expression& lhs, const Expression& rhs);
 inline bool operator!=(const Expression& lhs, const Expression& rhs) { return !(lhs == rhs); }
 
+inline bool is_null(const Expression& expr)
+{
+  return expr.isNull();
+}
+
+inline std::shared_ptr<AstNode> to_ast_node(const Expression& expr)
+{
+  return expr.impl();
+}
+
 } // namespace cxx
 
 namespace cxx

@@ -24,8 +24,7 @@ NodeKind IfStatement::node_kind() const
 
 AstNodeList IfStatement::children() const
 {
-  // @TODO: add 'condition'
-  return make_node_list(initialization, body, else_clause);
+  return make_node_list(initialization, condition, body, else_clause);
 }
 
 } // namespace cxx

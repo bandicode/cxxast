@@ -1301,20 +1301,17 @@ cxx::Expression LibClangParser::parseExpression(const ClangCursor& c)
 {
   std::string spelling = c.getSpelling();
 
-  if(!spelling.empty())
-    return Expression{ std::move(spelling) };
+  if (spelling.empty())
+  {
+    CXSourceRange range = c.getExtent();
+    ClangTokenSet tokens = m_tu.tokenize(range);
 
-  CXSourceRange range = c.getExtent();
-  ClangTokenSet tokens = m_tu.tokenize(range);
+    spelling = getSpelling(tokens);
+  }
 
-  spelling = getSpelling(tokens);
-
-  // @TODO: derived IExpression from AstNode & parse unexposed expressions
-  //c.visitChildren([&](const ClangCursor& child) {
-  //  recursiveUnexposedParse(child);
-  //  });
-
-  return Expression{ std::move(spelling) };
+  Expression expr{ std::move(spelling) };
+  localizeParentize(cxx::to_ast_node(expr), c);
+  return expr;
 }
 
 static void remove_prefix(std::string& str, const std::string& prefix)
