@@ -35,6 +35,7 @@ std::string to_string(NodeKind k)
   case NodeKind::ContinueStatement: return "ContinueStatement";
   case NodeKind::CompoundStatement: return "CompoundStatement";
   case NodeKind::DefaultStatement: return "DefaultStatement";
+  case NodeKind::DoWhileLoop: return "DoWhileLoop";
   case NodeKind::ForLoop: return "ForLoop";
   case NodeKind::ForRange: return "ForRange";
   case NodeKind::IfStatement: return "IfStatement";

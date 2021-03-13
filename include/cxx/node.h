@@ -41,6 +41,7 @@ enum class NodeKind
   ContinueStatement,
   CompoundStatement,
   DefaultStatement,
+  DoWhileLoop,
   ForLoop,
   ForRange,
   IfStatement,

@@ -210,6 +210,37 @@ TEST_CASE("The parser is able to parse a switch statement", "[libclang-parser]")
   REQUIRE(stmt.get<cxx::CompoundStatement::Statements>().at(1).is<cxx::DefaultStatement>());
 }
 
+
+TEST_CASE("The parser is able to parse a do-while loop", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo(int n) { do { --n; } while(n > 0); }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+
+  cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+  REQUIRE(stmt.is<cxx::DoWhileLoop>());
+
+  REQUIRE(stmt.get<cxx::DoWhileLoop::Condition>().toString() == "n > 0");
+}
+
+
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 {
   if (skipTest())

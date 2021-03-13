@@ -1139,6 +1139,8 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseCompoundStatement(c);
   case CXCursor_DefaultStmt:
     return parseDefaultStatement(c);
+  case CXCursor_DoStmt:
+    return parseDoWhileLoop(c);
   case CXCursor_ForStmt:
     return parseForLoop(c);
   case CXCursor_CXXForRangeStmt:
@@ -1236,6 +1238,30 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseDefaultStatement(const Cla
   c.visitChildren([&](const ClangCursor& child) {
 
     result->stmt = parseStatement(child);
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseDoWhileLoop(const ClangCursor& c)
+{
+  auto result = std::make_shared<DoWhileLoop>();
+
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (result->body.isNull())
+    {
+      result->body = parseStatement(child);
+    }
+    else
+    {
+      result->condition = parseExpression(child);
+    }
 
     });
 
