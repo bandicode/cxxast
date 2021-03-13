@@ -36,6 +36,8 @@ enum class NodeKind
   Variable,
   /* Statements */
   NullStatement,
+  BreakStatement, 
+  ContinueStatement,
   CompoundStatement,
   IfStatement,
   ReturnStatement,

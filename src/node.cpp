@@ -30,6 +30,8 @@ std::string to_string(NodeKind k)
   case NodeKind::Typedef: return "Typedef";
   case NodeKind::Variable: return "Variable";
   case NodeKind::NullStatement: return "NullStatement";
+  case NodeKind::BreakStatement: return "BreakStatement";
+  case NodeKind::ContinueStatement: return "ContinueStatement";
   case NodeKind::CompoundStatement: return "CompoundStatement";
   case NodeKind::IfStatement: return "IfStatement";
   case NodeKind::ReturnStatement: return "ReturnStatement";

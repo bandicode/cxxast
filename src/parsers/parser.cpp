@@ -1129,6 +1129,10 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
   {
   case CXCursor_NullStmt:
     return parseNullStatement(c);
+  case CXCursor_BreakStmt:
+    return parseBreakStatement(c);
+  case CXCursor_ContinueStmt:
+    return parseContinueStatement(c);
   case CXCursor_CompoundStmt:
     return parseCompoundStatement(c);
   case CXCursor_IfStmt:
@@ -1160,6 +1164,20 @@ Statement LibClangParser::parseFunctionBody(std::shared_ptr<cxx::Function> f, co
 std::shared_ptr<cxx::IStatement> LibClangParser::parseNullStatement(const ClangCursor& c)
 {
   auto result = std::make_shared<NullStatement>();
+  localizeParentize(result, c);
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseBreakStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<BreakStatement>();
+  localizeParentize(result, c);
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseContinueStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<ContinueStatement>();
   localizeParentize(result, c);
   return result;
 }
