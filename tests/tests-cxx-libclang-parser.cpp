@@ -90,6 +90,7 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
   REQUIRE(foo.isNoexcept());
 
   REQUIRE(foo.body.is<cxx::CompoundStatement>());
+  REQUIRE(cxx::to_ast_node(foo.body)->children().size() == 1);
 
   {
     auto& statements = foo.body.get<cxx::CompoundStatement::Statements>();
@@ -100,6 +101,8 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
     
     {
       cxx::Statement if_stmt = statements.front();
+
+      REQUIRE(cxx::to_ast_node(if_stmt)->children().size() == 2);
 
       REQUIRE(if_stmt.get<cxx::IfStatement::Condition>().toString() == "n > 0");
       REQUIRE(if_stmt.get<cxx::IfStatement::Body>().is<cxx::CompoundStatement>());

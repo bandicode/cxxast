@@ -15,17 +15,12 @@ namespace cxx
 class CXXAST_API ClassDeclaration : public IDeclaration
 {
 public:
-  std::shared_ptr<Class> class_;
-
-public:
   ClassDeclaration() = default;
 
   explicit ClassDeclaration(std::shared_ptr<Class> c);
 
   static constexpr NodeKind ClassNodeKind = NodeKind::ClassDeclaration;
   NodeKind node_kind() const override;
-
-  std::shared_ptr<IEntity> entity() const override;
 
   // bool isForwardDeclaration() const;
 };
@@ -36,7 +31,7 @@ namespace cxx
 {
 
 inline ClassDeclaration::ClassDeclaration(std::shared_ptr<Class> c)
-  : class_(c)
+  : IDeclaration(c)
 {
 
 }

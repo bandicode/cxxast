@@ -19,7 +19,7 @@ FunctionParameter::FunctionParameter(Type t, std::string name, std::shared_ptr<F
 FunctionParameter::FunctionParameter(Type t, std::string name, Expression default_val, std::shared_ptr<Function> parent)
   : IEntity(std::move(name), parent),
     type(std::move(t)),
-    default_value(std::move(default_val))
+    default_value(default_val)
 {
 
 }

@@ -31,7 +31,8 @@ namespace cxx
 {
 
 inline VariableDeclaration::VariableDeclaration(std::shared_ptr<Variable> var)
-  : variable(var)
+  : IDeclaration(var), 
+    variable(var)
 {
 
 }

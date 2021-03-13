@@ -12,9 +12,9 @@ NodeKind EnumDeclaration::node_kind() const
   return EnumDeclaration::ClassNodeKind;
 }
 
-std::shared_ptr<IEntity> EnumDeclaration::entity() const
+NodeKind EnumeratorDeclaration::node_kind() const
 {
-  return this->enum_;
+  return ClassNodeKind;
 }
 
 } // namespace cxx

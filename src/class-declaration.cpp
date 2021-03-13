@@ -12,11 +12,6 @@ NodeKind ClassDeclaration::node_kind() const
   return ClassDeclaration::ClassNodeKind;
 }
 
-std::shared_ptr<IEntity> ClassDeclaration::entity() const
-{
-  return this->class_;
-}
-
 //bool ClassDeclaration::isForwardDeclaration() const
 //{
 //  return this->class_->location != this->location;

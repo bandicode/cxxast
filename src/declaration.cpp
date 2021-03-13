@@ -4,10 +4,17 @@
 
 #include "cxx/declaration.h"
 
+#include "cxx/astnodelist_p.h"
 #include "cxx/entity.h"
 
 namespace cxx
 {
+
+IDeclaration::IDeclaration(std::shared_ptr<IEntity> e)
+  : entity_ptr(e)
+{
+
+}
 
 std::shared_ptr<IDeclaration> IDeclaration::shared_from_this()
 {
@@ -19,14 +26,15 @@ bool IDeclaration::isDeclaration() const
   return true;
 }
 
-std::shared_ptr<IEntity> IDeclaration::entity() const
+void IDeclaration::append(std::shared_ptr<AstNode> n)
 {
-  return nullptr;
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
 }
 
-AstDeclaration::AstDeclaration(const std::shared_ptr<IEntity>& ent)
+AstNodeList IDeclaration::children() const
 {
-  node_ptr = ent;
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
 }
 
 } // namespace cxx

@@ -18,6 +18,8 @@ private:
 public:
   explicit UnexposedExpression(std::string src);
 
+  NodeKind node_kind() const override;
+
   bool isUnexposed() const override;
   std::string toString() const override;
 };

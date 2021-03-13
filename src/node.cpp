@@ -1,9 +1,10 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
 #include "cxx/node.h"
 
+#include "cxx/astnodelist_p.h"
 #include "cxx/entity.h"
 #include "cxx/statement.h"
 
@@ -12,12 +13,54 @@
 namespace cxx
 {
 
+std::string to_string(NodeKind k)
+{
+  switch (k)
+  {
+  case NodeKind::Class: return "Class";
+  case NodeKind::ClassTemplate: return "ClassTemplate";
+  case NodeKind::Enum: return "Enum";
+  case NodeKind::EnumValue: return "EnumValue";
+  case NodeKind::Function: return "Function";
+  case NodeKind::FunctionTemplate: return "FunctionTemplate";
+  case NodeKind::FunctionParameter: return "FunctionParameter";
+  case NodeKind::Macro: return "Macro";
+  case NodeKind::Namespace: return "Namespace";
+  case NodeKind::TemplateParameter: return "TemplateParameter";
+  case NodeKind::Typedef: return "Typedef";
+  case NodeKind::Variable: return "Variable";
+  case NodeKind::NullStatement: return "NullStatement";
+  case NodeKind::CompoundStatement: return "CompoundStatement";
+  case NodeKind::IfStatement: return "IfStatement";
+  case NodeKind::WhileLoop: return "WhileLoop";
+  case NodeKind::ClassDeclaration: return "ClassDeclaration";
+  case NodeKind::EnumDeclaration: return "EnumDeclaration";
+  case NodeKind::EnumeratorDeclaration: return "EnumeratorDeclaration";
+  case NodeKind::FunctionDeclaration: return "FunctionDeclaration";
+  case NodeKind::NamespaceDeclaration: return "NamespaceDeclaration";
+  case NodeKind::VariableDeclaration: return "VariableDeclaration";
+  case NodeKind::TemplateParameterDeclaration: return "TemplateParameterDeclaration";
+  case NodeKind::UnexposedStatement: return "UnexposedStatement";
+  case NodeKind::UnexposedExpression: return "UnexposedExpression";
+  case NodeKind::AstRootNode: return "AstRootNode";
+  case NodeKind::AstUnexposedNode: return "AstUnexposedNode";
+  case NodeKind::MultilineComment: return "MultilineComment";
+  case NodeKind::Documentation: return "Documentation";
+  default: return "";
+  }
+}
+
 INode::~INode()
 {
 
 }
 
 bool INode::isEntity() const
+{
+  return false;
+}
+
+bool INode::isAstNode() const
 {
   return false;
 }
@@ -288,29 +331,187 @@ std::string to_string(AstNodeKind k)
   }
 }
 
-NodeKind AstNode::node_kind() const
+bool AstNode::isAstNode() const
 {
-  return NodeKind::AstNode;
+  return true;
 }
 
-std::shared_ptr<AstNode> AstNode::parent() const
+std::shared_ptr<INode> AstNode::parent() const
+{
+  return astParent();
+}
+
+std::shared_ptr<AstNode> AstNode::astParent() const
 {
   return weak_parent.lock();
 }
 
 void AstNode::append(std::shared_ptr<AstNode> n)
 {
-  children.push_back(n);
-  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+  throw std::runtime_error{ "not supported" };
+}
+
+AstNodeList AstNode::children() const
+{
+  return AstNodeList();
 }
 
 void AstNode::updateSourceRange()
 {
-  if (children.empty())
+  if (children().empty())
     return;
 
-  sourcerange = children.front()->sourcerange;
-  sourcerange.end = children.back()->sourcerange.end;
+  sourcerange = children().front()->sourcerange;
+  sourcerange.end = children().back()->sourcerange.end;
+}
+
+std::shared_ptr<File> AstNode::file() const
+{
+  return sourcerange.file.lock();
+}
+
+
+AstNodeList::AstNodeList()
+  : d(std::make_shared<AstEmptyNodeList>())
+{
+
+}
+
+AstNodeList::~AstNodeList()
+{
+
+}
+
+AstNodeList::AstNodeList(std::shared_ptr<AstNodeListInterface> impl)
+  : d(impl)
+{
+
+}
+
+bool AstNodeList::empty() const
+{
+  return size() == 0;
+}
+
+size_t AstNodeList::size() const
+{
+  return d->size();
+}
+
+std::shared_ptr<AstNode> AstNodeList::at(size_t index) const
+{
+  return d->at(index);
+}
+
+std::shared_ptr<AstNode> AstNodeList::front() const
+{
+  return at(0);
+}
+
+std::shared_ptr<AstNode> AstNodeList::back() const
+{
+  return at(size() - 1);
+}
+
+AstNodeListIterator AstNodeList::begin() const
+{
+  return AstNodeListIterator(*this);
+}
+
+AstNodeListIterator AstNodeList::end() const
+{
+  return AstNodeListIterator(*this, size());
+}
+
+bool AstNodeList::operator==(const AstNodeList& other) const
+{
+  return d == other.d;
+}
+
+bool AstNodeList::operator!=(const AstNodeList& other) const
+{
+  return d != other.d;
+}
+
+
+AstNodeListIterator::AstNodeListIterator(const AstNodeList& list, size_t i)
+  : m_list(&list),
+    m_index(i)
+{
+
+}
+
+std::shared_ptr<AstNode> AstNodeListIterator::operator*() const
+{
+  return m_list->at(m_index);
+}
+
+AstNodeListIterator& AstNodeListIterator::operator++()
+{
+  ++m_index;
+  return *this;
+}
+
+AstNodeListIterator AstNodeListIterator::operator++(int)
+{
+  AstNodeListIterator it{ *this };
+  ++m_index;
+  return it;
+}
+
+bool AstNodeListIterator::operator==(const AstNodeListIterator& other) const
+{
+  return m_list == other.m_list && m_index == other.m_index;
+}
+
+bool AstNodeListIterator::operator!=(const AstNodeListIterator& other) const
+{
+  return !(*this == other);
+}
+
+
+AstRootNode::AstRootNode()
+{
+
+}
+
+NodeKind AstRootNode::node_kind() const
+{
+  return NodeKind::AstRootNode;
+}
+
+void AstRootNode::append(std::shared_ptr<AstNode> n)
+{
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList AstRootNode::children() const
+{
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
+}
+
+
+UnexposedAstNode::UnexposedAstNode(AstNodeKind k)
+  : kind(k)
+{
+
+}
+
+NodeKind UnexposedAstNode::node_kind() const
+{
+  return NodeKind::AstUnexposedNode;
+}
+
+void UnexposedAstNode::append(std::shared_ptr<AstNode> n)
+{
+  childvec.push_back(n);
+  n->weak_parent = std::static_pointer_cast<AstNode>(shared_from_this());
+}
+
+AstNodeList UnexposedAstNode::children() const
+{
+  return AstNodeList(std::make_shared<AstVectorRefNodeList>(childvec));
 }
 
 } // namespace cxx

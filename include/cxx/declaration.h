@@ -15,31 +15,19 @@ class IEntity;
 class CXXAST_API IDeclaration : public IStatement
 {
 public:
-  std::vector<std::shared_ptr<IDeclaration>> declarations; // @TODO: remove this ?
+  std::shared_ptr<IEntity> entity_ptr;
+  std::vector<std::shared_ptr<AstNode>> childvec;
 
 public:
   IDeclaration() = default;
+  explicit IDeclaration(std::shared_ptr<IEntity> e);
 
   std::shared_ptr<IDeclaration> shared_from_this();
 
   bool isDeclaration() const override;
 
-  virtual std::shared_ptr<IEntity> entity() const;
-};
-
-class CXXAST_API AstDeclaration : public AstStatement
-{
-public:
-  AstDeclaration() = default;
-  
-  AstDeclaration(const std::shared_ptr<IDeclaration>& decl)
-  {
-    node_ptr = decl;
-  }
-
-  AstDeclaration(const std::shared_ptr<IEntity>& ent);
-
-  NodeKind node_kind() const override { return NodeKind::AstDeclaration; }
+  void append(std::shared_ptr<AstNode> n) override;
+  AstNodeList children() const override;
 };
 
 } // namespace cxx

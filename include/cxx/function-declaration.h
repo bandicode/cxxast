@@ -8,36 +8,37 @@
 #include "cxx/declaration.h"
 #include "cxx/function.h"
 
-//namespace cxx
-//{
-//
-//class CXXAST_API FunctionDeclaration : public AstDeclaration
-//{
-//public:
-//  std::shared_ptr<Function> function;
-//
-//public:
-//  FunctionDeclaration() = default;
-//
-//  explicit FunctionDeclaration(std::shared_ptr<Function> f);
-//
-//  static constexpr NodeKind ClassNodeKind = NodeKind::FunctionDeclaration;
-//  NodeKind node_kind() const override;
-//
-//  // bool isForwardDeclaration() const;
-//};
-//
-//} // namespace cxx
-//
-//namespace cxx
-//{
-//
-//inline FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Function> f)
-//  : function(f)
-//{
-//  node_ptr = f;
-//}
-//
-//} // namespace cxx
+namespace cxx
+{
+
+class CXXAST_API FunctionDeclaration : public IDeclaration
+{
+public:
+  std::shared_ptr<Function> function;
+
+public:
+  FunctionDeclaration() = default;
+
+  explicit FunctionDeclaration(std::shared_ptr<Function> f);
+
+  static constexpr NodeKind ClassNodeKind = NodeKind::FunctionDeclaration;
+  NodeKind node_kind() const override;
+
+  // bool isForwardDeclaration() const;
+};
+
+} // namespace cxx
+
+namespace cxx
+{
+
+inline FunctionDeclaration::FunctionDeclaration(std::shared_ptr<Function> f)
+  : IDeclaration(f),
+    function(f)
+{
+
+}
+
+} // namespace cxx
 
 #endif // CXXAST_FUNCTION_DECLARATION_H

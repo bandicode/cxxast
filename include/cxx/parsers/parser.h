@@ -77,21 +77,24 @@ protected:
   void write(std::shared_ptr<IEntity> e);
 
   std::shared_ptr<AstNode> createAstNode(const ClangCursor& c);
+  void localize(const std::shared_ptr<AstNode>& node, const ClangCursor& c);
+  void localizeParentize(const std::shared_ptr<AstNode>& node, const ClangCursor& c);
   void bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n);
 
   /* Visitor callbacks */
   void visit(const ClangCursor& cursor);
   void visit_tu(const ClangCursor& cursor);
 
-  void visit_namespace(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_class(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_enum(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_enumconstant(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_function(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_vardecl(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_fielddecl(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_accessspecifier(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
-  void visit_template_type_parameter(const ClangCursor& cursor, const std::shared_ptr<AstNode>& astnode);
+  void visit_namespace(const ClangCursor& cursor);
+  void visit_class(const ClangCursor& cursor);
+  void visit_enum(const ClangCursor& cursor);
+  void visit_enumconstant(const ClangCursor& cursor);
+  void visit_function(const ClangCursor& cursor);
+  void visit_vardecl(const ClangCursor& cursor);
+  void visit_fielddecl(const ClangCursor& cursor);
+  void visit_accessspecifier(const ClangCursor& cursor);
+  void visit_template_type_parameter(const ClangCursor& cursor);
+  void visit_unexposed(const ClangCursor& cursor);
 
   std::shared_ptr<cxx::Variable> parseVariable(const ClangCursor& c);
   std::shared_ptr<cxx::Function> parseFunction(const ClangCursor& cursor);
@@ -100,13 +103,13 @@ protected:
   CXChildVisitResult visitFunctionParamDecl(CXCursor cursor, CXCursor parent, std::string& param);
 
   Statement parseStatement(const ClangCursor& c);
-  std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
-  std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c, const std::shared_ptr<AstNode>& astnode);
+  Statement parseFunctionBody(std::shared_ptr<cxx::Function> f, const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c);
 
-  void recursiveUnexposedParse(const ClangCursor& c);
   std::string getSpelling(const ClangTokenSet& tokens);
 
   cxx::Expression parseExpression(const ClangCursor& c);
