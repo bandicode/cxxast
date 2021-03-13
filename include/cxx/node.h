@@ -46,6 +46,8 @@ enum class NodeKind
   VariableDeclaration,
   TemplateParameterDeclaration,
   UnexposedStatement,
+  /* Expressions */
+  UnexposedExpression,
   /*Ast */
   AstRootNode,
   AstUnexposedNode,

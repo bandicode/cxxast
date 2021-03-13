@@ -14,29 +14,22 @@
 namespace cxx
 {
 
-class CXXAST_API IExpression : public std::enable_shared_from_this<IExpression>
+class CXXAST_API IExpression : public AstNode
 {
 public:
   IExpression() = default;
-  virtual ~IExpression();
+  ~IExpression();
 
   virtual bool isUnexposed() const;
 
   virtual std::string toString() const = 0;
 };
 
-class CXXAST_API Expression
+class CXXAST_API Expression : public Handle<IExpression>
 {
-private:
-  std::shared_ptr<const IExpression> d;
-
 public:
-  Expression();
-  Expression(const Expression&) = default;
-  Expression(Expression&&) = default;
-  ~Expression();
+  using Handle<IExpression>::Handle;
 
-  explicit Expression(std::shared_ptr<const IExpression> e);
   explicit Expression(std::string content);
 
   static const Expression Zero;
@@ -45,10 +38,7 @@ public:
 
   std::string toString() const;
 
-  std::shared_ptr<const IExpression> impl() const;
-
   Expression& operator=(const Expression&) = default;
-  Expression& operator=(Expression&&) = default;
 };
 
 CXXAST_API bool operator==(const Expression& lhs, const Expression& rhs);
@@ -58,12 +48,6 @@ inline bool operator!=(const Expression& lhs, const Expression& rhs) { return !(
 
 namespace cxx
 {
-
-inline Expression::Expression(std::shared_ptr<const IExpression> e)
-  : d(e)
-{
-  assert(d != nullptr);
-}
 
 } // namespace cxx
 

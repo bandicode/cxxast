@@ -29,6 +29,11 @@ UnexposedExpression::UnexposedExpression(std::string src)
 
 }
 
+NodeKind UnexposedExpression::node_kind() const
+{
+  return NodeKind::UnexposedExpression;
+}
+
 bool UnexposedExpression::isUnexposed() const
 {
   return true;
@@ -40,14 +45,8 @@ std::string UnexposedExpression::toString() const
 }
   
 
-Expression::Expression()
-  : d(Expression::Zero.d)
-{
-
-}
-
 Expression::Expression(std::string content)
-  : d(std::make_shared<UnexposedExpression>(std::move(content)))
+  : Handle<IExpression>(std::make_shared<UnexposedExpression>(std::move(content)))
 {
 
 }
@@ -57,25 +56,18 @@ bool Expression::isUnexposed() const
   return d->isUnexposed();
 }
 
-Expression::~Expression()
-{
-
-}
-
 std::string Expression::toString() const
 {
   return d->toString();
-}
-
-std::shared_ptr<const IExpression> Expression::impl() const
-{
-  return d;
 }
 
 bool operator==(const Expression& lhs, const Expression& rhs)
 {
   if (lhs.impl() == rhs.impl())
     return true;
+
+  if (lhs.isNull() || rhs.isNull())
+    return false;
 
   if (typeid(*lhs.impl().get()) != typeid(*rhs.impl().get()))
     return false;
