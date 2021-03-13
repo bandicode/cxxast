@@ -26,14 +26,9 @@ typedef std::shared_ptr<IStatement> IStatementPtr;
 
 class CXXAST_API Statement : public Handle<IStatement>
 {
-protected:
-  std::shared_ptr<IStatement> d;
-
 public:
   
   using Handle<IStatement>::Handle;
-
-  NodeKind kind() const { return d->node_kind(); }
 
   bool isDeclaration() const { return d->isDeclaration(); }
 };
