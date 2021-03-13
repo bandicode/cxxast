@@ -15,6 +15,7 @@ namespace cxx
 
 class Class;
 class Entity;
+class Expression;
 class Statement;
 class Function;
 
@@ -621,6 +622,12 @@ public:
   void append(std::shared_ptr<AstNode> n) override;
   AstNodeList children() const override;
 };
+
+// Forward-declare some utility functions so that they can be used within templates
+bool is_null(const Expression& expr);
+bool is_null(const Statement& stmt);
+std::shared_ptr<AstNode> to_ast_node(const Expression& expr);
+std::shared_ptr<AstNode> to_ast_node(const Statement& stmt);
 
 } // namespace cxx
 
