@@ -34,6 +34,8 @@ void visit(const std::shared_ptr<cxx::AstNode>& node)
     std::cout << " [" << cxx::to_string(static_cast<cxx::UnexposedAstNode&>(*node).kind) << "]";
   else if (dynamic_cast<cxx::UnexposedStatement*>(node.get()))
     std::cout << " [" << cxx::to_string(static_cast<cxx::UnexposedStatement&>(*node).kind) << "]";
+  else
+    std::cout << " [" << cxx::to_string(node->kind()) << "]";
 
   std::cout << std::endl;
 

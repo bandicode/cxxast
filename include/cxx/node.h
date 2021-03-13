@@ -56,6 +56,8 @@ enum class NodeKind
   Documentation,
 };
 
+CXXAST_API std::string to_string(NodeKind k);
+
 namespace priv
 {
 

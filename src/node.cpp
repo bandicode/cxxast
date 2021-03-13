@@ -13,6 +13,43 @@
 namespace cxx
 {
 
+std::string to_string(NodeKind k)
+{
+  switch (k)
+  {
+  case NodeKind::Class: return "Class";
+  case NodeKind::ClassTemplate: return "ClassTemplate";
+  case NodeKind::Enum: return "Enum";
+  case NodeKind::EnumValue: return "EnumValue";
+  case NodeKind::Function: return "Function";
+  case NodeKind::FunctionTemplate: return "FunctionTemplate";
+  case NodeKind::FunctionParameter: return "FunctionParameter";
+  case NodeKind::Macro: return "Macro";
+  case NodeKind::Namespace: return "Namespace";
+  case NodeKind::TemplateParameter: return "TemplateParameter";
+  case NodeKind::Typedef: return "Typedef";
+  case NodeKind::Variable: return "Variable";
+  case NodeKind::NullStatement: return "NullStatement";
+  case NodeKind::CompoundStatement: return "CompoundStatement";
+  case NodeKind::IfStatement: return "IfStatement";
+  case NodeKind::WhileLoop: return "WhileLoop";
+  case NodeKind::ClassDeclaration: return "ClassDeclaration";
+  case NodeKind::EnumDeclaration: return "EnumDeclaration";
+  case NodeKind::EnumeratorDeclaration: return "EnumeratorDeclaration";
+  case NodeKind::FunctionDeclaration: return "FunctionDeclaration";
+  case NodeKind::NamespaceDeclaration: return "NamespaceDeclaration";
+  case NodeKind::VariableDeclaration: return "VariableDeclaration";
+  case NodeKind::TemplateParameterDeclaration: return "TemplateParameterDeclaration";
+  case NodeKind::UnexposedStatement: return "UnexposedStatement";
+  case NodeKind::UnexposedExpression: return "UnexposedExpression";
+  case NodeKind::AstRootNode: return "AstRootNode";
+  case NodeKind::AstUnexposedNode: return "AstUnexposedNode";
+  case NodeKind::MultilineComment: return "MultilineComment";
+  case NodeKind::Documentation: return "Documentation";
+  default: return "";
+  }
+}
+
 INode::~INode()
 {
 
