@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
@@ -29,6 +29,8 @@ public:
 
   struct Condition : priv::FieldEx<WhileLoop, Expression, &WhileLoop::condition> { };
   struct Body : priv::FieldEx<WhileLoop, Statement, &WhileLoop::body> { };
+
+  AstNodeList children() const override;
 };
 
 } // namespace cxx
