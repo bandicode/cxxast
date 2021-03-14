@@ -240,6 +240,35 @@ TEST_CASE("The parser is able to parse a do-while loop", "[libclang-parser]")
   REQUIRE(stmt.get<cxx::DoWhileLoop::Condition>().toString() == "n > 0");
 }
 
+TEST_CASE("The parser is able to parse a try-catch", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo() { try { throw 5; } catch(int n) { } }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+
+  cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+  REQUIRE(stmt.is<cxx::TryBlock>());
+
+  REQUIRE(stmt.get<cxx::TryBlock::Handlers>().size() == 1);
+}
+
 
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 {

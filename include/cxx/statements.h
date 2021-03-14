@@ -11,4 +11,5 @@
 #include "cxx/null-statement.h"
 #include "cxx/return-statement.h"
 #include "cxx/switch-statement.h"
+#include "cxx/try-block.h"
 #include "cxx/while-loop.h"

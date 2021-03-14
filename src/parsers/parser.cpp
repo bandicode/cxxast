@@ -1133,6 +1133,8 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseBreakStatement(c);
   case CXCursor_CaseStmt:
     return parseCaseStatement(c);
+  case CXCursor_CXXCatchStmt:
+    return parseCatchStatement(c);
   case CXCursor_ContinueStmt:
     return parseContinueStatement(c);
   case CXCursor_CompoundStmt:
@@ -1151,6 +1153,8 @@ Statement LibClangParser::parseStatement(const ClangCursor& c)
     return parseReturnStatement(c);
   case CXCursor_SwitchStmt:
     return parseSwitchStatement(c);
+  case CXCursor_CXXTryStmt:
+    return parseTryBlock(c);
   case CXCursor_WhileStmt:
     return parseWhile(c);
   default:
@@ -1201,6 +1205,26 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseCaseStatement(const ClangC
       result->value = parseExpression(child);
     else
       result->stmt = parseStatement(child);
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseCatchStatement(const ClangCursor& c)
+{
+  auto result = std::make_shared<CatchStatement>();
+
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (result->var.isNull())
+      result->var = parseStatement(child);
+    else
+      result->body = parseStatement(child);
 
     });
 
@@ -1433,6 +1457,31 @@ std::shared_ptr<cxx::IStatement> LibClangParser::parseSwitchStatement(const Clan
     else if (state == SwitchParsing_Body)
     {
       result->body = parseStatement(child);
+    }
+
+    });
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> LibClangParser::parseTryBlock(const ClangCursor& c)
+{
+  auto result = std::make_shared<TryBlock>();
+
+  localizeParentize(result, c);
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, result };
+
+  c.visitChildren([&](const ClangCursor& child) {
+
+    if (result->body.isNull())
+    {
+      result->body = parseStatement(child);
+    }
+    else
+    {
+      cxx::Statement h = parseStatement(child);
+      result->handlers.push_back(h);
     }
 
     });
