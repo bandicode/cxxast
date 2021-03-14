@@ -64,6 +64,10 @@ TEST_CASE("The parser is able to parse a function", "[libclang-parser]")
 
   REQUIRE(prog->globalNamespace()->entities.size() == 1);
   REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.isNull());
 }
 
 TEST_CASE("The parser is able to parse a simple function body", "[libclang-parser]")
@@ -109,6 +113,162 @@ TEST_CASE("The parser is able to parse a simple function body", "[libclang-parse
     }
   }
 }
+
+TEST_CASE("The parser is able to parse a return statement", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "int foo() { return 0; }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().at(0).is<cxx::ReturnStatement>());
+}
+
+TEST_CASE("The parser is able to parse a break & continue statements", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo() { while(true) break; for(int n = 0; n < 5; ++n) continue; }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 2);
+
+  {
+    cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+    REQUIRE(stmt.is<cxx::WhileLoop>());
+    REQUIRE(stmt.get<cxx::WhileLoop::Body>().is<cxx::BreakStatement>());
+  }
+
+  {
+    cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(1);
+    REQUIRE(stmt.is<cxx::ForLoop>());
+    REQUIRE(stmt.get<cxx::ForLoop::Condition>().toString() == "n < 5");
+    REQUIRE(stmt.get<cxx::ForLoop::Iter>().toString() == "++n");
+    REQUIRE(stmt.get<cxx::ForLoop::Body>().is<cxx::ContinueStatement>());
+  }
+}
+
+TEST_CASE("The parser is able to parse a switch statement", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo(int n) { switch(n) { case 1: break; default: return; } }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+
+  cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+  REQUIRE(stmt.is<cxx::SwitchStatement>());
+
+  stmt = stmt.get<cxx::SwitchStatement::Body>();
+  REQUIRE(stmt.is<cxx::CompoundStatement>());
+  REQUIRE(stmt.get<cxx::CompoundStatement::Statements>().size() == 2);
+  REQUIRE(stmt.get<cxx::CompoundStatement::Statements>().at(0).is<cxx::CaseStatement>());
+  REQUIRE(stmt.get<cxx::CompoundStatement::Statements>().at(1).is<cxx::DefaultStatement>());
+}
+
+
+TEST_CASE("The parser is able to parse a do-while loop", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo(int n) { do { --n; } while(n > 0); }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+
+  cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+  REQUIRE(stmt.is<cxx::DoWhileLoop>());
+
+  REQUIRE(stmt.get<cxx::DoWhileLoop::Condition>().toString() == "n > 0");
+}
+
+TEST_CASE("The parser is able to parse a try-catch", "[libclang-parser]")
+{
+  if (skipTest())
+    return;
+
+  write_file("test.cpp",
+    "void foo() { try { throw 5; } catch(int n) { } }");
+
+  cxx::parsers::LibClangParser parser;
+
+  bool result = parser.parse("test.cpp");
+
+  REQUIRE(result);
+
+  auto prog = parser.program();
+
+  REQUIRE(prog->globalNamespace()->entities.size() == 1);
+  REQUIRE(prog->globalNamespace()->entities.front()->is<cxx::Function>());
+
+  std::shared_ptr<cxx::Function> fn = std::static_pointer_cast<cxx::Function>(prog->globalNamespace()->entities.front());
+
+  REQUIRE(fn->body.get<cxx::CompoundStatement::Statements>().size() == 1);
+
+  cxx::Statement stmt = fn->body.get<cxx::CompoundStatement::Statements>().at(0);
+  REQUIRE(stmt.is<cxx::TryBlock>());
+
+  REQUIRE(stmt.get<cxx::TryBlock::Handlers>().size() == 1);
+}
+
 
 TEST_CASE("The parser is able to parse a struct", "[libclang-parser]")
 {

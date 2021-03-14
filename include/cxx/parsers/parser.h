@@ -105,8 +105,19 @@ protected:
   Statement parseStatement(const ClangCursor& c);
   Statement parseFunctionBody(std::shared_ptr<cxx::Function> f, const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseNullStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseBreakStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseCaseStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseCatchStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseContinueStatement(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseCompoundStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseDefaultStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseDoWhileLoop(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseForLoop(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseForRange(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseIf(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseReturnStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseSwitchStatement(const ClangCursor& c);
+  std::shared_ptr<cxx::IStatement> parseTryBlock(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseWhile(const ClangCursor& c);
   std::shared_ptr<cxx::IStatement> parseUnexposedStatement(const ClangCursor& c);
 
