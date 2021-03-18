@@ -1,11 +1,24 @@
-// Copyright (C) 2020 Vincent Chambrin
+// Copyright (C) 2020-2021 Vincent Chambrin
 // This file is part of the 'cxxast' project
 // For conditions of distribution and use, see copyright notice in LICENSE
 
 #include "cxx/parsers/restricted-parser.h"
 
-#include "cxx/name_p.h"
+#include "cxx/parsers/raii-utils.h"
 
+#include "cxx/class.h"
+#include "cxx/filesystem.h"
+#include "cxx/name_p.h"
+#include "cxx/namespace.h"
+#include "cxx/program.h"
+#include "cxx/statements.h"
+#include "cxx/class-declaration.h"
+#include "cxx/function-body.h"
+#include "cxx/function-declaration.h"
+#include "cxx/typedef-declaration.h"
+#include "cxx/variable-declaration.h"
+
+#include <fstream>
 #include <map>
 
 namespace cxx
@@ -117,6 +130,45 @@ public:
     }
 
     throw RestrictedParserError{ "no matching bracket" };
+  }
+};
+
+class ParserBraceView : public ParserViewRAII
+{
+public:
+  ParserBraceView(const std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos)
+    : ParserViewRAII(view)
+  {
+    size_t brace_depth = 0;
+
+    auto begin = toks.begin() + pos;
+    auto end = toks.begin() + view.second;
+
+    auto it = begin;
+
+    while (it != end)
+    {
+      if (it->type() == TokenType::RightBrace)
+      {
+        if (brace_depth == 0)
+        {
+          view = std::make_pair(pos, std::distance(toks.begin(), it));
+          return;
+        }
+        else
+        {
+          --brace_depth;
+        }
+      }
+      else if (it->type() == TokenType::LeftBrace)
+      {
+        ++brace_depth;
+      }
+
+      ++it;
+    }
+
+    throw RestrictedParserError{ "no matching brace" };
   }
 };
 
@@ -314,6 +366,54 @@ public:
   }
 };
 
+class ParserSentinelView : public ParserViewRAII
+{
+public:
+
+  ParserSentinelView(const std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos, TokenType tt)
+    : ParserViewRAII(view)
+  {
+    auto begin = toks.begin() + pos;
+    auto end = toks.begin() + view.second;
+
+    auto it = begin;
+
+    while (it != end)
+    {
+      if (it->type() == tt)
+      {
+        view = std::make_pair(pos, std::distance(toks.begin(), it));
+        return;
+      }
+
+      ++it;
+    }
+
+    throw RestrictedParserError{ "no matching token" };
+  }
+};
+
+class ParserSemicolonView : public ParserSentinelView
+{
+public:
+
+  ParserSemicolonView(const std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos)
+    : ParserSentinelView(toks, view, pos, TokenType::Semicolon)
+  {
+
+  }
+};
+
+class ParserColonView : public ParserSentinelView
+{
+public:
+
+  ParserColonView(const std::vector<Token>& toks, std::pair<size_t, size_t>& view, size_t pos)
+    : ParserSentinelView(toks, view, pos, TokenType::Colon)
+  {
+
+  }
+};
 
 RestrictedParser::RestrictedParser(const std::string *src)
   : m_lexer(src)
@@ -328,6 +428,107 @@ RestrictedParser::RestrictedParser(const std::string *src)
   }
 
   m_view = std::make_pair(0, m_buffer.size());
+
+  m_ast_stack.push_back(std::make_shared<AstRootNode>());
+}
+
+RestrictedParser::RestrictedParser()
+  : m_filesystem(&cxx::FileSystem::GlobalInstance()),
+    m_program(std::make_shared<Program>())
+{
+  setProgram(m_program);
+}
+
+bool RestrictedParser::parse(const std::string& filepath)
+{
+  std::ifstream stream{ filepath };
+
+  std::string line;
+  std::string filecontent;
+
+  while (std::getline(stream, line))
+  {
+    filecontent += line;
+    filecontent.push_back('\n');
+  }
+
+  return parse(filepath, filecontent);
+}
+
+bool RestrictedParser::parse(const std::string& filepath, const std::string& content)
+{
+  auto fileobj = m_filesystem->get(filepath);
+  m_lexer.reset(&content);
+
+  m_lexer.start();
+  m_buffer.clear();
+
+  while (!m_lexer.atEnd())
+  {
+    const Token t = m_lexer.read();
+    if (!isDiscardable(t))
+      m_buffer.push_back(t);
+  }
+
+  m_index = 0;
+  m_view = std::make_pair(size_t(0), m_buffer.size());
+
+  auto astnode = std::make_shared<AstRootNode>();
+  fileobj->ast = astnode;
+
+  m_current_file = fileobj;
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+
+  while (!atEnd())
+  {
+    Statement stmt = parseStatement();
+    astnode->childvec.push_back(cxx::to_ast_node(stmt));
+  }
+
+  return false;
+}
+
+std::shared_ptr<AstRootNode> RestrictedParser::parseSource(const std::string& content)
+{
+  m_lexer.reset(&content);
+
+  m_lexer.start();
+  m_buffer.clear();
+
+  while (!m_lexer.atEnd())
+  {
+    const Token t = m_lexer.read();
+    if (!isDiscardable(t))
+      m_buffer.push_back(t);
+  }
+
+  m_index = 0;
+  m_view = std::make_pair(size_t(0), m_buffer.size());
+
+  auto astnode = std::make_shared<AstRootNode>();
+
+  RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+
+  while (!atEnd())
+  {
+    Statement stmt = parseStatement();
+    astnode->childvec.push_back(cxx::to_ast_node(stmt));
+  }
+
+  return astnode;
+}
+
+std::shared_ptr<Program> RestrictedParser::program() const
+{
+  return m_program;
+}
+
+void RestrictedParser::setProgram(std::shared_ptr<Program> p)
+{
+  m_program = p;
+
+  m_program_stack.clear();
+  m_program_stack.push_back(m_program->globalNamespace());
 }
 
 cxx::Type RestrictedParser::parseType(const std::string& str)
@@ -709,43 +910,33 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
       if (!atEnd())
         read(TokenType::Comma);
     }
-
   }
 
   read(TokenType::RightPar);
 
-  if(atEnd())
+  if(atEnd() || unsafe_peek() == TokenType::Semicolon || unsafe_peek() == TokenType::LeftBrace)
     return ret;
 
   Token tok = read();
-
-  if (tok == TokenType::Semicolon)
-    return ret;
 
   if (tok == TokenType::Const)
   {
     ret->specifiers |= FunctionSpecifier::Const;
 
-    if (atEnd())
+    if (atEnd() || unsafe_peek() == TokenType::Semicolon || unsafe_peek() == TokenType::LeftBrace)
       return ret;
 
     tok = read();
   }
 
-  if (tok == TokenType::Semicolon)
-    return ret;
-
   if (tok == TokenType::Noexcept)
   {
     ret->specifiers |= FunctionSpecifier::Noexcept;
 
-    if (atEnd())
+    if (atEnd() || unsafe_peek() == TokenType::Semicolon || unsafe_peek() == TokenType::LeftBrace)
       return ret;
 
     tok = read();
-
-    if (tok == TokenType::Semicolon)
-      return ret;
   }
 
   if (tok == TokenType::Override)
@@ -770,12 +961,10 @@ std::shared_ptr<Function> RestrictedParser::parseFunctionSignature()
     }
   }
 
-  if (atEnd())
+  if (atEnd() || unsafe_peek() == TokenType::Semicolon || unsafe_peek() == TokenType::LeftBrace)
     return ret;
-
-  read(TokenType::Semicolon);
-
-  return ret;
+  else
+    throw std::runtime_error{ "unexpected token" };
 }
 
 std::shared_ptr<Variable> RestrictedParser::parseVariable()
@@ -812,35 +1001,15 @@ std::shared_ptr<Variable> RestrictedParser::parseVariable()
 
   read(TokenType::Eq);
 
-  std::string default_val = stringtoend();
-
-  if (default_val.back() == ';')
-    default_val.pop_back();
-
-  ret->defaultValue() = Expression{ std::move(default_val) };
+  ret->defaultValue() = parseExpression();
 
   return ret;
 }
 
 std::shared_ptr<Typedef> RestrictedParser::parseTypedef()
 {
-  read(TokenType::Typedef);
-
-  Type t = parseType();
-
-  Token name = read();
-
-  if (!name.isIdentifier())
-    throw std::runtime_error{ "Unexpected identifier while parsing typedef" };
-
-  auto result = std::make_shared<Typedef>(t, name.to_string());
-
-  if (atEnd())
-    return result;
-
-  read(TokenType::Semicolon);
-
-  return result;
+  auto decl = parseTypedefDecl();
+  return std::static_pointer_cast<Typedef>(static_cast<TypedefDeclaration&>(*decl).entity_ptr);
 }
 
 std::shared_ptr<Macro> RestrictedParser::parseMacro()
@@ -901,7 +1070,7 @@ Token RestrictedParser::unsafe_read()
   return m_buffer[m_index++];
 }
 
-Token RestrictedParser::peek()
+Token RestrictedParser::peek() const
 {
   if (atEnd())
     throw std::runtime_error{ "Unexpected end of input" };
@@ -913,6 +1082,11 @@ Token RestrictedParser::unsafe_peek() const
 {
   assert(m_index < m_buffer.size()); 
   return m_buffer[m_index];
+}
+
+Token RestrictedParser::prev() const
+{
+  return m_buffer[m_index - 1];
 }
 
 bool RestrictedParser::isDiscardable(const Token& t) const
@@ -1065,6 +1239,772 @@ std::shared_ptr<Function::Parameter> RestrictedParser::parseFunctionParameter()
   seekEnd();
 
   return std::make_shared<Function::Parameter>(param_type, std::move(name), Expression{ std::move(default_value) });
+}
+
+cxx::INode& RestrictedParser::curNode()
+{
+  return *m_program_stack.back();
+}
+
+void RestrictedParser::astWrite(std::shared_ptr<AstNode> n)
+{
+  cxx::AstNode& cur = *m_ast_stack.back();
+  cur.append(n);
+}
+
+void RestrictedParser::localizeParentize(const std::shared_ptr<AstNode>& node, const Token& tok)
+{
+  node->sourcerange.file = m_current_file;
+  node->sourcerange.begin.line = tok.line();
+  node->sourcerange.begin.column = tok.col();
+  node->sourcerange.end = node->sourcerange.begin;
+  node->sourcerange.end.column += static_cast<int>(tok.text().size());
+
+  parentize(node);
+}
+
+void RestrictedParser::localizeParentize(const std::shared_ptr<AstNode>& node, const Token& first, const Token& last)
+{
+  node->sourcerange.file = m_current_file;
+  node->sourcerange.begin.line = first.line();
+  node->sourcerange.begin.column = first.col();
+  node->sourcerange.end.line = last.line();
+  node->sourcerange.end.column = last.col() + static_cast<int>(last.text().size());
+
+  parentize(node);
+}
+
+void RestrictedParser::parentize(const std::shared_ptr<AstNode>& node)
+{
+  node->weak_parent = m_ast_stack.back();
+}
+
+void RestrictedParser::bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n)
+{
+  if(program())
+    program()->astmap[n.get()] = astnode;
+}
+
+Statement RestrictedParser::parseStatement()
+{
+  Token tok = peek();
+
+  switch (tok.type().value())
+  {
+  case TokenType::Semicolon:
+    return parseNullStatement();
+  case TokenType::Break:
+    return parseBreakStatement();
+  case TokenType::Class:
+  case TokenType::Struct:
+    throw parseClassDecl();
+  case TokenType::Bool:
+  case TokenType::Char:
+  case TokenType::Const: 
+  case TokenType::Constexpr:
+  case TokenType::Double:
+  case TokenType::Explicit:
+  case TokenType::Float:
+  case TokenType::Inline:
+  case TokenType::Int:
+  case TokenType::Mutable:
+  case TokenType::Static:
+  case TokenType::Typename:
+  case TokenType::Void:
+  case TokenType::UserDefinedName:
+    /* could be a function-decl, var-decl or even an expression */
+    break;
+  case TokenType::Continue:
+    return parseContinueStatement();
+  case TokenType::Default:
+  case TokenType::Delete:
+  case TokenType::Else:
+  case TokenType::False:
+  case TokenType::Final:
+  case TokenType::Noexcept:
+  case TokenType::Override:
+  case TokenType::This:
+  case TokenType::True:
+  case TokenType::Typeid:
+    throw std::runtime_error{ "unexpected keyword" };
+  case TokenType::Enum:
+    return parseEnumDecl();
+  case TokenType::For:
+    return parseForLoop();
+  case TokenType::Export:
+  case TokenType::Friend:
+    throw std::runtime_error{ "Not implemented" };
+  case TokenType::If:
+    return parseIf();
+  case TokenType::Import:
+  case TokenType::Namespace:
+    return parseNamespaceDecl();
+  case TokenType::Operator:
+  case TokenType::Private:
+  case TokenType::Protected:
+  case TokenType::Public:
+  case TokenType::Return:
+    return parseReturnStatement();
+  case TokenType::Template:
+  case TokenType::Typedef:
+    return parseTypedefDecl();
+  case TokenType::Using:
+    return parseUsingDecl();
+  case TokenType::Virtual:
+    return parseFunctionDecl();
+  case TokenType::While:
+    return parseWhile();
+  }
+
+  NodeKind nk = detectStatement();
+
+  if (nk == NodeKind::ExpressionStatement)
+  {
+    Token firsttok = peek();
+
+    auto result = std::make_shared<ExpressionStatement>();
+    
+    {
+      ParserSemicolonView view{ m_buffer, m_view, m_index };
+      result->expr = parseExpression();
+    }
+    
+    localizeParentize(result, firsttok, read(TokenType::Semicolon));
+
+    return result;
+  }
+  else if (nk == NodeKind::FunctionDeclaration)
+  {
+    return parseFunctionDecl();
+  }
+  else if (nk == NodeKind::VariableDeclaration)
+  {
+    return parseVarDecl();
+  }
+  else
+  {
+    throw std::runtime_error{ "not implemented" };
+  }
+}
+
+static bool is_function_or_var_specifier(cxx::parsers::Token tok)
+{
+  return tok == TokenType::Inline
+    || tok == TokenType::Static
+    || tok == TokenType::Mutable;
+}
+
+NodeKind RestrictedParser::detectStatement()
+{
+  RAIIGuard<size_t> index_guard{ m_index };
+
+  if(peek() == TokenType::Virtual || peek() == TokenType::Override || peek() == TokenType::Explicit)
+    return NodeKind::FunctionDeclaration;
+
+  bool can_be_expr = m_parsing_function_body;
+
+  while (is_function_or_var_specifier(peek()))
+  {
+    can_be_expr = false;
+    read();
+  }
+
+  try 
+  {
+    Type rt_or_vartype = parseType();
+    Name n = parseName();
+
+    if (peek() == TokenType::LeftBrace || peek() == TokenType::Semicolon || peek() == TokenType::Eq)
+    {
+      return NodeKind::VariableDeclaration;
+    }
+    else if (peek() == TokenType::LeftPar)
+    {
+      read();
+
+      // can still be var or fun decl
+      size_t right_par_index = 0;
+      {
+        ParserParenView subview{ m_buffer, m_view, m_index };
+        right_par_index = m_view.second;
+      }
+
+      if (m_buffer[right_par_index + 1] == TokenType::Semicolon)
+      {
+        // can still be both
+        // @TODO
+        throw std::runtime_error{ "not implemented" };
+      }
+      else
+      {
+        return NodeKind::FunctionDeclaration;
+      }
+    }
+    else
+    {
+      if(can_be_expr)
+        return NodeKind::ExpressionStatement;
+    }
+  }
+  catch (std::runtime_error&)
+  {
+    if(can_be_expr)
+      return NodeKind::ExpressionStatement;
+  }
+
+  return NodeKind::UnexposedStatement;
+}
+
+Statement RestrictedParser::parseFunctionBody(std::shared_ptr<cxx::Function> f)
+{
+  if (skip_function_bodies)
+  {
+    read(TokenType::LeftBrace);
+
+    {
+      ParserBraceView brace_view{ m_buffer, m_view, m_index };
+      m_index = m_view.second;
+    }
+
+    read(TokenType::RightBrace);
+
+    return Statement();
+  }
+
+  Token leftbrace = read(TokenType::LeftBrace);
+
+  auto astnode = std::make_shared<FunctionBody>(f);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> guard{ m_ast_stack, astnode };
+    ParserBraceView brace_view{ m_buffer, m_view, m_index };
+    RAIIGuard<bool> parse_func_guard{ m_parsing_function_body };
+    m_parsing_function_body = true;
+
+    while (!atEnd())
+    {
+      Statement stmt = parseStatement();
+      astnode->statements.push_back(stmt);
+    }
+  }
+
+  Token rightbrace = read(TokenType::RightBrace);
+
+  localizeParentize(astnode, leftbrace, rightbrace);
+
+  return { astnode };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseNullStatement()
+{
+  auto result = std::make_shared<NullStatement>();
+  localizeParentize(result, read());
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseBreakStatement()
+{
+  auto result = std::make_shared<BreakStatement>();
+  localizeParentize(result, read());
+  read(TokenType::Semicolon);
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseCaseStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseCatchStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseContinueStatement()
+{
+  auto result = std::make_shared<ContinueStatement>();
+  localizeParentize(result, read());
+  read(TokenType::Semicolon);
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseCompoundStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseDefaultStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseDoWhileLoop()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseForLoop()
+{
+  Token forkw = read(TokenType::For);
+
+  Token leftpar = read(TokenType::LeftPar);
+
+  bool is_for_range = false;
+
+  {
+    ParserParenView paren_view{ m_buffer, m_view, m_index };
+
+    size_t nb_semicolon = [this]() -> size_t {
+      size_t n = 0;
+      for (size_t i = m_index; i < m_view.second; ++i)
+      {
+        if (m_buffer.at(i) == TokenType::Semicolon)
+          n += 1;
+      }
+      return n;
+    }();
+
+    size_t nb_colon = [this]() -> size_t {
+      size_t n = 0;
+      for (size_t i = m_index; i < m_view.second; ++i)
+      {
+        if (m_buffer.at(i) == TokenType::Colon)
+          n += 1;
+      }
+      return n;
+    }();
+
+    is_for_range = nb_colon >= 1 && nb_semicolon < 2;
+  }
+
+  if (is_for_range)
+  {
+    auto result = std::make_shared<ForRange>();
+
+    {
+      ParserColonView colon_view{ m_buffer, m_view, m_index };
+      result->variable = parseStatement();
+    }
+
+    read(TokenType::Colon);
+
+    result->container = parseExpression();
+
+    read(TokenType::RightPar);
+
+    result->body = parseStatement();
+
+    localizeParentize(result, forkw, prev());
+
+    return result;
+  }
+  else
+  {
+    auto result = std::make_shared<ForLoop>();
+
+    {
+      ParserSemicolonView semicolon_view{ m_buffer, m_view, m_index };
+      m_view.second += 1;
+      result->init = parseStatement();
+    }
+ 
+    {
+      ParserSemicolonView semicolon_view{ m_buffer, m_view, m_index };
+      result->condition = parseExpression();
+    }
+
+    read(TokenType::Semicolon);
+
+    result->iter = parseExpression();
+
+    read(TokenType::RightPar);
+
+    result->body = parseStatement();
+
+    localizeParentize(result, forkw, prev());
+
+    return result;
+  }
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseIf()
+{
+  Token ifkw = read(TokenType::If);
+
+  Token leftpar = read(TokenType::LeftPar);
+
+  auto result = std::make_shared<IfStatement>();
+
+  {
+    ParserParenView paren_view{ m_buffer, m_view, m_index };
+
+    result->condition = parseExpression();
+  }
+
+  Token rightpar = read(TokenType::RightPar);
+
+  result->body = parseStatement();
+
+  if (!atEnd() && peek() == TokenType::Else)
+  {
+    Token elsekw = read(TokenType::Else);
+    result->else_clause = parseStatement();
+  }
+
+  localizeParentize(result, ifkw, prev());
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseReturnStatement()
+{
+  Token returnkw = read(TokenType::Return);
+
+  auto result = std::make_shared<ReturnStatement>();
+
+  if (peek() != TokenType::Semicolon)
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    ParserSemicolonView semicolon_view{ m_buffer, m_view, m_index };
+
+    result->expr = parseExpression();
+  }
+
+  Token semicolon = read();
+
+  localizeParentize(result, returnkw, semicolon);
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseSwitchStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseTryBlock()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseWhile()
+{
+  Token whilekw = read(TokenType::While);
+
+  Token leftpar = read(TokenType::LeftPar);
+
+  auto result = std::make_shared<WhileLoop>();
+
+  {
+    ParserParenView paren_view{ m_buffer, m_view, m_index };
+
+    result->condition = parseExpression();
+  }
+
+  Token rightpar = read(TokenType::RightPar);
+
+  result->body = parseStatement();
+
+  localizeParentize(result, whilekw, prev());
+
+  return result;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseUnexposedStatement()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseDecl()
+{
+  if (peek() == TokenType::Class || peek() == TokenType::Struct)
+    return parseClassDecl();
+  else if (unsafe_peek() == TokenType::Enum)
+    return parseEnumDecl();
+  else if (unsafe_peek() == TokenType::Typedef)
+    return parseTypedefDecl();
+  else if (unsafe_peek() == TokenType::Using)
+    return parseUsingDecl();
+
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseClassDecl()
+{
+  Token classkw = read(); // read 'class' or 'struct'
+
+  std::string cname = parseName().toString();
+  bool is_template = false;
+
+  auto entity = [&]() -> std::shared_ptr<Class> {
+    if (curNode().is<Namespace>())
+    {
+      auto& ns = static_cast<Namespace&>(curNode());
+
+      if (is_template)
+        return ns.getOrCreate<ClassTemplate>(cname, std::vector<std::shared_ptr<TemplateParameter>>(), std::move(cname));
+      else
+        return ns.getOrCreate<Class>(cname, std::move(cname));
+    }
+    else
+    {
+      Class& cla = static_cast<Class&>(curNode());
+      std::shared_ptr<Class> result = !is_template ? (std::make_shared<Class>(std::move(cname), cla.shared_from_this())) :
+        (std::make_shared<ClassTemplate>(std::vector<std::shared_ptr<TemplateParameter>>(), std::move(cname), cla.shared_from_this()));
+      result->setAccessSpecifier(m_access_specifier);
+      cla.members.push_back(result);
+      return result;
+    }
+  }();
+
+  auto decl = std::make_shared<ClassDeclaration>(entity);
+
+  if (peek() == TokenType::Semicolon)
+  {
+    localizeParentize(decl, classkw, read());
+    return decl;
+  }
+
+  m_access_specifier = classkw == TokenType::Class ? cxx::AccessSpecifier::PRIVATE : cxx::AccessSpecifier::PUBLIC;
+
+  read(TokenType::LeftBrace);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, decl };
+    RAIIVectorSharedGuard<cxx::INode> entity_guard{ m_program_stack, entity };
+
+    ParserBraceView brace_view{ m_buffer, m_view, m_index };
+
+    while (!atEnd())
+    {
+      Statement stmt = parseStatement();
+      decl->childvec.push_back(cxx::to_ast_node(stmt));
+    }
+  }
+
+  read(TokenType::RightBrace);
+  Token endingsemicolon = read(TokenType::Semicolon);
+
+  bind(decl, entity);
+  localizeParentize(decl, classkw, endingsemicolon);
+
+  return decl;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseEnumDecl()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseNamespaceDecl()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseUsingDecl()
+{
+  throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseTypedefDecl()
+{
+  Token typedefkw = read(TokenType::Typedef);
+
+  auto decl = std::make_shared<TypedefDeclaration>();
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, decl };
+
+    Type t = parseType();
+
+    Token name = read();
+
+    if (!name.isIdentifier())
+      throw std::runtime_error{ "Unexpected identifier while parsing typedef" };
+
+    auto entity = std::make_shared<Typedef>(t, name.to_string());
+  
+    decl->entity_ptr = entity;
+    bind(decl, entity);
+  }
+
+  Token semicolon = read(TokenType::Semicolon);
+
+  localizeParentize(decl, typedefkw, semicolon);
+
+  return decl;
+}
+
+// @TODO: avoid this awful copy/paste
+static bool are_equiv_param(const cxx::FunctionParameter& a, const cxx::FunctionParameter& b)
+{
+  return a.type == b.type;
+}
+
+static bool are_equiv_func(const cxx::Function& a, const cxx::Function& b)
+{
+  if (a.name != b.name)
+    return false;
+
+  if (a.parameters.size() != b.parameters.size())
+    return false;
+
+  if (a.return_type != b.return_type)
+    return false;
+
+  for (size_t i(0); i < a.parameters.size(); ++i)
+  {
+    if (!are_equiv_param(*a.parameters.at(i), *b.parameters.at(i)))
+      return false;
+  }
+
+  return true;
+}
+
+static std::shared_ptr<cxx::Function> find_equiv_func(cxx::INode& current_node, const cxx::Function& func)
+{
+  if (current_node.is<cxx::Class>())
+  {
+    for (const auto& m : static_cast<cxx::Class&>(current_node).members)
+    {
+      if (m->is<cxx::Function>())
+      {
+        if (are_equiv_func(static_cast<cxx::Function&>(*m), func))
+          return std::static_pointer_cast<cxx::Function>(m);
+      }
+    }
+  }
+  else if (current_node.is<cxx::Namespace>())
+  {
+    for (const auto& m : static_cast<cxx::Namespace&>(current_node).entities)
+    {
+      if (m->is<cxx::Function>())
+      {
+        if (are_equiv_func(static_cast<cxx::Function&>(*m), func))
+          return std::static_pointer_cast<cxx::Function>(m);
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+static void update_func(cxx::Function& func, const cxx::Function& new_one)
+{
+  for (size_t i(0); i < func.parameters.size(); ++i)
+  {
+    if (func.parameters.at(i)->default_value == cxx::Expression())
+    {
+      if (new_one.parameters.at(i)->default_value != cxx::Expression())
+        func.parameters.at(i)->default_value = new_one.parameters.at(i)->default_value;
+    }
+  }
+
+  if (func.body.isNull() && !new_one.body.isNull())
+  {
+    func.body = new_one.body;
+  }
+}
+
+std::shared_ptr<cxx::FunctionDeclaration> RestrictedParser::parseFunctionDecl()
+{
+  auto decl = std::make_shared<FunctionDeclaration>();
+
+  Token first_tok = peek();
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, decl };
+
+    std::shared_ptr<Function> fun = parseFunctionSignature();
+
+    std::shared_ptr<Function> equiv = find_equiv_func(curNode(), *fun);
+
+    if (equiv)
+    {
+      update_func(*equiv, *fun);
+      fun = equiv;
+    }
+    else
+    {
+      fun->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
+
+      if (curNode().is<Namespace>())
+      {
+        static_cast<Namespace&>(curNode()).entities.push_back(fun);
+      }
+      else
+      {
+        Class& cla = static_cast<Class&>(curNode());
+        fun->setAccessSpecifier(m_access_specifier);
+        cla.members.push_back(fun);
+      }
+    }
+
+    decl->entity_ptr = fun;
+    bind(decl, fun);
+
+    if (peek() == TokenType::Semicolon)
+    {
+      read();
+    }
+    else
+    {
+      Statement body = parseFunctionBody(fun);
+      decl->childvec.push_back(cxx::to_ast_node(body));
+      fun->body = body;
+    }
+  }
+
+  localizeParentize(decl, first_tok, prev());
+  return decl;
+}
+
+std::shared_ptr<cxx::VariableDeclaration> RestrictedParser::parseVarDecl()
+{
+  auto decl = std::make_shared<VariableDeclaration>();
+
+  Token first_tok = peek();
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, decl };
+    ParserSemicolonView semicolon_view{ m_buffer, m_view, m_index };
+
+    std::shared_ptr<Variable> var = parseVariable();
+
+    var->weak_parent = std::static_pointer_cast<cxx::IEntity>(curNode().shared_from_this());
+
+    if (curNode().is<Namespace>())
+    {
+      static_cast<Namespace&>(curNode()).entities.push_back(var);
+    }
+    else
+    {
+      Class& cla = static_cast<Class&>(curNode());
+      var->setAccessSpecifier(m_access_specifier);
+      cla.members.push_back(var);
+    }
+
+    decl->entity_ptr = var;
+    bind(decl, var);
+  }
+
+  localizeParentize(decl, first_tok, read(TokenType::Semicolon));
+  return decl;
+}
+
+Expression RestrictedParser::parseExpression()
+{
+  std::string default_val = stringtoend();
+
+  if (default_val.back() == ';')
+    default_val.pop_back();
+
+  Expression result{ std::move(default_val) };
+
+  m_index = m_view.second;
+
+  return result;
 }
 
 } // namespace parsers

@@ -43,6 +43,7 @@ enum class NodeKind
   CompoundStatement,
   DefaultStatement,
   DoWhileLoop,
+  ExpressionStatement,
   ForLoop,
   ForRange,
   IfStatement,
@@ -57,6 +58,7 @@ enum class NodeKind
   NamespaceDeclaration,
   VariableDeclaration,
   TemplateParameterDeclaration,
+  TypedefDeclaration,
   UnexposedStatement,
   /* Expressions */
   UnexposedExpression,

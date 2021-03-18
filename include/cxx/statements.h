@@ -6,6 +6,7 @@
 #include "cxx/break-statement.h"
 #include "cxx/continue-statement.h"
 #include "cxx/do-while-loop.h"
+#include "cxx/expression-statement.h"
 #include "cxx/for-loop.h"
 #include "cxx/if-statement.h"
 #include "cxx/null-statement.h"
