@@ -45,6 +45,7 @@ std::string to_string(NodeKind k)
   case NodeKind::SwitchStatement: return "SwitchStatement";
   case NodeKind::TryBlock: return "TryBlock";
   case NodeKind::WhileLoop: return "WhileLoop";
+  case NodeKind::AccessSpecifierDeclaration: return "AccessSpecifierDeclaration";
   case NodeKind::ClassDeclaration: return "ClassDeclaration";
   case NodeKind::EnumDeclaration: return "EnumDeclaration";
   case NodeKind::EnumeratorDeclaration: return "EnumeratorDeclaration";

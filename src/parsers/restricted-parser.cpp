@@ -14,6 +14,7 @@
 #include "cxx/statements.h"
 #include "cxx/class-declaration.h"
 #include "cxx/function-body.h"
+#include "cxx/access-specifier-declaration.h"
 #include "cxx/function-declaration.h"
 #include "cxx/namespace-declaration.h"
 #include "cxx/typedef-declaration.h"
@@ -1513,7 +1514,22 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseNullStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseAccessSpecifier()
 {
-  throw std::runtime_error{ "Not implemented: access specifiers" };
+  auto result = std::make_shared<AccessSpecifierDeclaration>();
+
+  Token aspec = read();
+  Token colon = read();
+  localizeParentize(result, aspec, colon);
+
+  if (aspec.type() == TokenType::Public)
+    result->value = AccessSpecifier::PUBLIC;
+  else if (aspec.type() == TokenType::Protected)
+    result->value = AccessSpecifier::PROTECTED;
+  else if (aspec.type() == TokenType::Private)
+    result->value = AccessSpecifier::PRIVATE;
+
+  m_access_specifier = result->value;
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseBreakStatement()

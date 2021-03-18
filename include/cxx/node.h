@@ -51,6 +51,7 @@ enum class NodeKind
   SwitchStatement,
   TryBlock,
   WhileLoop,
+  AccessSpecifierDeclaration,
   ClassDeclaration,
   EnumDeclaration,
   EnumeratorDeclaration,
