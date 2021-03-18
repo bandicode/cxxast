@@ -596,6 +596,7 @@ const Keyword l3k[] = {
 const Keyword l4k[] = {
   { "auto", TokenType::Auto },
   { "bool", TokenType::Bool },
+  { "case", TokenType::Case },
   { "char", TokenType::Char },
   { "else", TokenType::Else },
   { "enum", TokenType::Enum },

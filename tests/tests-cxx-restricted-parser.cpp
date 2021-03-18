@@ -6,7 +6,9 @@
 
 #include "cxx/parsers/restricted-parser.h"
 
+#include "cxx/class-declaration.h"
 #include "cxx/function-declaration.h"
+#include "cxx/namespace-declaration.h"
 #include "cxx/variable-declaration.h"
 
 TEST_CASE("The parser is able to parse simple types", "[restricted-parser]")
@@ -130,15 +132,23 @@ TEST_CASE("The parser is able to parse declarations", "[restricted-parser]")
 
   std::shared_ptr<cxx::AstRootNode> result = parser.parseSource(
     "int n = 0;\n"
-    "int foo() { return 0; }");
+    "int foo() { return 0; }\n"
+    "namespace bar { }\n"
+    "class A { void do(); }; ");
 
   REQUIRE(result);
 
-  REQUIRE(result->childvec.size() == 2);
+  REQUIRE(result->childvec.size() == 4);
 
   cxx::Statement stmt{ std::static_pointer_cast<cxx::IStatement>(result->childvec.at(0)) };
   REQUIRE(stmt.is<cxx::VariableDeclaration>());
 
   stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(1)));
   REQUIRE(stmt.is<cxx::FunctionDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(2)));
+  REQUIRE(stmt.is<cxx::NamespaceDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(3)));
+  REQUIRE(stmt.is<cxx::ClassDeclaration>());
 }

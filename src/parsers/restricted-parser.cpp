@@ -15,6 +15,7 @@
 #include "cxx/class-declaration.h"
 #include "cxx/function-body.h"
 #include "cxx/function-declaration.h"
+#include "cxx/namespace-declaration.h"
 #include "cxx/typedef-declaration.h"
 #include "cxx/variable-declaration.h"
 
@@ -1291,13 +1292,15 @@ Statement RestrictedParser::parseStatement()
 
   switch (tok.type().value())
   {
+  case TokenType::LeftBrace:
+    return parseCompoundStatement();
   case TokenType::Semicolon:
     return parseNullStatement();
   case TokenType::Break:
     return parseBreakStatement();
   case TokenType::Class:
   case TokenType::Struct:
-    throw parseClassDecl();
+    return parseClassDecl();
   case TokenType::Bool:
   case TokenType::Char:
   case TokenType::Const: 
@@ -1340,9 +1343,11 @@ Statement RestrictedParser::parseStatement()
   case TokenType::Namespace:
     return parseNamespaceDecl();
   case TokenType::Operator:
+    throw std::runtime_error{ "Not implemented" };
   case TokenType::Private:
   case TokenType::Protected:
   case TokenType::Public:
+    return parseAccessSpecifier();
   case TokenType::Return:
     return parseReturnStatement();
   case TokenType::Template:
@@ -1432,6 +1437,10 @@ NodeKind RestrictedParser::detectStatement()
       if (m_buffer[right_par_index + 1] == TokenType::Semicolon)
       {
         // can still be both
+
+        if (rt_or_vartype.toString() == "void")
+          return NodeKind::FunctionDeclaration;
+
         // @TODO
         throw std::runtime_error{ "not implemented" };
       }
@@ -1502,6 +1511,11 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseNullStatement()
   return result;
 }
 
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseAccessSpecifier()
+{
+  throw std::runtime_error{ "Not implemented: access specifiers" };
+}
+
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseBreakStatement()
 {
   auto result = std::make_shared<BreakStatement>();
@@ -1512,7 +1526,29 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseBreakStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseCaseStatement()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto result = std::make_shared<CaseStatement>();
+
+  Token casekw = read(TokenType::Case);
+  
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    ParserSentinelView view{ m_buffer, m_view, m_index, TokenType::Colon };
+
+    result->value = parseExpression();
+  }
+
+  read(TokenType::Colon);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    result->stmt = parseStatement();
+  }
+
+  localizeParentize(result, casekw, prev());
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseCatchStatement()
@@ -1530,12 +1566,44 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseContinueStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseCompoundStatement()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto result = std::make_shared<CompoundStatement>();
+  
+  Token leftbrace = read(TokenType::LeftBrace);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    ParserBraceView paren_view{ m_buffer, m_view, m_index };
+
+    while (!atEnd())
+    {
+      result->statements.push_back(parseStatement());
+    }
+  }
+
+  Token rightbrace = read(TokenType::RightBrace);
+
+  localizeParentize(result, leftbrace, rightbrace);
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseDefaultStatement()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto result = std::make_shared<DefaultStatement>();
+
+  Token defaultkw = read(TokenType::Default);
+  read(TokenType::Colon);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    result->stmt = parseStatement();
+  }
+
+  localizeParentize(result, defaultkw, prev());
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseDoWhileLoop()
@@ -1680,7 +1748,28 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseReturnStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseSwitchStatement()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto result = std::make_shared<SwitchStatement>();
+
+  Token switchtok = read();
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
+
+    read(TokenType::LeftPar);
+
+    {
+      ParserParenView paren_view{ m_buffer, m_view, m_index };
+      result->value = parseExpression();
+    }
+
+    read(TokenType::RightPar);
+
+    result->body = parseStatement();
+  }
+
+  localizeParentize(result, switchtok, prev());
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseTryBlock()
@@ -1697,14 +1786,18 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseWhile()
   auto result = std::make_shared<WhileLoop>();
 
   {
-    ParserParenView paren_view{ m_buffer, m_view, m_index };
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, result };
 
-    result->condition = parseExpression();
+    {
+      ParserParenView paren_view{ m_buffer, m_view, m_index };
+
+      result->condition = parseExpression();
+    }
+
+    Token rightpar = read(TokenType::RightPar);
+
+    result->body = parseStatement();
   }
-
-  Token rightpar = read(TokenType::RightPar);
-
-  result->body = parseStatement();
 
   localizeParentize(result, whilekw, prev());
 
@@ -1799,7 +1892,39 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseEnumDecl()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseNamespaceDecl()
 {
-  throw std::runtime_error{ "not implemented" };
+  Token namespacekw = read(); 
+
+  auto decl = std::make_shared<NamespaceDeclaration>();
+
+  std::string nsname = parseName().toString();
+
+  if (!curNode().is<Namespace>())
+    throw std::runtime_error{ "direct parent of namespace must be a namespace" };
+
+  auto ns = static_cast<Namespace&>(curNode()).getOrCreateNamespace(nsname);
+
+  decl->entity_ptr = ns;
+
+  read(TokenType::LeftBrace);
+
+  {
+    RAIIVectorSharedGuard<cxx::AstNode> ast_guard{ m_ast_stack, decl };
+    RAIIVectorSharedGuard<cxx::INode> entity_guard{ m_program_stack, ns };
+
+    ParserBraceView brace_view{ m_buffer, m_view, m_index };
+
+    while (!atEnd())
+    {
+      Statement stmt = parseStatement();
+      decl->childvec.push_back(cxx::to_ast_node(stmt));
+    }
+  }
+
+  Token rbrace = read(TokenType::RightBrace);
+
+  localizeParentize(decl, namespacekw, rbrace);
+
+  return decl;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseUsingDecl()

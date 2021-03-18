@@ -126,6 +126,7 @@ protected:
   Statement parseFunctionBody(std::shared_ptr<cxx::Function> f);
   /* statements */
   std::shared_ptr<cxx::IStatement> parseNullStatement();
+  std::shared_ptr<cxx::IStatement> parseAccessSpecifier();
   std::shared_ptr<cxx::IStatement> parseBreakStatement();
   std::shared_ptr<cxx::IStatement> parseCaseStatement();
   std::shared_ptr<cxx::IStatement> parseCatchStatement();

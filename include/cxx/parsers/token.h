@@ -134,6 +134,7 @@ public:
     Auto = TokenCategory::Keyword | 20,
     Bool,
     Break,
+    Case,
     Char,
     Class,
     Const,
@@ -177,7 +178,7 @@ public:
     Void,
     While,
     //Operators
-    ScopeResolution = TokenCategory::OperatorToken | 65,
+    ScopeResolution = TokenCategory::OperatorToken | 66,
     PlusPlus,
     MinusMinus,
     Plus,
@@ -213,8 +214,8 @@ public:
     BitXorEq,
     Comma,
     // Misc
-    UserDefinedName = TokenCategory::Identifier | 100,
-    UserDefinedLiteral = TokenCategory::Literal | 101,
+    UserDefinedName = TokenCategory::Identifier | 101,
+    UserDefinedLiteral = TokenCategory::Literal | 102,
     SingleLineComment = 102,
     LeftRightPar,
     LeftRightBracket,
