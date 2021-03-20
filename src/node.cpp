@@ -51,6 +51,7 @@ std::string to_string(NodeKind k)
   case NodeKind::EnumeratorDeclaration: return "EnumeratorDeclaration";
   case NodeKind::FunctionDeclaration: return "FunctionDeclaration";
   case NodeKind::NamespaceDeclaration: return "NamespaceDeclaration";
+  case NodeKind::ParameterDeclaration: return "ParameterDeclaration";
   case NodeKind::VariableDeclaration: return "VariableDeclaration";
   case NodeKind::TemplateParameterDeclaration: return "TemplateParameterDeclaration";
   case NodeKind::TypedefDeclaration: return "TypedefDeclaration";

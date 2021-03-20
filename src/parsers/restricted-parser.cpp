@@ -12,13 +12,8 @@
 #include "cxx/namespace.h"
 #include "cxx/program.h"
 #include "cxx/statements.h"
-#include "cxx/class-declaration.h"
 #include "cxx/function-body.h"
-#include "cxx/access-specifier-declaration.h"
-#include "cxx/function-declaration.h"
-#include "cxx/namespace-declaration.h"
-#include "cxx/typedef-declaration.h"
-#include "cxx/variable-declaration.h"
+#include "cxx/declarations.h"
 
 #include <fstream>
 #include <map>
@@ -28,6 +23,35 @@ namespace cxx
 
 namespace parsers
 {
+
+// RaiiAstLocator will sets a node's parent, push it into a stack
+// and sets its location upon exiting.
+class RaiiAstLocator
+{
+public:
+  RestrictedParser& parser_;
+  Token start_;
+
+  RaiiAstLocator(RestrictedParser* p, std::shared_ptr<AstNode> elem)
+    : parser_(*p)
+  {
+    if (!parser_.m_ast_stack.empty())
+      elem->weak_parent = parser_.m_ast_stack.back();
+
+    parser_.m_ast_stack.push_back(elem);
+
+    start_ = parser_.peek();
+  }
+
+  ~RaiiAstLocator()
+  {
+    std::shared_ptr<AstNode> elem = parser_.m_ast_stack.back();
+
+    parser_.localize(elem, start_, parser_.prev());
+
+    parser_.m_ast_stack.pop_back();
+  }
+};
 
 class ParserViewRAII
 {
@@ -1276,6 +1300,15 @@ void RestrictedParser::localizeParentize(const std::shared_ptr<AstNode>& node, c
   parentize(node);
 }
 
+void RestrictedParser::localize(const std::shared_ptr<AstNode>& node, const Token& first, const Token& last)
+{
+  node->sourcerange.file = m_current_file;
+  node->sourcerange.begin.line = first.line();
+  node->sourcerange.begin.column = first.col();
+  node->sourcerange.end.line = last.line();
+  node->sourcerange.end.column = last.col() + static_cast<int>(last.text().size());
+}
+
 void RestrictedParser::parentize(const std::shared_ptr<AstNode>& node)
 {
   node->weak_parent = m_ast_stack.back();
@@ -1352,6 +1385,11 @@ Statement RestrictedParser::parseStatement()
   case TokenType::Return:
     return parseReturnStatement();
   case TokenType::Template:
+    throw std::runtime_error{ "Not implemented" };
+  case TokenType::Throw:
+    return parseExpressionStatement();
+  case TokenType::Try:
+    return parseTryBlock();
   case TokenType::Typedef:
     return parseTypedefDecl();
   case TokenType::Using:
@@ -1360,24 +1398,15 @@ Statement RestrictedParser::parseStatement()
     return parseFunctionDecl();
   case TokenType::While:
     return parseWhile();
+  case TokenType::Catch:
+    throw std::runtime_error{ "unexpected token" };
   }
 
   NodeKind nk = detectStatement();
 
   if (nk == NodeKind::ExpressionStatement)
   {
-    Token firsttok = peek();
-
-    auto result = std::make_shared<ExpressionStatement>();
-    
-    {
-      ParserSemicolonView view{ m_buffer, m_view, m_index };
-      result->expr = parseExpression();
-    }
-    
-    localizeParentize(result, firsttok, read(TokenType::Semicolon));
-
-    return result;
+    return parseExpressionStatement();
   }
   else if (nk == NodeKind::FunctionDeclaration)
   {
@@ -1569,7 +1598,23 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseCaseStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseCatchStatement()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto stmt = std::make_shared<CatchStatement>();
+  RaiiAstLocator ast_locator{ this, stmt };
+
+  read(TokenType::Catch);
+
+  read(TokenType::LeftPar);
+
+  {
+    ParserParenView paren_view{ m_buffer, m_view, m_index };
+    stmt->var = parseParameterDecl();
+  }
+
+  read(TokenType::RightPar);
+
+  stmt->body = parseStatement();
+
+  return stmt;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseContinueStatement()
@@ -1625,6 +1670,22 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseDefaultStatement()
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseDoWhileLoop()
 {
   throw std::runtime_error{ "not implemented" };
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseExpressionStatement()
+{
+  auto result = std::make_shared<ExpressionStatement>();
+
+  RaiiAstLocator astguard{ this, result };
+
+  {
+    ParserSemicolonView view{ m_buffer, m_view, m_index };
+    result->expr = parseExpression();
+  }
+
+  read(TokenType::Semicolon);
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseForLoop()
@@ -1790,7 +1851,20 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseSwitchStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseTryBlock()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto stmt = std::make_shared<TryBlock>();
+
+  RaiiAstLocator ast_locator{ this, stmt };
+
+  read(TokenType::Try);
+
+  stmt->body = parseStatement();
+
+  while (!atEnd() && peek() == TokenType::Catch)
+  {
+    stmt->handlers.push_back(parseCatchStatement());
+  }
+
+  return stmt;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseWhile()
@@ -1939,6 +2013,34 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseNamespaceDecl()
   Token rbrace = read(TokenType::RightBrace);
 
   localizeParentize(decl, namespacekw, rbrace);
+
+  return decl;
+}
+
+std::shared_ptr<cxx::IStatement> RestrictedParser::parseParameterDecl()
+{
+  auto decl = std::make_shared<ParameterDeclaration>();
+  RaiiAstLocator ast_locator{ this, decl };
+
+  parseType();
+  
+  if (atEnd())
+    return decl;
+
+  if (peek() == TokenType::UserDefinedName)
+  {
+    parseName();
+
+    if (atEnd())
+      return decl;
+  }
+
+  if (peek() == TokenType::Eq)
+  {
+    read(TokenType::Eq);
+
+    parseExpression();
+  }
 
   return decl;
 }

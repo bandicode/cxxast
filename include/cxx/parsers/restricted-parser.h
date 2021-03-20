@@ -118,6 +118,7 @@ protected:
   void astWrite(std::shared_ptr<AstNode> n);
   void localizeParentize(const std::shared_ptr<AstNode>& node, const Token& tok);
   void localizeParentize(const std::shared_ptr<AstNode>& node, const Token& first, const Token& last);
+  void localize(const std::shared_ptr<AstNode>& node, const Token& first, const Token& last);
   void parentize(const std::shared_ptr<AstNode>& node);
   void bind(const std::shared_ptr<AstNode>& astnode, const std::shared_ptr<INode>& n);
 
@@ -134,6 +135,7 @@ protected:
   std::shared_ptr<cxx::IStatement> parseCompoundStatement();
   std::shared_ptr<cxx::IStatement> parseDefaultStatement();
   std::shared_ptr<cxx::IStatement> parseDoWhileLoop();
+  std::shared_ptr<cxx::IStatement> parseExpressionStatement();
   std::shared_ptr<cxx::IStatement> parseForLoop();
   std::shared_ptr<cxx::IStatement> parseIf();
   std::shared_ptr<cxx::IStatement> parseReturnStatement();
@@ -146,6 +148,7 @@ protected:
   std::shared_ptr<cxx::IStatement> parseClassDecl();
   std::shared_ptr<cxx::IStatement> parseEnumDecl();
   std::shared_ptr<cxx::IStatement> parseNamespaceDecl();
+  std::shared_ptr<cxx::IStatement> parseParameterDecl();
   std::shared_ptr<cxx::IStatement> parseUsingDecl();
   std::shared_ptr<cxx::IStatement> parseTypedefDecl();
   std::shared_ptr<cxx::FunctionDeclaration> parseFunctionDecl();
@@ -164,6 +167,7 @@ private:
   size_t m_index = 0;
 
 private:
+  friend class RaiiAstLocator;
   std::shared_ptr<cxx::File> m_current_file;
   std::vector<std::shared_ptr<cxx::AstNode>> m_ast_stack;
   cxx::AccessSpecifier m_access_specifier = cxx::AccessSpecifier::PUBLIC;

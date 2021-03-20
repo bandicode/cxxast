@@ -6,10 +6,8 @@
 
 #include "cxx/parsers/restricted-parser.h"
 
-#include "cxx/class-declaration.h"
-#include "cxx/function-declaration.h"
-#include "cxx/namespace-declaration.h"
-#include "cxx/variable-declaration.h"
+#include "cxx/declarations.h"
+#include "cxx/statements.h"
 
 TEST_CASE("The parser is able to parse simple types", "[restricted-parser]")
 {
@@ -134,11 +132,12 @@ TEST_CASE("The parser is able to parse declarations", "[restricted-parser]")
     "int n = 0;\n"
     "int foo() { return 0; }\n"
     "namespace bar { }\n"
-    "class A { public: void do(); }; ");
+    "class A { public: void do(); }; \n"
+    "try { throw 5; } catch(int n) { } \n");
 
   REQUIRE(result);
 
-  REQUIRE(result->childvec.size() == 4);
+  REQUIRE(result->childvec.size() == 5);
 
   cxx::Statement stmt{ std::static_pointer_cast<cxx::IStatement>(result->childvec.at(0)) };
   REQUIRE(stmt.is<cxx::VariableDeclaration>());
@@ -151,4 +150,7 @@ TEST_CASE("The parser is able to parse declarations", "[restricted-parser]")
 
   stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(3)));
   REQUIRE(stmt.is<cxx::ClassDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(4)));
+  REQUIRE(stmt.is<cxx::TryBlock>());
 }

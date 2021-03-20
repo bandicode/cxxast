@@ -57,6 +57,7 @@ enum class NodeKind
   EnumeratorDeclaration,
   FunctionDeclaration,
   NamespaceDeclaration,
+  ParameterDeclaration,
   VariableDeclaration,
   TemplateParameterDeclaration,
   TypedefDeclaration,
