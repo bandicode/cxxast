@@ -585,6 +585,7 @@ struct Keyword {
 };
 
 const Keyword l2k[] = {
+  { "do", TokenType::Do },
   { "if", TokenType::If },
 };
 

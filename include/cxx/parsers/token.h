@@ -143,6 +143,7 @@ public:
     Continue,
     Default,
     Delete,
+    Do,
     Double,
     Else,
     Enum,

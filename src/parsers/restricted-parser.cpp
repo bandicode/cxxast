@@ -1335,6 +1335,8 @@ Statement RestrictedParser::parseStatement()
   case TokenType::Class:
   case TokenType::Struct:
     return parseClassDecl();
+  case TokenType::Do:
+    return parseDoWhileLoop();
   case TokenType::Bool:
   case TokenType::Char:
   case TokenType::Const: 
@@ -1669,7 +1671,29 @@ std::shared_ptr<cxx::IStatement> RestrictedParser::parseDefaultStatement()
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseDoWhileLoop()
 {
-  throw std::runtime_error{ "not implemented" };
+  auto result = std::make_shared<DoWhileLoop>();
+
+  RaiiAstLocator astguard{ this, result };
+
+  read(TokenType::Do);
+
+  result->body = parseStatement();
+
+  read(TokenType::While);
+
+  read(TokenType::LeftPar);
+
+  {
+    ParserParenView parenview{ m_buffer, m_view, m_index };
+
+    result->condition = parseExpression();
+  }
+
+  read(TokenType::RightPar);
+
+  read(TokenType::Semicolon);
+
+  return result;
 }
 
 std::shared_ptr<cxx::IStatement> RestrictedParser::parseExpressionStatement()

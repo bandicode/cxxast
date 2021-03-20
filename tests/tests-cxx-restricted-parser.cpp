@@ -132,7 +132,7 @@ TEST_CASE("The parser is able to parse declarations", "[restricted-parser]")
     "int n = 0;\n"
     "int foo() { return 0; }\n"
     "namespace bar { }\n"
-    "class A { public: void do(); }; \n"
+    "class A { public: void dewit(); }; \n"
     "try { throw 5; } catch(int n) { } \n");
 
   REQUIRE(result);
