@@ -1397,7 +1397,7 @@ Statement RestrictedParser::parseStatement()
   case TokenType::Using:
     return parseUsingDecl();
   case TokenType::Virtual:
-    return parseFunctionDecl();
+    return Statement(parseFunctionDecl());
   case TokenType::While:
     return parseWhile();
   case TokenType::Catch:
@@ -1412,11 +1412,11 @@ Statement RestrictedParser::parseStatement()
   }
   else if (nk == NodeKind::FunctionDeclaration)
   {
-    return parseFunctionDecl();
+    return Statement(parseFunctionDecl());
   }
   else if (nk == NodeKind::VariableDeclaration)
   {
-    return parseVarDecl();
+    return Statement(parseVarDecl());
   }
   else
   {
