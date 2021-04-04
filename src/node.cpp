@@ -37,6 +37,7 @@ std::string to_string(NodeKind k)
   case NodeKind::CompoundStatement: return "CompoundStatement";
   case NodeKind::DefaultStatement: return "DefaultStatement";
   case NodeKind::DoWhileLoop: return "DoWhileLoop";
+  case NodeKind::ExpressionStatement: return "ExpressionStatement";
   case NodeKind::ForLoop: return "ForLoop";
   case NodeKind::ForRange: return "ForRange";
   case NodeKind::IfStatement: return "IfStatement";
@@ -44,13 +45,16 @@ std::string to_string(NodeKind k)
   case NodeKind::SwitchStatement: return "SwitchStatement";
   case NodeKind::TryBlock: return "TryBlock";
   case NodeKind::WhileLoop: return "WhileLoop";
+  case NodeKind::AccessSpecifierDeclaration: return "AccessSpecifierDeclaration";
   case NodeKind::ClassDeclaration: return "ClassDeclaration";
   case NodeKind::EnumDeclaration: return "EnumDeclaration";
   case NodeKind::EnumeratorDeclaration: return "EnumeratorDeclaration";
   case NodeKind::FunctionDeclaration: return "FunctionDeclaration";
   case NodeKind::NamespaceDeclaration: return "NamespaceDeclaration";
+  case NodeKind::ParameterDeclaration: return "ParameterDeclaration";
   case NodeKind::VariableDeclaration: return "VariableDeclaration";
   case NodeKind::TemplateParameterDeclaration: return "TemplateParameterDeclaration";
+  case NodeKind::TypedefDeclaration: return "TypedefDeclaration";
   case NodeKind::UnexposedStatement: return "UnexposedStatement";
   case NodeKind::UnexposedExpression: return "UnexposedExpression";
   case NodeKind::AstRootNode: return "AstRootNode";

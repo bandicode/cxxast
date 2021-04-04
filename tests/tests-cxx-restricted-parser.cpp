@@ -6,6 +6,9 @@
 
 #include "cxx/parsers/restricted-parser.h"
 
+#include "cxx/declarations.h"
+#include "cxx/statements.h"
+
 TEST_CASE("The parser is able to parse simple types", "[restricted-parser]")
 {
   cxx::Type t = cxx::parsers::RestrictedParser::parseType("const int*");
@@ -119,4 +122,35 @@ TEST_CASE("The parser is able to parse simple macro declarations", "[restricted-
   REQUIRE(def->parameters.size() == 2);
   REQUIRE(def->parameters.front() == "X");
   REQUIRE(def->parameters.back() == "...");
+}
+
+TEST_CASE("The parser is able to parse declarations", "[restricted-parser]")
+{
+  cxx::parsers::RestrictedParser parser;
+
+  std::shared_ptr<cxx::AstRootNode> result = parser.parseSource(
+    "int n = 0;\n"
+    "int foo() { return 0; }\n"
+    "namespace bar { }\n"
+    "class A { public: void dewit(); }; \n"
+    "try { throw 5; } catch(int n) { } \n");
+
+  REQUIRE(result);
+
+  REQUIRE(result->childvec.size() == 5);
+
+  cxx::Statement stmt{ std::static_pointer_cast<cxx::IStatement>(result->childvec.at(0)) };
+  REQUIRE(stmt.is<cxx::VariableDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(1)));
+  REQUIRE(stmt.is<cxx::FunctionDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(2)));
+  REQUIRE(stmt.is<cxx::NamespaceDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(3)));
+  REQUIRE(stmt.is<cxx::ClassDeclaration>());
+
+  stmt = cxx::Statement(std::static_pointer_cast<cxx::IStatement>(result->childvec.at(4)));
+  REQUIRE(stmt.is<cxx::TryBlock>());
 }

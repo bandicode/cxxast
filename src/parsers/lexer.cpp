@@ -585,17 +585,20 @@ struct Keyword {
 };
 
 const Keyword l2k[] = {
+  { "do", TokenType::Do },
   { "if", TokenType::If },
 };
 
 const Keyword l3k[] = {
   { "for", TokenType::For },
   { "int", TokenType::Int },
+  { "try", TokenType::Try },
 };
 
 const Keyword l4k[] = {
   { "auto", TokenType::Auto },
   { "bool", TokenType::Bool },
+  { "case", TokenType::Case },
   { "char", TokenType::Char },
   { "else", TokenType::Else },
   { "enum", TokenType::Enum },
@@ -606,11 +609,13 @@ const Keyword l4k[] = {
 
 const Keyword l5k[] = {
   { "break", TokenType::Break },
+  { "catch", TokenType::Catch },
   { "class", TokenType::Class },
   { "const", TokenType::Const },
   { "false", TokenType::False },
   { "final", TokenType::Final },
   { "float", TokenType::Float },
+  { "throw", TokenType::Throw },
   { "using", TokenType::Using },
   { "while", TokenType::While },
 };
